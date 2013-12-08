@@ -5,6 +5,7 @@ Perlini Bottling System v3 Arduino MICRO Controller
 RECENT CHAGNGES
 
 10/29 ADDED PIN FOR 2ND PRESSURE SENSOR 
+12/7  THIS FILE CONTAINS THE CURRENT PINOUTS FOR MICRO--I THINK
 **************************************************************************  
 */
 
