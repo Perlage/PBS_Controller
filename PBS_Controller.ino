@@ -243,17 +243,6 @@ void loop(){
   switchFillState = digitalRead(switchFillPin);
   switchDoorState = digitalRead(switchDoorPin);
   delay(50);  
-
-  
-  /*
-  if(switchDoorState == HIGH){      //////////////////////////////////////////////
-    relayOn(relay6Pin, false);
-  }  
-  else
-  {
-    relayOn(relay6Pin, true);
-  }  
- */
  
   // **************************************************************************  
   // BUTTON 1 FUNCTIONS 
@@ -318,17 +307,21 @@ void loop(){
   // PURGE LOOP***********************************************************
 
   // While B2 is pressed and platform is up, purge the bottle
-  while(button2State == LOW && button1State && (P1 >= pressureOffset + pressureDeltaUp) && relay4State == HIGH){  // Try making this a two-button press for purging
-    inPurgeLoop = true;
-    //relayOn(relay3Pin, false); //close S3 if not already
-    relayOn(relay2Pin, true); //open S2 to purge
-    //digitalWrite(light2Pin, HIGH); //TOTC
+  while(button2State == LOW && switchDoorState == HIGH && (P1 >= pressureOffset + pressureDeltaUp) && relay4State == HIGH){ // Can't purge with door closed
+    while(button1State == LOW){ // Require two button pushes to purge
+      inPurgeLoop = true;
+      relayOn(relay2Pin, true); //open S2 to purge
+      //digitalWrite(light2Pin, HIGH); //TOTC
+      button1State = !digitalRead(button1Pin); 
+      delay(50);  
+      printLcd(2,"Purging..."); 
+    }
+    relayOn(relay2Pin, false); // Close relay when B1 not pushed
+    button1State = !digitalRead(button1Pin); 
     button2State = !digitalRead(button2Pin); 
-    delay(50);  
- 
-    printLcd(2,"Purging..."); 
+    delay(50);
   }
-    if(inPurgeLoop){
+  if(inPurgeLoop){
     //close S2 when button lifted
     relayOn(relay2Pin, false);
     //digitalWrite(light2Pin, LOW); //TOTC
@@ -593,15 +586,13 @@ void loop(){
       
       // Open door
       relayOn(relay6Pin, true);
-      delay(500);
-      relayOn(relay6Pin, false);
       
       // Drop platform partially
       relayOn(relay4Pin, false); // NOW can close platform UP solenoid
       relayOn(relay5Pin, true);
-      delay(1000);
+      delay(1500);
       relayOn(relay5Pin, false);
-      
+      relayOn(relay6Pin, false); // Close door solenoid
     }  
 
   inDepressurizeLoop = false;
@@ -613,15 +604,23 @@ void loop(){
     //when pressure is close to 0, close S3 and lower platform with S5
     printLcd(2,"Lowering platform...");
     inPlatformLowerLoop = true;
-    relayOn(relay3Pin, true); // May as well leave this open? YES. Liquid is still outgassing.
+    
+    // Only open door if closed
+    if(switchDoorState == LOW){
+      relayOn(relay6Pin, true);  
+      delay(250);
+      relayOn(relay6Pin, false);  
+    }
+
+    relayOn(relay3Pin, true);  // May as well leave this open? YES. Liquid is still outgassing.
     relayOn(relay4Pin, false); // Need to close this if we got here by not going through depressurize loop--i.e., bottle was never pressurized
-    relayOn(relay5Pin, true);
-    relayOn(relay6Pin, true); // Open door when pressed
+    relayOn(relay5Pin, true);  // Open cylinder exhaust
     //digitalWrite(light3Pin, HIGH); //TOTC
     relay4State = HIGH; //TOTC
 
     P1 = analogRead(sensor1Pin);
     button3State = !digitalRead(button3Pin);
+    switchDoorState =  digitalRead(switchDoorPin);
     delay(50);
   }
 
