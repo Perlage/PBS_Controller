@@ -2,10 +2,7 @@
 **************************************************************************  
 Perlini Bottling System v3 Arduino MICRO Controller
 
-RECENT CHAGNGES
 
-10/29 ADDED PIN FOR 2ND PRESSURE SENSOR 
-12/7  THIS FILE CONTAINS THE CURRENT PINOUTS FOR MICRO--I THINK
 **************************************************************************  
 */
 
@@ -234,6 +231,7 @@ void setup() {
   
 }
 
+
 void loop(){
 
   // read the state of buttons and sensors
@@ -329,17 +327,10 @@ void loop(){
     inPurgeLoop = false;
     printLcd(2,""); 
   }
-  
-    /*  
-    Serial.print("Current Pressure: ");
-    Serial.print (P1);
-    Serial.print (" units");
-    Serial.println("");
-    */  
    
   // PRESSURIZE LOOP***********************************************************
    
-  while(button2State == LOW && switchDoorState == LOW && (P1 >= pressureOffset + pressureDeltaUp) && relay4State == LOW){ 
+  while(switchDoorState == LOW && (P1 >= pressureOffset + pressureDeltaUp) && relay4State == LOW){ // deleted button2State == LOW && // Now pressurization starts when door closes
     inPressurizeLoop = true;
     
     relayOn(relay3Pin, true); //close S3 if not already
@@ -360,9 +351,8 @@ void loop(){
     //do sensor reads and button check
     button2State = !digitalRead(button2Pin); 
     switchDoorState = digitalRead(switchDoorPin); //Check door switch    
-
-    delay(50); //Debounce
     P1 = analogRead(sensor1Pin);
+    delay(50); //Debounce
   }
 
   if(inPressurizeLoop){
@@ -371,6 +361,7 @@ void loop(){
     //digitalWrite(light2Pin, LOW); //TOTC
     inPressurizeLoop = false;
     
+    button2State = LOW; // This makes Fill Loop start automatically
     printLcd(2,""); 
   }
 
@@ -403,10 +394,11 @@ void loop(){
     String (convPSI) = floatToString(buffer, pressurePSI, 1);
     String (outputPSI) = "Press diff: " + convPSI + " psi";
     printLcd(3, outputPSI); 
-    delay(100);
+    //delay(100);
 
     //see if B2 has been toggled
     button2StateNew = !digitalRead(button2Pin); 
+    delay(50);
     if (button2StateNew == HIGH && button2StateUp == false) 
     {
       button2StateUp = true; // User released button -- toggle "up" state of button
@@ -428,6 +420,7 @@ void loop(){
     Serial.println("");
     
     //either B2 was released, or FS1 was tipped/switched, or pressure dipped too much -- Autotamp in all three cases
+    // I DON'T THINK WE SHOULD REPRESSURIZE HERE. NO NEED TO AUTOTAMP ON FILLING
     relayOn(relay1Pin, false);
     //digitalWrite(light2Pin, LOW); //TOTC
     
@@ -471,23 +464,23 @@ void loop(){
       //digitalWrite(light2Pin, LOW); //TOTC
       
       switchFillState = digitalRead(switchFillPin); 
+      button3State = LOW; // ############## This will make auto depressurize after overfill
     }  
-    else
+    //else // COMMENTED "else" OUT AND STILL WORKS??? ODD
 
     inFillLoop = false;
     printLcd(0, "Press Button 3");  
     printLcd(1, "To depressurize");  
   }
+  
   switchFillState = digitalRead(switchFillPin); 
-  button2State = 1; // TEMP: THIS MAKES AUTOFILL!!
-
+  //button2State = 1; // TEMP: THIS MAKES AUTOFILL!! ########
 
   // *********************************************************************
   // BUTTON 3 FUNCTIONS 
   // *********************************************************************
 
   // DEPRESSURIZE LOOP ***************************************************
-
 
   while(button3State == LOW && switchFillState == HIGH && P1 <= startPressure - pressureDeltaDown){  // Don't need to take into account offset, as it is in both P1 and Startpressure
     inDepressurizeLoop = true;
@@ -600,17 +593,18 @@ void loop(){
 
   // PLATFORM LOWER LOOP *************************************************
 
-  while(button3State == LOW && P1 > startPressure - pressureDeltaDown){
+  // Only open door if closed
+  if(button3State == LOW && switchDoorState == LOW && P1 > startPressure - pressureDeltaDown){
+    relayOn(relay6Pin, true);  
+    delay(500);
+    relayOn(relay6Pin, false);  
+  }
+  
+  // Platform will not lower with door closed. This prevents someone from defeating door switch
+  while(button3State == LOW && switchDoorState == HIGH && P1 > startPressure - pressureDeltaDown){
     //when pressure is close to 0, close S3 and lower platform with S5
     printLcd(2,"Lowering platform...");
     inPlatformLowerLoop = true;
-    
-    // Only open door if closed
-    if(switchDoorState == LOW){
-      relayOn(relay6Pin, true);  
-      delay(250);
-      relayOn(relay6Pin, false);  
-    }
 
     relayOn(relay3Pin, true);  // May as well leave this open? YES. Liquid is still outgassing.
     relayOn(relay4Pin, false); // Need to close this if we got here by not going through depressurize loop--i.e., bottle was never pressurized
@@ -665,6 +659,13 @@ void loop(){
 /*
 
  CODE FRAGMENTS *********************************************************
+ 
+ /*  
+Serial.print("Current Pressure: ");
+Serial.print (P1);
+Serial.print (" units");
+Serial.println("");
+*/  
 
 /* THIS FUNCTION ADDED BY MATT
 int ReadButton(const int buttonId)
