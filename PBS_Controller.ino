@@ -1,11 +1,17 @@
 /*
 **************************************************************************  
-Perlini Bottling System v3 Arduino MICRO Controller
+Perlini Bottling System
+Arduino MICRO Controller
 
+Author: 
+Evan Wallace
+Perlage Systems Inc
 
 **************************************************************************  
 */
 
+String (versionSoftwareTag) = "v0.01.00";
+String (versionHardwareTag) = "v0.4.1";
 
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
@@ -130,7 +136,7 @@ void setup() {
   lcd.setCursor(0,0); 
   lcd.print("Perlini Bottling");
   lcd.setCursor(0,1);
-  lcd.print("System, version 1.0");
+  lcd.print("System, " + versionSoftwareTag);
   delay(1000);  
   lcd.setCursor(0,3);
   lcd.print("Initializing...");
