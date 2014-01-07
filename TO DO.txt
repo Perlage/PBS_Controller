@@ -1,0 +1,30 @@
+BUGS
+=====
+
+Closing door after depressurization ends and door opens starts flow of gas
+
+Holding down B1 with door closed starts flow of gas when platform locks in
+
+
+FEATURES 
+========
+
+--Allow tamping by pressing B2 anytime during depressurization (i.e., when platform is up)
+
+--Don't repressurize when stopping depressurization; (but DO repressurize anytime foam touches sensor?)
+
+--Check to make sure that pressure difference is zero when bottle is not pressurized (I think we solved this once...may have lost that change?)
+
+
+COMPLETED BUGS
+==============
+
+
+
+COMPLETED FEATURES
+==================
+
+
+--Make two button push for purge
+
+--If door already open, don't click door solenoid

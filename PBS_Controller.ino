@@ -4,14 +4,14 @@ Perlini Bottling System
 Arduino MICRO Controller
 
 Author: 
-Evan Wallace
-Perlage Systems Inc
-
+  Evan Wallace
+  Perlage Systems, Inc.
+  
 **************************************************************************  
 */
 
-String (versionSoftwareTag) = "v0.01.00";
-String (versionHardwareTag) = "v0.4.1";
+String (versionSoftwareTag) = "v0.01.00" ;
+String (versionHardwareTag) = "v0.4.1"   ;
 
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
@@ -20,32 +20,32 @@ String (versionHardwareTag) = "v0.4.1";
 
 LiquidCrystal_I2C lcd(0x3F,20,4);  
 
-const int button1Pin =  0;     // pin for button 1 B1 (Raise platform) RX=0; B1 on PBS is B3 on Touchsensor
-const int button2Pin =  1;     // pin for button 2 B2 (Fill/purge)     TX=1; B2 on PBS is B2 on Touchsensor
-// 2 SDA for LCD        2  
-// 3 SDL for LCD        3
-const int button3Pin =  4;     // pin for button 3 B3 (Depressurize and lower) B3 on PBS is B1 on Touchsensor
-
-const int relay1Pin =   5;     // pin for relay1 S1 (liquid fill)
-const int relay2Pin =   6;     // pin for relay2 S2 (bottle gas)
-const int relay3Pin =   7;     // pin for relay3 S3 (bottle gas vent)
-const int relay4Pin =   8;     // pin for relay4 S4 (gas in lift)
-const int relay5Pin =   9;     // pin for relay5 S5 (gas out lift)
-const int relay6Pin =  10;     // pin for relay6 S6 (door lock solenoid) //Oct 18
-
+// ROW 1 ARDUINO MICRO
+const int button1Pin    =  0;     // pin for button 1 B1 (Raise platform) RX=0; B1 on PBS is B3 on Touchsensor
+const int button2Pin    =  1;     // pin for button 2 B2 (Fill/purge)     TX=1; B2 on PBS is B2 on Touchsensor
+// 2 SDA for LCD           2;  
+// 3 SDL for LCD           3;
+const int button3Pin    =  4;     // pin for button 3 B3 (Depressurize and lower) B3 on PBS is B1 on Touchsensor
+const int relay1Pin     =  5;     // pin for relay1 S1 (liquid fill)
+const int relay2Pin     =  6;     // pin for relay2 S2 (bottle gas)
+const int relay3Pin     =  7;     // pin for relay3 S3 (bottle gas vent)
+const int relay4Pin     =  8;     // pin for relay4 S4 (gas in lift)
+const int relay5Pin     =  9;     // pin for relay5 S5 (gas out lift)
+const int relay6Pin     = 10;     // pin for relay6 S6 (door lock solenoid) //Oct 18
 const int switchFillPin = 11;     // pin for fill switchFill F1 // 10/7 Zack changed from 13 to 7 because of shared LED issue on 13. Light3Pin put on 13
 const int switchDoorPin = 12;     // pin for finger switch
-const int buzzerPin  = 13;     // pin for buzzer
 
-const int sensor1Pin = A0;     // pin for preasure sensor1 P1
-const int sensor2Pin = A1;     // pin for pressure sensor2 P2 ADDED 10/29
-//                     A2      // future cleaning switch
-//const int light1Pin =  A3;     // pin for button 1 light 
-//const int light2Pin =  A4;     // pin for button 2 light
-//const int light3Pin =  A5;     // pin for button 3 light
+// ROW 2 ARDUINO MICRO
+const int buzzerPin     = 13;     // pin for buzzer
+const int sensor1Pin    = A0;     // pin for preasure sensor1 P1
+const int sensor2Pin    = A1;     // pin for pressure sensor2 P2 ADDED 10/29
+//                        A2;     // future cleaning switch
+//const int light1Pin   = A3;     // pin for button 1 light 
+//const int light2Pin   = A4;     // pin for button 2 light
+//const int light3Pin   = A5;     // pin for button 3 light
 
 
-// Inititialize button states
+// Inititialize states
 int button1State = 1;
 int button2State = 1; 
 int button3State = 1;        
@@ -152,10 +152,17 @@ void setup() {
   pinMode(relay5Pin, OUTPUT);  
   pinMode(relay6Pin, OUTPUT);  
   
+  pinMode(button1Pin, INPUT);  //EDITED BUTTONS 1,2,3 TO PULLUP
+  pinMode(button2Pin, INPUT);
+  pinMode(button3Pin, INPUT);  
   //pinMode(light1Pin, OUTPUT); //ADDED AT TOTC
   //pinMode(light2Pin, OUTPUT);
   //pinMode(light3Pin, OUTPUT);
 
+  pinMode(switchFillPin, INPUT_PULLUP); 
+  pinMode(switchDoorPin, INPUT_PULLUP); // So HIGH is open?
+  pinMode(buzzerPin, OUTPUT); //Added Oct 16 for buzzer
+  
   //set all pins to high which is "off" for this controller
   digitalWrite(relay1Pin, HIGH);
   digitalWrite(relay2Pin, HIGH);
@@ -164,19 +171,9 @@ void setup() {
   digitalWrite(relay5Pin, HIGH);
   digitalWrite(relay6Pin, HIGH);
 
-  pinMode(button1Pin, INPUT);  //EDITED BUTTONS 1,2,3 TO PULLUP
-  pinMode(button2Pin, INPUT);
-  pinMode(button3Pin, INPUT);  
-  pinMode(switchFillPin, INPUT_PULLUP); 
-  pinMode(switchDoorPin, INPUT_PULLUP); // So HIGH is open?
-  
-  pinMode(buzzerPin, OUTPUT); //Added Oct 16 for buzzer
-
-
   P1 = analogRead(sensor1Pin); // Initial pressure difference reading from sensor. High = unpressurized bottle
   startPressure = P1;  
   startPressurePSI = pressureConv(P1);
-  
   
   Serial.print("Starting pressure: ");
   Serial.print (startPressurePSI);
@@ -188,10 +185,6 @@ void setup() {
   Serial.print (" units");
   Serial.println("");
   
-
-  //String output = "Pressure: " + String(startPressure); 
-  //printLcd(3, output); 
-  
   //FINALLY WORKS
   String (convPSI) = floatToString(buffer, startPressurePSI, 1);
   String (outputPSI) = "Pressure: " + convPSI + " psi";
@@ -202,10 +195,10 @@ void setup() {
   //=========================================================
   
   while ( P1 < pressureNull ){
+    inPressureNullLoop = true;
+    
     relayOn(relay3Pin, true); //Open bottle vent
     relayOn(relay4Pin, true); //Keep platform up while depressurizing
-    
-    inPressureNullLoop = true;
     
     printLcd(0, "Bottle pressurized");
     printLcd(1, "Or gas off");
@@ -216,7 +209,6 @@ void setup() {
     String (convPSI) = floatToString(buffer, bottlePressurePSI, 1);
     String (outputPSI) = "Pressure diff: " + convPSI;
     printLcd(3, outputPSI);       
-    
   }  
   
     if ( inPressureNullLoop){
@@ -234,9 +226,7 @@ void setup() {
   lcd.print("Insert bottle,     ");
   lcd.setCursor(0,1);
   lcd.print("Press button 1     ");
-  
 }
-
 
 void loop(){
 
@@ -492,9 +482,6 @@ void loop(){
     inDepressurizeLoop = true;
 
     printLcd(2, "Depressurizing...");  
-    //String output = "Pressure diff: " + String(P1);
-    //printLcd(3,output);
-    
     float pressurePSI = startPressurePSI - pressureConv(P1);
     String (convPSI) = floatToString(buffer, pressurePSI, 1);
     String (outputPSI) = "Bottle Press: " + convPSI;
