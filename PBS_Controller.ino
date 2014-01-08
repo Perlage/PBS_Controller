@@ -485,14 +485,12 @@ void loop(){
   while(button3State == LOW && switchFillState == HIGH && P1 <= startPressure - pressureDeltaDown){  // Don't need to take into account offset, as it is in both P1 and Startpressure
     inDepressurizeLoop = true;
 
-    //Allow momentary foam tamping
+    //Allow momentary foam tamping // Could this be a while statement ##################################################################################
     button2State = !digitalRead(button2Pin);
       if(button2State == LOW)
       {
         relayOn(relay2Pin, true);
-      }
-        else
-      {
+        delay(50);
         relayOn(relay2Pin, false);
       }
     
