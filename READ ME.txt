@@ -1,3 +1,0 @@
-Controller was put under source control in Jan 2014. 
-
-First checkin was last valid version before safety door was added.
