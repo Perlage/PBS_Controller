@@ -10,7 +10,7 @@ Author:
 **************************************************************************  
 */
 
-String (versionSoftwareTag) = "v0.01.00" ;
+String (versionSoftwareTag) = "Uncommit" ;
 String (versionHardwareTag) = "v0.4.1"   ;
 
 #include <Wire.h> 
@@ -21,7 +21,7 @@ String (versionHardwareTag) = "v0.4.1"   ;
 LiquidCrystal_I2C lcd(0x3F,20,4);  
 
 // ROW 1 ARDUINO MICRO
-const int button1Pin    =  0;     // pin for button 1 B1 (Raise platform) RX=0; B1 on PBS is B3 on Touchsensor
+const int button1Pin    =  0;     // pin for button 1 B1 (Raise platform) RX=0; B1 on PBS is B3 on Touchsensor 
 const int button2Pin    =  1;     // pin for button 2 B2 (Fill/purge)     TX=1; B2 on PBS is B2 on Touchsensor
 // 2 SDA for LCD           2;  
 // 3 SDL for LCD           3;
@@ -40,18 +40,18 @@ const int buzzerPin     = 13;     // pin for buzzer
 const int sensor1Pin    = A0;     // pin for preasure sensor1 P1
 const int sensor2Pin    = A1;     // pin for pressure sensor2 P2 ADDED 10/29
 //                        A2;     // future cleaning switch
-//const int light1Pin   = A3;     // pin for button 1 light 
-//const int light2Pin   = A4;     // pin for button 2 light
-//const int light3Pin   = A5;     // pin for button 3 light
+const int light1Pin     = A3;     // pin for button 1 light 
+const int light2Pin     = A4;     // pin for button 2 light
+const int light3Pin     = A5;     // pin for button 3 light
 
 
 // Inititialize states
 int button1State = 1;
 int button2State = 1; 
 int button3State = 1;        
-//int light1State = 1;
-//int light2State = 1;
-//int light3State = 1;
+int light1State = 1;
+int light2State = 1;
+int light3State = 1;
 int switchFillState = 1; //Should this be high?
 int switchDoorState = 1;
 int platformState = LOW; //LOW=Low, HIGH = High
@@ -87,9 +87,12 @@ boolean inPurgeLoop = false;
 boolean button3StateUp = false; //Boolean variables for B3 toggle state
 boolean button3StateNew = LOW;  //Boolean variables for B3 toggle state
 
-// Debug variables to be deleted later
-int N = 0; // number of times through the mainloop;
-int M = 0;
+int timePlatformInit;        // Time in ms going into loop
+int timePlatformCurrent;     // Time in ms currently in loop
+int timePlatformRising = 0;  // Diffence between Init and Current
+int timePlatformLock = 1250; // Time in ms before platform locks in up position
+
+boolean platformLockedNew = false; // variable to be set when platfrom first locks up
 
 char buffer[25]; // just give it plenty to write out any values for flost to str (i dont think i need this anymore)
 
@@ -141,7 +144,6 @@ void setup() {
   delay(1000);  
   lcd.setCursor(0,3);
   lcd.print("Initializing...");
-  delay(1000);
 
   Serial.begin(9600);
   
@@ -156,9 +158,9 @@ void setup() {
   pinMode(button1Pin, INPUT);  //EDITED BUTTONS 1,2,3 TO PULLUP
   pinMode(button2Pin, INPUT);
   pinMode(button3Pin, INPUT);  
-  //pinMode(light1Pin, OUTPUT); //ADDED AT TOTC
-  //pinMode(light2Pin, OUTPUT);
-  //pinMode(light3Pin, OUTPUT);
+  pinMode(light1Pin, OUTPUT); //ADDED AT TOTC
+  pinMode(light2Pin, OUTPUT);
+  pinMode(light3Pin, OUTPUT);
 
   pinMode(switchFillPin, INPUT_PULLUP); 
   pinMode(switchDoorPin, INPUT_PULLUP); // So HIGH is open?
@@ -171,20 +173,32 @@ void setup() {
   digitalWrite(relay4Pin, HIGH);
   digitalWrite(relay5Pin, HIGH);
   digitalWrite(relay6Pin, HIGH);
+  
+  // Flash lights
+  digitalWrite(light1Pin, HIGH);
+  digitalWrite(light2Pin, HIGH);
+  digitalWrite(light3Pin, HIGH);
+  delay(500);
+  digitalWrite(light1Pin, LOW);
+  digitalWrite(light2Pin, LOW);
+  digitalWrite(light3Pin, LOW);
+  delay(500);
+  digitalWrite(light1Pin, HIGH);
+  digitalWrite(light2Pin, HIGH);
+  digitalWrite(light3Pin, HIGH);
+  delay(500);
+  digitalWrite(light1Pin, LOW);
+  digitalWrite(light2Pin, LOW);
+  digitalWrite(light3Pin, LOW); 
+  delay(500);
+  digitalWrite(light1Pin, HIGH);
+  digitalWrite(light2Pin, HIGH);
+  digitalWrite(light3Pin, HIGH);
+
 
   P1 = analogRead(sensor1Pin); // Initial pressure difference reading from sensor. High = unpressurized bottle
   startPressure = P1;  
   startPressurePSI = pressureConv(P1);
-  
-  Serial.print("Starting pressure: ");
-  Serial.print (startPressurePSI);
-  Serial.print (" psi");
-  Serial.println("");
-  
-  Serial.print("Starting pressure: ");
-  Serial.print (P1);
-  Serial.print (" units");
-  Serial.println("");
   
   //FINALLY WORKS
   String (convPSI) = floatToString(buffer, startPressurePSI, 1);
@@ -222,6 +236,9 @@ void setup() {
     inPressureNullLoop = false;
   }
   
+  //If platform is up, drop it
+  relayOn(relay5Pin, true);
+  
   delay(1000);
   lcd.setCursor(0,0);
   lcd.print("Insert bottle,     ");
@@ -244,61 +261,61 @@ void loop(){
   // **************************************************************************  
 
   // PLATFORM RAISING LOOP ****************************************************
-
-  //while B1 is pressed, Raise bottle platform
-  M = 0; // We're going to use this as a time counter. We'll do with pressure later.
-  int counter = 25;
   
-  while (button1State == LOW && P1 >= startPressure - pressureDeltaUp ){ // I.e. no bottle or bottle unpressurized
-    // Added pressure condition to make sure this button doesn't act when bottle is pressurized--else could lower bottle when pressurized
+  timePlatformInit = millis(); // Inititalize time for platform lockin routine
+  
+  //while B1 is pressed, Raise bottle platform
+  while (button1State == LOW && (timePlatformRising < timePlatformLock) && platformState == LOW && (P1 >= startPressure - pressureDeltaUp)) // I.e. no bottle or bottle unpressurized. Added pressure condition to make sure this button doesn't act when bottle is pressurized--else could lower bottle when pressurized
+  { 
     inPlatformLoop = true; 
     
     relayOn(relay4Pin, true);     //open S4
     relayOn(relay5Pin, false);
     //digitalWrite(light1Pin, HIGH);
     
-    M = M + 1;
+    // Bug PBSFIRM-5
+    timePlatformCurrent = millis();
+    delay(10);
+    timePlatformRising = timePlatformCurrent - timePlatformInit;
     
-    String numMLoops = "Raising... " + String(counter - M);
-    if (M < counter) {
-      printLcd(2, numMLoops); 
-    }
-    else
-    {
-      printLcd(0, "To fill, close door"); 
-      printLcd(1, "& press Button 2"); 
-      printLcd(2, "");
-      printLcd(2, "");
-      
-      digitalWrite(buzzerPin, HIGH); 
-      delay(100);
-      digitalWrite(buzzerPin, LOW);
-    }
+    String platformStatus = ("Raising... " + String(timePlatformRising) + " ms");
+    printLcd(2, platformStatus);  
+
     //see if button is still pressed
     button1State = !digitalRead(button1Pin); 
   }  
 
-  if (inPlatformLoop){
-    if (M >= counter)
+  if (inPlatformLoop)
+  {
+    if (timePlatformRising >= timePlatformLock)
     {
-    //run end actions of platformLoop
-      relayOn(relay4Pin, true); // EW: Slight leak is causing platform to fall--leave open 
+      // PlatformLoop lockin reached
+      digitalWrite(buzzerPin, HIGH); 
+      delay(100);
+      digitalWrite(buzzerPin, LOW);
+  
+      printLcd(0, "To fill, close door"); 
+      printLcd(1, "& press Button 2"); 
+      printLcd(2, "");
+      printLcd(2, "");
+
+      relayOn(relay4Pin, true);  // Slight leak is causing platform to fall--leave open 
       relayOn(relay5Pin, false); // 
       //digitalWrite(light1Pin, HIGH); //TOTC
-      relay4State = LOW; // Don't need this anymore--replaced with platformState
       platformState = HIGH;
-      
+      platformLockedNew = true;
     }  
     else    
     {
+      // Drop Platform
       relayOn(relay4Pin, false); // 
       relayOn(relay5Pin, true); // Drop platform
       //digitalWrite(light1Pin, LOW); //TOTC
-      relay4State = HIGH;
       platformState = LOW;
       printLcd(2, "");
     }
     inPlatformLoop = false;
+    timePlatformRising = 0;
   }
 
   // **************************************************************************    
@@ -334,8 +351,9 @@ void loop(){
   // PRESSURIZE LOOP***********************************************************
 
   // Deleting "button2State == LOW" will make pressurization start when door closes, but this is problematic   
-  while(button2State == LOW && switchDoorState == LOW && (P1 >= pressureOffset + pressureDeltaUp) && platformState == HIGH){ 
+  while((button2State == LOW || platformLockedNew == true) && switchDoorState == LOW && (P1 >= pressureOffset + pressureDeltaUp) && platformState == HIGH){ 
 
+    platformLockedNew = false;
     inPressurizeLoop = true;
     
     relayOn(relay3Pin, true); //close S3 if not already
@@ -617,7 +635,6 @@ void loop(){
     relayOn(relay4Pin, false); // Need to close this if we got here by not going through depressurize loop--i.e., bottle was never pressurized
     relayOn(relay5Pin, true);  // Open cylinder exhaust
     //digitalWrite(light3Pin, HIGH); //TOTC
-    platformState = LOW; //TOTC
 
     P1 = analogRead(sensor1Pin);
     button3State = !digitalRead(button3Pin);
@@ -634,6 +651,8 @@ void loop(){
     //digitalWrite(light3Pin, LOW); //TOTC
 
     inPlatformLowerLoop = false;   
+    platformState = LOW; //TOTC
+
 
     //End of main loop cleanup
 
@@ -766,7 +785,17 @@ int ReadButton(const int buttonId)
   lcd.print("Ready.");
   */
  
- 
+  /*
+  Serial.print("Starting pressure: ");
+  Serial.print (startPressurePSI);
+  Serial.print (" psi");
+  Serial.println("");
+  
+  Serial.print("Starting pressure: ");
+  Serial.print (P1);
+  Serial.print (" units");
+  Serial.println("");
+ */
 
 
 
