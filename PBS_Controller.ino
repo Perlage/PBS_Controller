@@ -10,7 +10,7 @@ Author:
 **************************************************************************  
 */
 
-String (versionSoftwareTag) = "uncommit" ;
+String (versionSoftwareTag) = "TEMP" ;
 String (versionHardwareTag) = "v0.4.1"   ;
 
 #include <Wire.h> 
@@ -46,17 +46,24 @@ const int light3Pin     = A5;     // pin for button 3 light
 
 
 // Inititialize states
-int button1State = 1;
-int button2State = 1; 
-int button3State = 1;        
-int light1State = 1;
-int light2State = 1;
-int light3State = 1;
-int switchFillState = 1; //Should this be high?
-int switchDoorState = 1;
-int platformState = LOW; //LOW=Low, HIGH = High
+int button1State = HIGH;
+int button2State = HIGH; 
+int button3State = HIGH;
 
-int relay1State = HIGH; //TOTC
+//button toggle states ####################################################################
+int button2StateTEMP = HIGH;
+int button3StateTEMP = HIGH;
+boolean button2ToggleState = false;
+boolean button3ToggleState = false;
+
+int light1State = LOW;
+int light2State = LOW;
+int light3State = LOW;
+int switchFillState = HIGH; 
+int switchDoorState = HIGH;
+int platformState = LOW; //LOW=Low
+
+int relay1State = HIGH;
 int relay2State = HIGH;
 int relay3State = HIGH;
 int relay4State = HIGH;
@@ -85,9 +92,6 @@ boolean inOverFillLoop = false;
 boolean inPurgeLoop = false;
 boolean inDoorOpenLoop = false;
 
-boolean button3StateUp = false; //Boolean variables for B3 toggle state
-boolean button3StateNew = LOW;  //Boolean variables for B3 toggle state
-
 int timePlatformInit;        // Time in ms going into loop
 int timePlatformCurrent;     // Time in ms currently in loop
 int timePlatformRising = 0;  // Diffence between Init and Current
@@ -115,12 +119,10 @@ void printLcd (int line, String newString){
 // FUNCTION: This was added so that the relay states could easily be changed from HI to LOW
 void relayOn(int pinNum, boolean on)
 {
-  if(on)
-  {
+  if(on){
     digitalWrite(pinNum, LOW); //turn relay on
   }
-  else
-  {
+  else{
     digitalWrite(pinNum, HIGH); //turn relay off
   }
 }
@@ -135,7 +137,11 @@ float pressureConv(int P1)
   return pressurePSI;
 }
 
-void setup() 
+//***************************************************************************************
+// SETUP LOOP
+//***************************************************************************************
+
+void setup()
 {
   //setup LCD
   lcd.init();
@@ -148,7 +154,7 @@ void setup()
   lcd.setCursor(0,3);
   lcd.print("Initializing...");
 
-  Serial.begin(9600);
+  Serial.begin(9600); // TO DO: remove
   
   //setup pins
   pinMode(relay1Pin, OUTPUT);      
@@ -158,16 +164,16 @@ void setup()
   pinMode(relay5Pin, OUTPUT);  
   pinMode(relay6Pin, OUTPUT);  
   
-  pinMode(button1Pin, INPUT);  //EDITED BUTTONS 1,2,3 TO PULLUP
+  pinMode(button1Pin, INPUT);  //Changed buttons 1,2,3 from PULLUP  to regular when starting to use touchbuttons
   pinMode(button2Pin, INPUT);
   pinMode(button3Pin, INPUT);  
-  pinMode(light1Pin, OUTPUT); //ADDED AT TOTC
+  pinMode(light1Pin, OUTPUT); 
   pinMode(light2Pin, OUTPUT);
   pinMode(light3Pin, OUTPUT);
 
   pinMode(switchFillPin, INPUT_PULLUP); 
-  pinMode(switchDoorPin, INPUT_PULLUP); // So HIGH is open?
-  pinMode(buzzerPin, OUTPUT); //Added Oct 16 for buzzer
+  pinMode(switchDoorPin, INPUT_PULLUP); 
+  pinMode(buzzerPin, OUTPUT);
   
   //set all pins to high which is "off" for this controller
   digitalWrite(relay1Pin, HIGH);
@@ -176,6 +182,10 @@ void setup()
   digitalWrite(relay4Pin, HIGH);
   digitalWrite(relay5Pin, HIGH);
   digitalWrite(relay6Pin, HIGH);
+  
+  digitalWrite(button1Pin, HIGH); //This is new 
+  digitalWrite(button2Pin, HIGH);
+  digitalWrite(button3Pin, HIGH);
   
   // Flash lights
   digitalWrite(light1Pin, HIGH);
@@ -222,7 +232,7 @@ void setup()
     
     bottlePressurePSI = pressureConv(P1);
     String (convPSI) = floatToString(buffer, bottlePressurePSI, 1);
-    String (outputPSI) = "Bottle pressure: " + convPSI;
+    String (outputPSI) = "Bottle pressure: " + convPSI; //TO DO: Make this Pressure DIFF
     printLcd(3, outputPSI);       
   }  
   
@@ -255,15 +265,54 @@ void setup()
   printLcd(1, "B1 raises platform");
 }
 
-void loop(){
-
+//***************************************************************************************
+// MAIN LOOP
+//***************************************************************************************
+void loop()
+{
+  
   // read the state of buttons and sensors
-  button1State = !digitalRead(button1Pin); //BOOLEAN NOT added JUL 12
-  button2State = !digitalRead(button2Pin); //BOOLEAN NOT added JUL 12
-  button3State = !digitalRead(button3Pin); //BOOLEAN NOT added JUL 12
-  switchFillState = digitalRead(switchFillPin);
-  switchDoorState = digitalRead(switchDoorPin);
+  // Boolean NOT (!) added for touchbuttons
+  button1State =     !digitalRead(button1Pin); 
+  button2StateTEMP = !digitalRead(button2Pin); 
+  button3StateTEMP = !digitalRead(button3Pin); 
+  switchFillState =   digitalRead(switchFillPin);
+  switchDoorState =   digitalRead(switchDoorPin);
   delay(50);  
+
+//##########################################################################################################################################################################################################
+
+  //Check Button2 toggle state
+  if (button2StateTEMP == LOW && button2ToggleState == false){ //ON push
+    button2State = LOW;         //goto while loop
+  }
+  if (button2StateTEMP == LOW && button2ToggleState == true){  //button still being held down after OFF push in while loop. 
+    button2State = HIGH;        //nothing happens--buttonState remains HIGH
+  } 
+  if (button2StateTEMP == HIGH && button2ToggleState == true){  //OFF release
+    button2ToggleState = false; //buttonState remains HIGH
+  }
+  
+  //Check Button3 toggle state
+  if (button3StateTEMP == LOW && button3ToggleState == false){ //ON push
+    button3State = LOW;         //goto while loop
+  }
+  if (button3StateTEMP == LOW && button3ToggleState == true){  //button still being held down after OFF push in while loop. 
+    button3State = HIGH;        //nothing happens--buttonState remains HIGH
+  } 
+  if (button3StateTEMP == HIGH && button3ToggleState == true){  //OFF release
+    button3ToggleState = false; //buttonState remains HIGH
+  }  
+  
+Serial.print("Main Loop: ");
+Serial.print ("B2 State= ");
+Serial.print (button2State);
+Serial.print ("; toggleState= ");
+Serial.print (button2ToggleState);
+Serial.println("");
+  
+  
+//###############################################################################################################################################################################################################
  
   // **************************************************************************  
   // BUTTON 1 FUNCTIONS 
@@ -282,7 +331,7 @@ void loop(){
     relayOn(relay5Pin, false);
     digitalWrite(light1Pin, HIGH);
     
-    // Bug PBSFIRM-5
+    //solves bug PBSFIRM-5
     timePlatformCurrent = millis();
     delay(10);
     timePlatformRising = timePlatformCurrent - timePlatformInit;
@@ -307,17 +356,17 @@ void loop(){
       printLcd(1, "B2 toggles filling"); 
       printLcd(2, "");
 
-      relayOn(relay4Pin, true);  // Slight leak is causing platform to fall--leave open 
-      relayOn(relay5Pin, false); // 
-      digitalWrite(light1Pin, HIGH); //TOTC
+      relayOn(relay4Pin, true);  // Slight leak causes platform to fall over time--so leave open 
+      relayOn(relay5Pin, false); 
+      digitalWrite(light1Pin, HIGH); 
       platformState = HIGH;
-      platformLockedNew = true; //This sets variable for first time through the loop
+      platformLockedNew = true; //Pass this to PressureLoop for autopressurize on door close--better than trying to pass button2State = LOW, which causes problems
     }  
     else    
     {
       // Drop Platform
       relayOn(relay4Pin, false);
-      relayOn(relay5Pin, true); // Drop platform
+      relayOn(relay5Pin, true);
       digitalWrite(light1Pin, LOW); 
       platformState = LOW;
       printLcd(2, "");
@@ -369,10 +418,10 @@ void loop(){
     {
       delay(500); //Make a slight delay in starting pressuriztion when door is first closed
       platformLockedNew = false; //This is a "first pass" variable; reset to false to indicate that this is no longer the first pass
+      //button2State = LOW; //set B2 low REEVALUATE THIS
     }
       
     digitalWrite(light2Pin, LOW); //Light button when button state is low
-    
     relayOn(relay3Pin, true); //close S3 if not already
     relayOn(relay2Pin, true); //open S2 to pressurize
       
@@ -380,10 +429,26 @@ void loop(){
     bottlePressurePSI = startPressurePSI - pressureConv(P1);
     String (convPSI) = floatToString(buffer, bottlePressurePSI, 1);
     String (outputPSI) = "Bottle Press: " + convPSI;
-    printLcd(3, outputPSI);       
+    printLcd(3, outputPSI);      
    
-    //Do sensor reads and button check
-    button2State = !digitalRead(button2Pin); 
+    //####################################################################################################################
+    
+    //Check toggle state of B2
+    button2StateTEMP = !digitalRead(button2Pin);
+    delay(25);
+   
+    if (button2StateTEMP == HIGH && button2ToggleState == false){  // ON release
+      button2ToggleState = true; //leave button state LOW
+      button2State = LOW;        //or make it low if it isn't yet
+    }
+    if (button2StateTEMP == LOW && button2ToggleState == true){ // OFF push
+      button2State = HIGH; //exit WHILE loop
+    }  
+      
+    //other two possibilites do nothing (LOW and false, HIGH and true). button2State stays same   
+    
+    //####################################################################################################################   
+    
     switchDoorState = digitalRead(switchDoorPin); //Check door switch    
     P1 = analogRead(sensor1Pin);
     delay(50); //Debounce
@@ -396,18 +461,15 @@ void loop(){
     digitalWrite(light2Pin, LOW); //Turn off B2 light
     inPressurizeLoop = false;
     
-    button2State = LOW; //By feeding this LOW buttonState to FillLoop, FillLoop start automatically
+    //button2State = LOW; //By feeding this LOW buttonState to FillLoop, FillLoop start automatically NEED TO REEVALUATE
     printLcd(2,""); 
   }
 
   //FILL LOOP ***************************************************
   
-  boolean button2StateUp = false; //Boolean variables for B2 toggle state
-  boolean button2StateNew = LOW;
-  
   pinMode(switchFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
   
-  while(button2State == LOW && switchFillState == HIGH && switchDoorState == LOW && P1 < pressureOffset + pressureDeltaUp + pressureDeltaAutotamp) // Added switchDoorState
+  while(button2State == LOW && switchFillState == HIGH && switchDoorState == LOW && P1 < pressureOffset + pressureDeltaUp + pressureDeltaAutotamp) 
   { 
     pinMode(switchFillPin, INPUT_PULLUP); //See above comment
 
@@ -426,18 +488,32 @@ void loop(){
     String (outputPSI) = "Press diff: " + convPSI + " psi";
     printLcd(3, outputPSI); 
 
-    //see if B2 has been toggled
-    button2StateNew = !digitalRead(button2Pin); 
-    delay(100); //Need a better way to keep constant finger contact from causing another toggle
-    if (button2StateNew == HIGH && button2StateUp == false) 
-    {
-      button2StateUp = true; // User released button -- toggle "up" state of button
+    //####################################################################################################################
+    
+    button2StateTEMP = !digitalRead(button2Pin);
+    delay(25);
+
+    if (button2StateTEMP == HIGH && button2ToggleState == false){  // ON release
+      button2ToggleState = true; //Leaves buttonState LOW
+      button2State = LOW;        //Or makes it low
     }
-    if (button2StateNew == LOW && button2StateUp == true)
-    {
-      button2State = HIGH; // User pushed button again, so exit loop
-      button2StateUp = false;
-    }      
+    if (button2StateTEMP == LOW && button2ToggleState == true){ // OFF push
+      button2State = HIGH; //exit WHILE loop
+    }
+    
+    //other two possibilites do nothing (LOW and false, HIGH and true). button2State stays same 
+  
+Serial.print("B3 toggle loop: ");
+Serial.print ("B2 State= ");
+Serial.print (button2State);
+Serial.print ("; toggleState= ");
+Serial.print (button2ToggleState);
+
+Serial.println("");
+  
+    
+    //####################################################################################################################
+    
     switchFillState = digitalRead(switchFillPin); //Check fill sensor
     switchDoorState = digitalRead(switchDoorPin); //Check door switch    
   }
@@ -446,13 +522,13 @@ void loop(){
   if(inFillLoop)
   {
     //Either B2 was released, or FillSwitch was tripped, or pressure dipped too much -- repressurize in all three cases
-    digitalWrite(light2Pin, LOW); //TOTC
+    digitalWrite(light2Pin, LOW);
     relayOn(relay1Pin, false);
     relayOn(relay3Pin, false);
 
     printLcd(2,""); 
 
-    //do the preasure loop again to repressurize
+    //do the preasure loop again to repressurize ///DO WE NEED TO DO THIS????
     while(P1 >= pressureOffset + pressureDeltaUp)
     {
       inPressurizeLoop = true;
@@ -462,7 +538,7 @@ void loop(){
       printLcd(2,"Repressurizing...");
     }
     
-    //inPressureizeLoop CLEANUP
+    //inPressurizeLoop CLEANUP
     if(inPressurizeLoop)
     { 
       relayOn(relay2Pin, false);  //close S2 because the preasures are equal
@@ -520,29 +596,33 @@ void loop(){
     button2State = !digitalRead(button2Pin);
       if(button2State == LOW)
       {
-        digitalWrite(light3Pin, HIGH); 
+        digitalWrite(light2Pin, HIGH); 
         relayOn(relay2Pin, true);
         delay(50);
         relayOn(relay2Pin, false);
-        digitalWrite(light3Pin, LOW);
+        digitalWrite(light2Pin, LOW);
       }
 
     P1 = analogRead(sensor1Pin);
     switchFillState = digitalRead(switchFillPin); 
 
-    //see if B3 has been toggled
-    button3StateNew = !digitalRead(button3Pin); 
-    delay(200); //TO DO: Need better way to do this
-    if (button3StateNew == HIGH && button3StateUp == false) 
-    {
-      button3StateUp = true; // User released button first time-- toggle "up" state of button
+//###################################################################################################
+
+    //Check toggle state of B3
+    button3StateTEMP = !digitalRead(button3Pin);
+    delay(25);
+   
+    if (button3StateTEMP == HIGH && button3ToggleState == false){  // ON release
+      button3ToggleState = true; //Leaves buttonState LOW
+      button3State = LOW; 
     }
-    if (button3StateNew == LOW && button3StateUp == true) 
-    {
-      button3StateNew = HIGH; // Toggle button state variables back
-      button3StateUp = false;
-      button3State = HIGH; // User pushed button again, so exit loop and set B3 HIGH
+    if (button3StateTEMP == LOW && button3ToggleState == true){ // OFF push
+      button3State = HIGH; //exit WHILE loop
     }
+    
+    //other two possibilites do nothing (LOW and false, HIGH and true). button2State stays same   
+    
+//#####################################################################################################    
   }
 
   //inDepressurizeLoop CLEANUP *******************************************************************************
