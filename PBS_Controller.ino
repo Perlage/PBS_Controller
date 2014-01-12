@@ -88,6 +88,7 @@ boolean inPlatformLowerLoop = false;
 boolean inPressureNullLoop = false;
 boolean inOverFillLoop = false;
 boolean inPurgeLoop = false;
+boolean inPurgeLoopInterlock = false;
 boolean inDoorOpenLoop = false;
 
 //variables for platform function and timing
@@ -253,6 +254,7 @@ void setup()
   
   // NULL PRESSURE EXIT ROUTINES
   //================================
+  
   if (inPressureNullLoop)
   {
     relayOn(relay6Pin, true);  //Open door
@@ -266,6 +268,7 @@ void setup()
     String output = "Pressure NEW: " + String(startPressure); //TO DO: this is never reported...
     inPressureNullLoop = false;
   }
+  
   //END NULL PRESSURE LOOP
   //====================================================================================
  
@@ -326,13 +329,13 @@ void loop()
   // =====================================================================================  
   // PLATFORM RAISING LOOP
   // while B1 is pressed, Raise bottle platform.
-  // Conditions look for no bottle or bottle unpressurized. Added pressure condition 
+  // Conditions look for no bottle or bottle unpressurized, and door must be open. Added pressure condition 
   // to make sure this button couldn't accidentally lower platform when pressurized
  // =====================================================================================  
   
   timePlatformInit = millis(); // Inititalize time for platform lockin routine
   
-  while (button1State == LOW && (timePlatformRising < timePlatformLock) && platformState == LOW && (P1 >= startPressure - pressureDeltaUp)) 
+  while (button1State == LOW && platformState == LOW && switchDoorState == HIGH && (timePlatformRising < timePlatformLock) && (P1 >= startPressure - pressureDeltaUp)) 
   { 
     inPlatformLoop = true; 
     digitalWrite(light1Pin, HIGH);
@@ -392,7 +395,6 @@ void loop()
   // While B2 and then B1 is pressed, and door is open, and platform is down, purge the bottle
   //=============================================================================================
   
-  int inPurgeLoopInterlock = false;
   while(button2State == LOW && switchDoorState == HIGH && (P1 >= pressureOffset + pressureDeltaUp) && platformState == LOW) // Can't purge with door closed
   {
     inPurgeLoopInterlock = true;
@@ -410,6 +412,7 @@ void loop()
     
     // PURGE LOOP EXIT ROUTINES
     //=========================
+    
     if(inPurgeLoop)
     {
       relayOn(relay2Pin, false); //Close relay when B1 and B2 not pushed
@@ -423,8 +426,10 @@ void loop()
     button2State = !digitalRead(button2Pin); 
     delay(25);
   }
+  
   // PURGE LOOP INTERLOCK EXIT ROUTINES
   //===================================
+  
   if (inPurgeLoopInterlock)
   {
     digitalWrite(light2Pin, LOW); 
@@ -439,16 +444,23 @@ void loop()
   // Pressurization will start automatically when door closes IF platfromLockedNew is true
   //============================================================================================
   
-  labelPressureLoop:
-  while((button2State == LOW || platformLockedNew == true) && switchDoorState == LOW && (P1 >= pressureOffset + pressureDeltaUp) && platformState == HIGH)
+  LABEL_PressureLoop:
+  
+  int P1Init = P1;
+  int PTest = .5 * P1Init; //if after an interval bottle isn't 25% pressurized, exit loop
+  int PTestFail = false;
+  int pressurizeDuration = 0;
+  int pressurizeCurrentTime = 0;
+  int pressurizeStartTime = millis();
+  
+  while((button2State == LOW || platformLockedNew == true) && switchDoorState == LOW && platformState == HIGH && (P1 >= pressureOffset + pressureDeltaUp))
   { 
     inPressurizeLoop = true;
-    
+
     if (platformLockedNew == true)
     {
       delay(500);                   //Make a slight delay in starting pressuriztion when door is first closed
       platformLockedNew = false;    //This is a "first pass" variable; reset to false to indicate that this is no longer the first pass
-      //button2State = LOW;         //TO DO: set B2 low REEVALUATE THIS
     }
       
     digitalWrite(light2Pin, HIGH);  //Light button when button state is low
@@ -460,6 +472,15 @@ void loop()
     String (convPSI) = floatToString(buffer, bottlePressurePSI, 1);
     String (outputPSI) = "Bottle Press: " + convPSI;
     printLcd(3, outputPSI);      
+    
+    //Test to see if bottle is pressurizing
+    pressurizeCurrentTime = millis();
+    pressurizeDuration = pressurizeCurrentTime - pressurizeStartTime;
+    
+    if (pressurizeDuration > 1500 && P1 > PTest){
+      button2State = HIGH; 
+      PTestFail = true;
+    }
 
     switchDoorState = digitalRead(switchDoorPin); //Check door switch    
     P1 = analogRead(sensor1Pin);
@@ -484,7 +505,15 @@ void loop()
     digitalWrite(light2Pin, LOW); //Turn off B2 light
     inPressurizeLoop = false;
     
-    //button2State = LOW; // TO DO: By feeding this LOW buttonState to FillLoop, FillLoop start automatically NEED TO REEVALUATE
+    //PRESSURE TEST EXIT ROUTINE
+    if (PTestFail == true){
+      printLcd (2, "No bottle, or leak");
+      digitalWrite(light1Pin, LOW); 
+      delay (3000);
+      PTestFail = false;      
+      timePlatformRising = 0;
+      //TO DO: Make platform drop
+    }
     printLcd(2,""); 
   }
 
@@ -558,6 +587,7 @@ void loop()
     if (button2State == HIGH)
     {
       // Filling was toggled. Do nothing
+      // resumeFillingFlag = true;
     }
     
     // CASE 2: FillSwitch tripped--Overfill condition
@@ -728,6 +758,7 @@ void loop()
     relayOn(relay6Pin, false);
     inDoorOpenLoop = false;
     digitalWrite(light3Pin, LOW);
+    //button3State = HIGH; //TO DO: soleved one problem but caused another
 
     if(platformState = HIGH)
     {
@@ -745,6 +776,7 @@ void loop()
   // Platform will not lower with door closed. This prevents someone from defeating door switch
   // ===========================================================================================
 
+  LABEL_PlatformLowerLoop:
   while(button3State == LOW && switchDoorState == HIGH && P1 > startPressure - pressureDeltaDown)
   {
     inPlatformLowerLoop = true;
@@ -785,7 +817,7 @@ void loop()
     digitalWrite(light3Pin, LOW); //TOTC
 
     inPlatformLowerLoop = false;   
-    platformState = LOW; //TOTC
+    platformState = LOW;
 
     //Prepare for next cycle
     printLcd(0, "Insert bottle,");
