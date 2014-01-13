@@ -71,7 +71,7 @@ int switchDoorState  = HIGH;
 int P1 = 0;                         // Current pressure reading from sensor
 int startPressure = 0;              // Pressure at the start of filling cycle
 int pressureOffset = 35;            // Choose so that with cylinder off and IN and OUT tubes open, IDLE pressure = 0
-int pressureDeltaUp = 50;           // Pressure at which, during pressurization, full pressure is considered to have been reached
+int pressureDeltaUp = 10;           // Pressure at which, during pressurization, full pressure is considered to have been reached //1-12 was 50 //TO DO: something odd here; needle valve corroding??
 int pressureDeltaDown = 40;         // Pressure at which, during depressurizing, pressure considered to be close enough to zero
 int pressureDeltaAutotamp = 250;    // This basically gives a margin to ensure that S1 can never open without pressurized bottle
 int pressureNull = 450;             // This is the threshold for the controller deciding that no gas source is attached. 
@@ -80,16 +80,16 @@ float startPressurePSI = 0;         // In PSI
 float bottlePressurePSI = 0;        // In PSI
 
 //State variables set in loops
-boolean inPlatformLoop = false;
-boolean inFillLoop = false;
-boolean inPressurizeLoop = false;
-boolean inDepressurizeLoop = false;
-boolean inPlatformLowerLoop = false;
-boolean inPressureNullLoop = false;
-boolean inOverFillLoop = false;
-boolean inPurgeLoop = false;
-boolean inPurgeLoopInterlock = false;
-boolean inDoorOpenLoop = false;
+boolean inPlatformLoop               = false;
+boolean inFillLoop                   = false;
+boolean inPressurizeLoop             = false;
+boolean inDepressurizeLoop           = false;
+boolean inPlatformLowerLoop          = false;
+boolean inPressureNullLoop           = false;
+boolean inOverFillLoop               = false;
+boolean inPurgeLoop                  = false;
+boolean inPurgeLoopInterlock         = false;
+boolean inDoorOpenLoop               = false;
 
 //variables for platform function and timing
 int timePlatformInit;                  // Time in ms going into loop
@@ -101,12 +101,14 @@ int autoPlatformDropDuration = 1500;   // Duration of platform autodrop in ms
 //Key performance parameters
 int autoSiphonDuration = 2500;         // Duration of autosiphon function in ms
 int foamDetectionDelay = 2000;         // Amount of time to pause after foam detection
-int pausePlatformDrop  = 250;          // Pause before platform drops after door automatically opens
+int pausePlatformDrop  = 1000;          // Pause before platform drops after door automatically opens
 
 //Key logical states
-boolean autoMode_1 = false;            // Variable to help differentiate between states reached automatically vs manually 
-boolean platformLockedNew = false;     // Variable to be set when platfrom first locks up. This is for autofill-on-doorclose function
-int platformState = LOW;               // HIGH means platform locked in UP; toggled after S5 opens
+boolean autoMode_1 = false;                // Variable to help differentiate between states reached automatically vs manually 
+boolean platformLockedNew = false;         // Variable to be set when platfrom first locks up. This is for autofill-on-doorclose function
+int platformState = LOW;                   // HIGH means platform locked in UP; toggled after S5 opens
+boolean FLAG_firstPass = true;             // Variable to set for flagging first pass
+boolean FLAG_noRepressureOnResume = false; // Variable to prevent repressurization on resuming filling after stopping with button press
  
 //Variables for button toggle states 
 int button2StateTEMP = HIGH;
@@ -268,6 +270,10 @@ void setup()
     startPressure = P1;  
     String output = "Pressure NEW: " + String(startPressure); //TO DO: this is never reported...
     inPressureNullLoop = false;
+    
+    printLcd(0, "");
+    printLcd(1, "");
+    printLcd(2, "");
   }
   
   //END NULL PRESSURE LOOP
@@ -296,6 +302,9 @@ void setup()
 void loop()
 {
   
+  //MAIN LOOP IDLE FUNCTIONS
+  //=====================================================================
+  
   // Read the state of buttons and sensors
   // Boolean NOT (!) added for touchbuttons
   button1State =     !digitalRead(button1Pin); 
@@ -307,61 +316,56 @@ void loop()
 
   //Check Button2 toggle state
   //======================================================================
-  if (button2StateTEMP == LOW && button2ToggleState == false){ //ON push
+  if (button2StateTEMP == LOW && button2ToggleState == false){  //ON push
     button2State = LOW;         //goto while loop
   }
-  if (button2StateTEMP == LOW && button2ToggleState == true){  //button still being held down after OFF push in while loop. 
+  if (button2StateTEMP == LOW && button2ToggleState == true){   //button still being held down after OFF push in while loop. 
     button2State = HIGH;        //nothing happens--buttonState remains HIGH
   } 
   if (button2StateTEMP == HIGH && button2ToggleState == true){  //OFF release
     button2ToggleState = false; //buttonState remains HIGH
   }
   //Check Button3 toggle state
-  if (button3StateTEMP == LOW && button3ToggleState == false){ //ON push
+  if (button3StateTEMP == LOW && button3ToggleState == false){  //ON push
     button3State = LOW;         //goto while loop
   }
-  if (button3StateTEMP == LOW && button3ToggleState == true){  //button still being held down after OFF push in while loop. 
+  if (button3StateTEMP == LOW && button3ToggleState == true){   //button still being held down after OFF push in while loop. 
     button3State = HIGH;        //nothing happens--buttonState remains HIGH
   } 
   if (button3StateTEMP == HIGH && button3ToggleState == true){  //OFF release
     button3ToggleState = false; //buttonState remains HIGH
   }
-    
-  // =====================================================================================  
-  // IDLE LOOP
-  // When platform is down, run idle loop
-  // =====================================================================================  
   
-  int pressureIdle;  
-  float pressureIdlePSI;
-  int inIdleLoop = false;
-  
-  while (button1State == HIGH && button2State == HIGH && button3State == HIGH && platformState == LOW)
+  // TO DO: REMOVE THIS ######################################
+  Serial.print("B2 toggle loop: ");
+  Serial.print ("B2 State= ");
+  Serial.print (button2State);
+  Serial.print ("; toggleState= ");
+  Serial.print (button2ToggleState);
+  Serial.println("");
+    // TO DO: REMOVE THIS
+  Serial.print("B3 toggle loop: ");
+  Serial.print ("B3 State= ");
+  Serial.print (button3State);
+  Serial.print ("; toggleState= ");
+  Serial.print (button3ToggleState);
+  Serial.println("");
+
+   
+  // Main Loop pressure measurement
+  if (FLAG_firstPass == true) // Will only get continuous measurement IF no button has been pressed
   {
-    inIdleLoop = true;
-    pressureIdle = analogRead(sensor1Pin); //If we've lowered the platform, assume we've gone through a cycle and store the startPressure again      startPressure = P1;
+    int pressureIdle;  
+    float pressureIdlePSI;
     
+    pressureIdle = analogRead(sensor1Pin); 
+      
     pressureIdlePSI = pressureConv(pressureIdle); 
     String (convPSI) = floatToString(buffer, pressureIdlePSI, 1);
     String (outputPSI) = "Reg. Press: " + convPSI + " psi";
     printLcd(3, outputPSI); 
-    
-    button1State = !digitalRead(button1Pin); 
-    button2State = !digitalRead(button2Pin); 
-    button3State = !digitalRead(button3Pin); 
   }
 
-  // IDLE LOOP EXIT ROUTINE
-  // =====================================================================================  
-  
-  if (inIdleLoop)
-  {
-    inIdleLoop = false;
-  }  
-
-  // END IDLE LOOP
-  // =====================================================================================  
-   
   // =====================================================================================  
   // PLATFORM RAISING LOOP
   // while B1 is pressed, Raise bottle platform.
@@ -387,6 +391,7 @@ void loop()
     printLcd(2, platformStatus);  
 
     button1State = !digitalRead(button1Pin); 
+    FLAG_firstPass = false; // Loop lost virginity
   }  
 
   // PLATFORM RAISING LOOP EXIT ROUTINES
@@ -408,6 +413,17 @@ void loop()
       digitalWrite(light1Pin, LOW); //Decided to turn this off. Lights should be lit only if pressing button or releasing it can change a state. 
       platformState = HIGH;
       platformLockedNew = true; //Pass this to PressureLoop for autopressurize on door close--better than trying to pass button2State = LOW, which causes problems
+      
+      // Read new starting pressure 
+      // This used to be in the platform DOWN exit loop
+      P1 = analogRead(sensor1Pin); //If we've lowered the platform, assume we've gone through a cycle and store the startPressure again
+      startPressure = P1;
+      
+      startPressurePSI = pressureConv(P1); 
+      String (convPSI) = floatToString(buffer, startPressurePSI, 1);
+      String (outputPSI) = "Reg. Press: " + convPSI + " psi";
+      printLcd(3, outputPSI); 
+      
     }  
     else    
     {
@@ -435,6 +451,7 @@ void loop()
   //=============================================================================================
   // Door must be closed, platform up, and pressure at zero
   //TO DO: switch B1 and B2; toggle B1 on
+  
   while(button2State == LOW && switchDoorState == HIGH && (P1 >= pressureOffset + pressureDeltaUp) && platformState == LOW)
   {
     inPurgeLoopInterlock = true;
@@ -495,7 +512,7 @@ void loop()
   int pressurizeCurrentTime = 0;
   int pressurizeStartTime = millis();
   
-  while((button2State == LOW || platformLockedNew == true) && switchDoorState == LOW && platformState == HIGH && (P1 >= pressureOffset + pressureDeltaUp))
+  while((button2State == LOW || platformLockedNew == true) && switchDoorState == LOW && platformState == HIGH && FLAG_noRepressureOnResume == false && (P1 >= pressureOffset + pressureDeltaUp))
   { 
     inPressurizeLoop = true;
 
@@ -608,11 +625,12 @@ void loop()
   //========================================================================================
   
   pinMode(switchFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
-  
+    
   while(button2State == LOW && switchFillState == HIGH && switchDoorState == LOW && P1 < pressureOffset + pressureDeltaUp + pressureDeltaAutotamp) 
   { 
-
     inFillLoop = true;
+    FLAG_noRepressureOnResume = false;
+
     digitalWrite(light2Pin, HIGH); //Light B2
     printLcd(2,"Filling..."); 
     
@@ -669,8 +687,7 @@ void loop()
     // CASE 1: Button2 released
     if (button2State == HIGH)
     {
-      // Filling was toggled. Do nothing
-      // resumeFillingFlag = true;
+      FLAG_noRepressureOnResume = true;   
     }
     
     // CASE 2: FillSwitch tripped--Overfill condition
@@ -800,17 +817,26 @@ void loop()
     }
 
     //CASE 3: Bottle was properly depressurized. If we reach here, the pressure must have reached threshold. Go to Platform lower loop
-    if (P1 >= startPressure - pressureDeltaDown)
+    if (P1 > startPressure - pressureDeltaDown)
     {
       digitalWrite(buzzerPin, HIGH); 
       delay(100);
       digitalWrite(buzzerPin, LOW);     
-      button3State = LOW; //Feed LOW state in to make automatic platform lowering // TO DO: Is this the best way to do this?? Are both statements needed?
       autoMode_1 = true;  //Going to platform loop automatically, so set this var to partially drop platform 
     }
     
   digitalWrite(light3Pin, LOW);
   inDepressurizeLoop = false;
+
+
+  // TO DO: REMOVE THIS #################################################
+  Serial.print("End Depress Loop: ");
+  Serial.print ("B3 State= ");
+  Serial.print (button3State);
+  Serial.print ("; toggleState= ");
+  Serial.print (button3ToggleState);
+  Serial.println("");  
+
   }
   
   // END DEPRESSURIZE LOOP
@@ -823,12 +849,15 @@ void loop()
   // TO DO: Need to add opening door loop, to accomodate door getting blocked or sticking
   // Only activate door solenoid if door is already closed
   
-  while(button3State == LOW && switchDoorState == LOW && P1 > startPressure - pressureDeltaDown)
+  while((button3State == LOW || autoMode_1 == true) && switchDoorState == LOW && P1 > startPressure - pressureDeltaDown)
   {
     inDoorOpenLoop = true;
+
     printLcd(2,"Opening door..."); 
     digitalWrite(light3Pin, HIGH);
+
     relayOn(relay6Pin, true);  
+
     P1 = analogRead(sensor1Pin);
     switchDoorState =  digitalRead(switchDoorPin);
     delay(50); //Debounce
@@ -844,17 +873,18 @@ void loop()
     relayOn(relay6Pin, false);
     inDoorOpenLoop = false;
     digitalWrite(light3Pin, LOW);
-    //button3State = HIGH; //TO DO: soleved one problem but caused another
+    button3State = HIGH; //TO DO: soleved one problem but caused another
+    
+    // TO DO: REMOVE THIS #################################################
+    Serial.print("End Door Loop: ");
+    Serial.print ("B3 State= ");
+    Serial.print (button3State);
+    Serial.print ("; toggleState= ");
+    Serial.print (button3ToggleState);
+    Serial.print ("; platformState= "); 
+    Serial.print (platformState); 
+    Serial.println(""); 
 
-    if(platformState = HIGH)
-    {
-      button3State == LOW;
-      delay(pausePlatformDrop); //Give time to get hand on bottle before dropping platform 
-    }  
-    else
-    {
-      button3State = HIGH;
-    }  
   }
   
   // END DOOR OPEN LOOP
@@ -866,7 +896,7 @@ void loop()
   // ===========================================================================================
 
   LABEL_PlatformLowerLoop:
-  while(button3State == LOW && switchDoorState == HIGH && P1 > startPressure - pressureDeltaDown)
+  while((button3State == LOW || autoMode_1 == true) && switchDoorState == HIGH && P1 > startPressure - pressureDeltaDown)
   {
     inPlatformLowerLoop = true;
     relayOn(relay4Pin, false); // Finally can close platform up solenoid
@@ -912,6 +942,7 @@ void loop()
     printLcd(0, "Insert bottle,");
     printLcd(1, "B1 raises platform");
 
+    //Going to add the following to the platform UP routine, to get a more current value of the startPressure
     P1 = analogRead(sensor1Pin); //If we've lowered the platform, assume we've gone through a cycle and store the startPressure again
     startPressure = P1;
     
@@ -922,6 +953,7 @@ void loop()
     
     digitalWrite(light1Pin, LOW); //TOTC
   } 
+  
   // END PLAFORM LOWER LOOP
   //====================================================================
 }
