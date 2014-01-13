@@ -15,7 +15,7 @@ Copyright 2013, 2014  All rights reserved
 
 //Version control variables
 String (versionSoftwareTag) = "9ca6547" ; //Current version of controller
-String (versionHardwareTag) = "v0.5.0"  ; //Addition of safety door rev'd PBS from 0.4.0 to 0.5.0
+String (versionHardwareTag) = "v0.4.0"  ; //Addition of safety door rev'd PBS from 0.4.0 to 0.5.0
 
 //Library includes
 #include <Wire.h> 
@@ -70,9 +70,9 @@ int switchDoorState  = HIGH;
 //Pressure variables
 int P1 = 0;                         // Current pressure reading from sensor
 int startPressure = 0;              // Pressure at the start of filling cycle
-int pressureOffset = 55;            // changed from 37 to 60 w new P sensor based on 0 psi measure
-int pressureDeltaUp = 50;           // changed from 20 to 50 OCT 23 NOW WORKS
-int pressureDeltaDown = 40;         // When depressurizing, the pressure margin considered to be close enough to zero
+int pressureOffset = 35;            // Choose so that with cylinder off and IN and OUT tubes open, IDLE pressure = 0
+int pressureDeltaUp = 50;           // Pressure at which, during pressurization, full pressure is considered to have been reached
+int pressureDeltaDown = 40;         // Pressure at which, during depressurizing, pressure considered to be close enough to zero
 int pressureDeltaAutotamp = 250;    // This basically gives a margin to ensure that S1 can never open without pressurized bottle
 int pressureNull = 450;             // This is the threshold for the controller deciding that no gas source is attached. 
 float PSI = 0;                      // In PSI
@@ -145,6 +145,7 @@ void relayOn(int pinNum, boolean on){
 float pressureConv(int P1) {
   // Subtract actual offset from P1 first before conversion:
   // pressurePSI = (((P1 - pressureOffset) * 0.0048828)/0.009) * 0.145037738; //This was original equation
+  // 1 PSI = 12.7084 units; 1 unit = 0.078688 PSI
   float pressurePSI;
   pressurePSI = (P1 - pressureOffset) * 0.078688; 
   return pressurePSI;
@@ -324,14 +325,49 @@ void loop()
   } 
   if (button3StateTEMP == HIGH && button3ToggleState == true){  //OFF release
     button3ToggleState = false; //buttonState remains HIGH
+  }
+    
+  // =====================================================================================  
+  // IDLE LOOP
+  // When platform is down, run idle loop
+  // =====================================================================================  
+  
+  int pressureIdle;  
+  float pressureIdlePSI;
+  int inIdleLoop = false;
+  
+  while (button1State == HIGH && button2State == HIGH && button3State == HIGH && platformState == LOW)
+  {
+    inIdleLoop = true;
+    pressureIdle = analogRead(sensor1Pin); //If we've lowered the platform, assume we've gone through a cycle and store the startPressure again      startPressure = P1;
+    
+    pressureIdlePSI = pressureConv(pressureIdle); 
+    String (convPSI) = floatToString(buffer, pressureIdlePSI, 1);
+    String (outputPSI) = "Reg. Press: " + convPSI + " psi";
+    printLcd(3, outputPSI); 
+    
+    button1State = !digitalRead(button1Pin); 
+    button2State = !digitalRead(button2Pin); 
+    button3State = !digitalRead(button3Pin); 
+  }
+
+  // IDLE LOOP EXIT ROUTINE
+  // =====================================================================================  
+  
+  if (inIdleLoop)
+  {
+    inIdleLoop = false;
   }  
+
+  // END IDLE LOOP
+  // =====================================================================================  
    
   // =====================================================================================  
   // PLATFORM RAISING LOOP
   // while B1 is pressed, Raise bottle platform.
   // Conditions look for no bottle or bottle unpressurized, and door must be open. Added pressure condition 
   // to make sure this button couldn't accidentally lower platform when pressurized
- // =====================================================================================  
+  // =====================================================================================  
   
   timePlatformInit = millis(); // Inititalize time for platform lockin routine
   
@@ -369,7 +405,7 @@ void loop()
 
       relayOn(relay4Pin, true);  // Slight leak causes platform to fall over time--so leave open 
       relayOn(relay5Pin, false); 
-      digitalWrite(light1Pin, HIGH); 
+      digitalWrite(light1Pin, LOW); //Decided to turn this off. Lights should be lit only if pressing button or releasing it can change a state. 
       platformState = HIGH;
       platformLockedNew = true; //Pass this to PressureLoop for autopressurize on door close--better than trying to pass button2State = LOW, which causes problems
     }  
@@ -395,11 +431,17 @@ void loop()
   // While B2 and then B1 is pressed, and door is open, and platform is down, purge the bottle
   //=============================================================================================
   
-  while(button2State == LOW && switchDoorState == HIGH && (P1 >= pressureOffset + pressureDeltaUp) && platformState == LOW) // Can't purge with door closed
+  // PURGE INTERLOCK LOOP
+  //=============================================================================================
+  // Door must be closed, platform up, and pressure at zero
+  //TO DO: switch B1 and B2; toggle B1 on
+  while(button2State == LOW && switchDoorState == HIGH && (P1 >= pressureOffset + pressureDeltaUp) && platformState == LOW)
   {
     inPurgeLoopInterlock = true;
     digitalWrite(light2Pin, HIGH);
     
+    // PURGE LOOP
+    //=========================
     while (button1State == LOW) // Require two button pushes, B2 then B1, to purge
     { 
       inPurgeLoop = true;
@@ -444,7 +486,7 @@ void loop()
   // Pressurization will start automatically when door closes IF platfromLockedNew is true
   //============================================================================================
   
-  LABEL_PressureLoop:
+  LABEL_inPressurizeLoop:
   
   int P1Init = P1;
   int PTest = .5 * P1Init; //if after an interval bottle isn't 25% pressurized, exit loop
@@ -506,7 +548,8 @@ void loop()
     inPressurizeLoop = false;
     
     //PRESSURE TEST EXIT ROUTINE
-    if (PTestFail == true){
+    if (PTestFail == true)
+    {
       printLcd (2, "No bottle, or leak");
       digitalWrite(light1Pin, LOW); 
       delay (3000);
@@ -514,10 +557,50 @@ void loop()
       timePlatformRising = 0;
       //TO DO: Make platform drop
     }
+    
+    if (switchDoorState == HIGH){ //pressureDeltaDown
+      goto LABEL_inEmergencyDepressurizeLoop;
+    }  
+      
     printLcd(2,""); 
   }
 
   // END PRESSURIZE LOOP
+  //========================================================================================
+  
+  //========================================================================================
+  // EMERGENCY DEPRESSURIZE LOOP
+  // Depressurize anytime door opens when pressurized above low threshold
+  //========================================================================================
+
+  LABEL_inEmergencyDepressurizeLoop:    
+  int inEmergencyDepressurizeLoop = false;
+  
+  while (switchDoorState == HIGH && (P1 <= startPressure - pressureDeltaDown))
+  {
+    inEmergencyDepressurizeLoop = true;
+    relayOn(relay3Pin, true);  
+    printLcd (2, "Close door...");
+    
+    float pressurePSI = startPressurePSI - pressureConv(P1);
+    String (convPSI) = floatToString(buffer, pressurePSI, 1);
+    String (outputPSI) = "Bottle Press: " + convPSI;
+    printLcd(3, outputPSI);     
+    
+    switchDoorState = digitalRead(switchDoorPin); //Check door switch    
+    P1 = analogRead(sensor1Pin);
+  }  
+  
+  // EMERGENCY DEPRESSURIZE LOOP EXIT ROUTINES
+  //========================================================================================
+  if (inEmergencyDepressurizeLoop)
+  {
+    printLcd (2, "");
+    button2State = LOW;
+    inEmergencyDepressurizeLoop = false;
+  }  
+  
+  // END EMERGENCY DEPRESSURIZE LOOP
   //========================================================================================
 
   //========================================================================================
@@ -646,7 +729,7 @@ void loop()
   // DEPRESSURIZE LOOP
   //================================================================================
 
-  LABEL_depressurizeLoop:
+  LABEL_inDepressurizeLoop:
   while(button3State == LOW && switchFillState == HIGH && P1 <= startPressure - pressureDeltaDown){  // Don't need to take into account offset, as it is in both P1 and Startpressure
     inDepressurizeLoop = true;
     digitalWrite(light3Pin, HIGH);
@@ -699,7 +782,8 @@ void loop()
     // CASE 1: Button3 released
     if (button3State == HIGH)  
     { 
-      //Used to repressurize here; now we don't    
+      //Used to repressurize here; now we don't  
+      //TO DO: either a quick burst to clear the sensor, or check for overfill and tamp in case bottle foams up
     }
     
     // CASE 2: Foam tripped sensor
@@ -747,11 +831,13 @@ void loop()
     relayOn(relay6Pin, true);  
     P1 = analogRead(sensor1Pin);
     switchDoorState =  digitalRead(switchDoorPin);
-    delay(100);
+    delay(50); //Debounce
 
     //TO DO: Add timer: if door not open in 2 sec, must be stuck; show error message
   }
-  
+
+  // DOOR OPEN LOOP EXIT ROUTINES
+  //=======================================================================
   if(inDoorOpenLoop)
   {
     printLcd(2,""); 
@@ -769,7 +855,10 @@ void loop()
     {
       button3State = HIGH;
     }  
-  } 
+  }
+  
+  // END DOOR OPEN LOOP
+  //======================================================================= 
     
   // ===========================================================================================
   // PLATFORM LOWER LOOP 
