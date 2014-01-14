@@ -10,6 +10,11 @@ Author:
   
 Copyright 2013, 2014  All rights reserved
 
+TO DO:
+--Add routine to differentiate between stuck bottle (if pressure not falling, low pressure)
+--Add routine to check for cylinder going empty during bottling (take an initial pressure during startup)
+--Anti drip routine when ending fill with button push?
+
 //===========================================================================  
 */
 
@@ -73,8 +78,8 @@ int startPressure = 0;              // Pressure at the start of filling cycle
 int pressureOffset = 35;            // Choose so that with cylinder off and IN and OUT tubes open, IDLE pressure = 0
 int pressureDeltaUp = 10;           // Pressure at which, during pressurization, full pressure is considered to have been reached //1-12 was 50 //TO DO: something odd here; needle valve corroding??
 int pressureDeltaDown = 40;         // Pressure at which, during depressurizing, pressure considered to be close enough to zero
-int pressureDeltaAutotamp = 250;    // This basically gives a margin to ensure that S1 can never open without pressurized bottle
-int pressureNull = 450;             // This is the threshold for the controller deciding that no gas source is attached. 
+int pressureDeltaAutotamp = 250;    // This basically gives a margin to ensure that S1 can never open without pressurized bottle. Also is max pressure difference allowed on filling
+int pressureNull = 450;             // This is the threshold for the controller deciding that no gas source is attached. //TO DO: CHANGED TO 500 AND CORE FUNCTIONALITY BROKE.
 float PSI = 0;                      // In PSI
 float startPressurePSI = 0;         // In PSI
 float bottlePressurePSI = 0;        // In PSI
@@ -147,7 +152,7 @@ void relayOn(int pinNum, boolean on){
 float pressureConv(int P1) {
   // Subtract actual offset from P1 first before conversion:
   // pressurePSI = (((P1 - pressureOffset) * 0.0048828)/0.009) * 0.145037738; //This was original equation
-  // 1 PSI = 12.7084 units; 1 unit = 0.078688 PSI
+  // 1 PSI = 12.7084 units; 1 unit = 0.078688 PSI; 40 psi = 543 units
   float pressurePSI;
   pressurePSI = (P1 - pressureOffset) * 0.078688; 
   return pressurePSI;
@@ -207,10 +212,16 @@ void setup()
   printLcd (2, "");
   printLcd (3, "Initializing...");
   
+  // For show--blinks lights
+  delay (500);
   for (int n = 0; n < 2; n++)
   {
     digitalWrite(light1Pin, HIGH);
+    delay(500);
+    //digitalWrite(light1Pin, LOW);
     digitalWrite(light2Pin, HIGH);
+    delay(500);
+    //digitalWrite(light2Pin, LOW);
     digitalWrite(light3Pin, HIGH);
     delay(500);
     digitalWrite(light1Pin, LOW);
@@ -218,6 +229,24 @@ void setup()
     digitalWrite(light3Pin, LOW);
     delay(500);
   }
+  
+    // For show--cycle platform
+    digitalWrite(light1Pin, HIGH);
+    delay(500);
+    //digitalWrite(light1Pin, LOW);
+    digitalWrite(light2Pin, HIGH);
+    delay(500);
+    //digitalWrite(light2Pin, LOW);
+    digitalWrite(light3Pin, HIGH);
+    delay(500);
+    relayOn(relay4Pin, true);
+    delay(1000);
+    relayOn(relay4Pin, false);
+    delay(500);
+    relayOn(relay5Pin, true);
+    delay(2000);  
+    relayOn(relay5Pin, false);  
+  
 
   // Initial pressure difference reading from sensor. High = unpressurized bottle
   //=============================================================================
@@ -230,6 +259,9 @@ void setup()
   String (convPSI) = floatToString(buffer, startPressurePSI, 1);
   String (outputPSI) = "Pressure: " + convPSI + " psi";
   printLcd(3, outputPSI); 
+  
+  switchFillState =   digitalRead(switchFillPin);
+  switchDoorState =   digitalRead(switchDoorPin);  
   
   //============================================================================
   // NULL PRESSURE LOOP
@@ -245,7 +277,11 @@ void setup()
     
     printLcd(0, "Bottle pressurized");
     printLcd(1, "Or gas pressure low");
-    printLcd(2, "Fix or let de-gas...");
+    printLcd(2, "Let de-gas or fix...");
+    
+    digitalWrite(light1Pin, HIGH);
+    digitalWrite(light2Pin, HIGH);
+    digitalWrite(light3Pin, HIGH);
     
     P1 = analogRead(sensor1Pin); 
     
@@ -260,20 +296,17 @@ void setup()
   
   if (inPressureNullLoop)
   {
-    relayOn(relay6Pin, true);  //Open door
-    delay(500);
-    relayOn(relay6Pin, false);
-    relayOn(relay4Pin, false); //turn off platform support
     relayOn(relay5Pin, true);  //drop platform
-    
-    P1 = analogRead(sensor1Pin); 
-    startPressure = P1;  
-    String output = "Pressure NEW: " + String(startPressure); //TO DO: this is never reported...
-    inPressureNullLoop = false;
     
     printLcd(0, "");
     printLcd(1, "");
     printLcd(2, "");
+
+    digitalWrite(light1Pin, LOW);
+    digitalWrite(light2Pin, LOW);
+    digitalWrite(light3Pin, LOW);
+    
+    inPressureNullLoop = false;
   }
   
   //END NULL PRESSURE LOOP
@@ -288,11 +321,19 @@ void setup()
   }
   
   //If platform is up, drop it
+  relayOn(relay4Pin, false); //turn off platform support
   relayOn(relay5Pin, true);
   
   // User instructions
-  printLcd(0, "Insert bottle,");
+  printLcd(0, "Insert bottle;");
   printLcd(1, "B1 raises platform");
+  printLcd(2, "Ready...");
+
+  delay(500);
+  digitalWrite(light1Pin, LOW);
+  digitalWrite(light2Pin, LOW);
+  digitalWrite(light3Pin, LOW);
+  
 }
 
 //====================================================================================================================================
@@ -989,17 +1030,7 @@ digitalRead(buttonId);
 //button1State = ReadButton(button1Pin);
 */
 
-/*
-//This is for show--cycle platform
-delay(500);
-relayOn(relay4Pin, true);
-delay(1000);
-relayOn(relay4Pin, false);
-delay(500);
-relayOn(relay5Pin, true);
-delay(2000);  
-relayOn(relay5Pin, false);  
-*/
+
 
 /*
 Serial.print("Starting pressure: ");
