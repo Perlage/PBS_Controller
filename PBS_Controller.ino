@@ -284,7 +284,7 @@ void setup()
     pressurizeDuration = millis() - pressurizeStartTime; 
     
     //try to determine whether low P1 reading means stuck pressurized bottle, or gas is off or cylinder empty
-    if (pressurizeDuration > 6000 && pressureIsNull == true)
+    if (pressurizeDuration > 6000 && pressureIsNull == false)
     {
       if (P1 > startPressure + 20)  //e.g., pressure diff is rising (bottle pressure falling)
       {  
@@ -301,6 +301,7 @@ void setup()
         printLcd(0, "Gas off or empty.");
         printLcd(1, "Please fix.");
         printLcd(2, "Continue...");
+        delay(2000);
         newMessage = true;
         pressureIsNull = true;
       }
@@ -318,15 +319,16 @@ void setup()
   //================================
   
   if (inPressureNullLoop)
- 
   {
   
     if(switchDoorState == LOW)
     {
+      //Open door
       relayOn(relay6Pin, true);
       delay(500);
       relayOn(relay6Pin, false);
       
+      //Drop plaform
       relayOn(relay4Pin, false);
       relayOn(relay5Pin, true);
       delay(pausePlatformDrop);      
@@ -339,15 +341,13 @@ void setup()
   //END NULL PRESSURE LOOP
   //====================================================================================
  
-  if (inPressureNullLoopExecuted = false)
+  if (inPressureNullLoopExecuted == false)
   {
+    
     // For show--cycle platform
-    relayOn(relay4Pin, true);
-    delay(1000);
-    relayOn(relay4Pin, false);
-    delay(500);
+    relayOn(relay4Pin, false);  
     relayOn(relay5Pin, true);
-    delay(2000);  
+    delay(3000);  
     relayOn(relay5Pin, false);  
     
     // Open door if closed
@@ -359,17 +359,17 @@ void setup()
     }
   }
   
-    // User instructions
-    printLcd(0, "Insert bottle;");
-    printLcd(1, "B1 raises platform");
-    printLcd(2, "Ready...");
-  
-    delay(500);
-    digitalWrite(light3Pin, LOW);
-    delay(100);
-    digitalWrite(light2Pin, LOW);
-    delay(100);
-    digitalWrite(light1Pin, LOW);
+  // User instructions
+  printLcd(0, "Insert bottle;");
+  printLcd(1, "B1 raises platform");
+  printLcd(2, "Ready...");
+
+  delay(500);
+  digitalWrite(light3Pin, LOW);
+  delay(100);
+  digitalWrite(light2Pin, LOW);
+  delay(100);
+  digitalWrite(light1Pin, LOW);
   
 }
 
