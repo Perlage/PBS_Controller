@@ -91,6 +91,8 @@ boolean platformLockedNew            = false;   // Variable to be set when platf
 boolean platformStateUp              = false;   // true means platform locked in UP; toggled anytime S5 opens
 boolean FLAG_firstPass               = true;    // Variable to set for flagging first pass
 boolean FLAG_noRepressureOnResume    = false;   // Variable to prevent repressurization on resuming filling after stopping with button press
+boolean inPressureNullLoopExecuted   = false;   // ############################
+
 
 //Pressure variables
 int P1                               = 0;       // Current pressure reading from sensor
@@ -209,11 +211,16 @@ void setup()
   // Startup Routine
   //===================================================================================
   
+  // Note start time
+  int pressurizeStartTime = millis(); 
+  int pressurizeDuration = 0;
+  
   //Initial user message
   printLcd (0, "Perlini Bottling");
   printLcd (1, "System, " + versionSoftwareTag);
   printLcd (2, "");
   printLcd (3, "Initializing...");
+  delay(1000); //Just to give a little time before platform goes up
   
   // Initial pressure difference reading from sensor. High = unpressurized bottle
   //=============================================================================
@@ -224,23 +231,11 @@ void setup()
   // Read states
   switchFillState = digitalRead(switchFillPin);
   switchDoorState = digitalRead(switchDoorPin);  
-  P1              = analogRead(sensor1Pin); 
+  P1 = analogRead(sensor1Pin); 
   
   startPressure = P1;   // This is the starting pressure
 
-  /* Don't print out yet
-  startPressurePSI = pressureConv(startPressure);
-  String (convPSI) = floatToString(buffer, startPressurePSI, 1);
-  String (outputPSI) = "Pressure: " + convPSI + " psi";
-  printLcd(3, outputPSI); 
-  */
-  
-  // Note start time
-  int pressurizeDuration = 0;
-  int pressurizeStartTime = millis(); 
-      
   // Blinks lights and give time to measure any degassing
-  delay (500);
   for (int n = 0; n < 1; n++)
   {
     digitalWrite(light1Pin, HIGH);
@@ -272,34 +267,33 @@ void setup()
   // Check for stuck pressurized bottle or implausibly low gas pressure at start 
   //============================================================================
   
-  int pressureIsNull = true;  // true = pressure off; false = stuck pressurized bottle
+
+  int pressureIsNull = false;  // Don't know if pressure null yet so false
   boolean newMessage = false;
 
-  while ( P1 < pressureNull && pressureIsNull == true)
+  while ( P1 < pressureNull && pressureIsNull == false)
   {
     inPressureNullLoop = true;
-    
-    relayOn(relay3Pin, true); //Open bottle vent
-    relayOn(relay4Pin, true); //Keep platform up while depressurizing
-    
+        
     if (newMessage == false){
       printLcd(0, "Bottle pressurized");
       printLcd(1, "Or gas pressure low");
       printLcd(2, "Checking. Wait...");
     }  
     
-    pressurizeDuration = millis() - pressurizeStartTime;
-  
+    pressurizeDuration = millis() - pressurizeStartTime; 
+    
     //try to determine whether low P1 reading means stuck pressurized bottle, or gas is off or cylinder empty
-    if (pressurizeDuration > 2500 && pressureIsNull == true)
+    if (pressurizeDuration > 6000 && pressureIsNull == true)
     {
-      if (P1 > startPressure + 10)  //e.g., pressure diff is rising (bottle pressure falling)
+      if (P1 > startPressure + 20)  //e.g., pressure diff is rising (bottle pressure falling)
       {  
-        //Bottle is depressurizing
+        //Then there must be a pressurized bottle in place (bottle is already depressurizing because S3 opened above)
         pressureIsNull = false;
         printLcd(0, "Bottle is ");
         printLcd(1, "pressurized. ");
         printLcd(2, "Depressurizing...");
+        newMessage = true;
       }
       else
       {
@@ -307,6 +301,8 @@ void setup()
         printLcd(0, "Gas off or empty.");
         printLcd(1, "Please fix.");
         printLcd(2, "Continue...");
+        newMessage = true;
+        pressureIsNull = true;
       }
     }
     
@@ -316,12 +312,13 @@ void setup()
     String (convPSI) = floatToString(buffer, bottlePressurePSI, 1);
     String (outputPSI) = "Press. diff: " + convPSI + "psi";  
     printLcd(3, outputPSI);     
-    }  
+  }  
   
   // NULL PRESSURE EXIT ROUTINES
   //================================
   
   if (inPressureNullLoop)
+ 
   {
   
     if(switchDoorState == LOW)
@@ -336,39 +333,44 @@ void setup()
     }  
 
     inPressureNullLoop = false;
+    inPressureNullLoopExecuted = true;    
   }
   
   //END NULL PRESSURE LOOP
   //====================================================================================
  
-  // For show--cycle platform
-  relayOn(relay4Pin, true);
-  delay(1000);
-  relayOn(relay4Pin, false);
-  delay(500);
-  relayOn(relay5Pin, true);
-  delay(2000);  
-  relayOn(relay5Pin, false);  
-  
-  // Open door if closed
-  if(switchDoorState == LOW)
+  if (inPressureNullLoopExecuted = false)
   {
-    relayOn(relay6Pin, true);
+    // For show--cycle platform
+    relayOn(relay4Pin, true);
+    delay(1000);
+    relayOn(relay4Pin, false);
     delay(500);
-    relayOn(relay6Pin, false);
-  }
+    relayOn(relay5Pin, true);
+    delay(2000);  
+    relayOn(relay5Pin, false);  
     
-  // User instructions
-  printLcd(0, "Insert bottle;");
-  printLcd(1, "B1 raises platform");
-  printLcd(2, "Ready...");
-
-  delay(500);
-  digitalWrite(light3Pin, LOW);
-  delay(100);
-  digitalWrite(light2Pin, LOW);
-  delay(100);
-  digitalWrite(light1Pin, LOW);
+    // Open door if closed
+    if(switchDoorState == LOW)
+    {
+      relayOn(relay6Pin, true);
+      delay(500);
+      relayOn(relay6Pin, false);
+    }
+  }
+  
+    // User instructions
+    printLcd(0, "Insert bottle;");
+    printLcd(1, "B1 raises platform");
+    printLcd(2, "Ready...");
+  
+    delay(500);
+    digitalWrite(light3Pin, LOW);
+    delay(100);
+    digitalWrite(light2Pin, LOW);
+    delay(100);
+    digitalWrite(light1Pin, LOW);
+  
 }
 
 //====================================================================================================================================
