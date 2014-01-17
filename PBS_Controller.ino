@@ -20,7 +20,7 @@ TO DO:
 */
 
 //Version control variables
-String (versionSoftwareTag) = "9ca6547" ; //Current version of controller
+String (versionSoftwareTag) = "v1.0" ; //Current version of controller
 String (versionHardwareTag) = "v0.4.0"  ; //Addition of safety door rev'd PBS from 0.4.0 to 0.5.0
 
 //Library includes
@@ -114,7 +114,7 @@ int timePlatformLock                 = 1250;    // Time in ms before platform lo
 int autoPlatformDropDuration         = 1500;    // Duration of platform autodrop in ms
 
 //Key performance parameters
-int autoSiphonDuration               = 2500;    // Duration of autosiphon function in ms
+int autoSiphonDuration               = 3000;    // Duration of autosiphon function in ms //SACC: CHANGED FROM 2500 TO 5500 WITH LONGER TUBE FOR 750S
 int foamDetectionDelay               = 2000;    // Amount of time to pause after foam detection
 int pausePlatformDrop                = 1000;    // Pause before platform drops after door automatically opens
  
@@ -371,7 +371,11 @@ void setup()
   delay(100);
   digitalWrite(light1Pin, LOW);
   
+  relayOn(relay3Pin, false); // Turn off vent solenoid so doesn't get hot
+  
 }
+
+
 
 //====================================================================================================================================
 // MAIN LOOP =========================================================================================================================
@@ -415,17 +419,13 @@ void loop()
   }
   
   // TO DO: REMOVE THIS ######################################
-  Serial.print("B2 toggle loop: ");
-  Serial.print ("B2 State= ");
+  Serial.print("MAIN LOOP: B2 state: ");
   Serial.print (button2State);
-  Serial.print ("; toggleState= ");
+  Serial.print ("; B2 toggleState= ");
   Serial.print (button2ToggleState);
-  Serial.println("");
-    // TO DO: REMOVE THIS
-  Serial.print("B3 toggle loop: ");
-  Serial.print ("B3 State= ");
+  Serial.print (" B3 State= ");
   Serial.print (button3State);
-  Serial.print ("; toggleState= ");
+  Serial.print ("; B3 toggleState= ");
   Serial.print (button3ToggleState);
   Serial.println("");
    
@@ -702,6 +702,7 @@ void loop()
   // FILL LOOP
   //========================================================================================
   
+  
   pinMode(switchFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
     
   while(button2State == LOW && switchFillState == HIGH && switchDoorState == LOW && P1 < pressureOffset + pressureDeltaUp + pressureDeltaAutotamp) 
@@ -723,17 +724,9 @@ void loop()
       button2ToggleState = true; //Leaves buttonState LOW
       button2State = LOW;        //Or makes it low
     }
-    if (button2StateTEMP == LOW && button2ToggleState == true){ // OFF push
+    if (button2StateTEMP == LOW && button2ToggleState == true){    // OFF push
       button2State = HIGH; //exit WHILE loop
     }
-    
-    // TO DO: REMOVE THIS
-    Serial.print("B3 toggle loop: ");
-    Serial.print ("B2 State= ");
-    Serial.print (button2State);
-    Serial.print ("; toggleState= ");
-    Serial.print (button2ToggleState);
-    Serial.println("");
     
     //Check pressure
     P1 = analogRead(sensor1Pin);
@@ -746,6 +739,14 @@ void loop()
     pinMode(switchFillPin, INPUT_PULLUP); // TO DO: See above comment above...is this still needed?
     switchFillState = digitalRead(switchFillPin); //Check fill sensor
     switchDoorState = digitalRead(switchDoorPin); //Check door switch    
+    
+    // TO DO: REMOVE THIS########################################
+    Serial.print ("FILL LOOP: B2 State= ");
+    Serial.print (button2State);
+    Serial.print ("; B2 toggleState= ");
+    Serial.print (button2ToggleState);
+    Serial.println("");
+    
   }
 
   // FILL LOOP EXIT ROUTINES
@@ -762,10 +763,11 @@ void loop()
     
     // Check which condition caused filling to stop
     
-    // CASE 1: Button2 released
+    // CASE 1: Button2 pressed when filling (B2 low and toggle state true)
     if (button2State == HIGH)
     {
-      FLAG_noRepressureOnResume = true;   
+      FLAG_noRepressureOnResume = true; 
+      //TO DO: Add anti-drip here
     }
     
     // CASE 2: FillSwitch tripped--Overfill condition
@@ -775,7 +777,7 @@ void loop()
       relayOn(relay1Pin, true);
       relayOn(relay2Pin, true);
       
-      printLcd(2,"Fixing overfill..."); 
+      printLcd(2,"Adjusting level..."); 
       delay(autoSiphonDuration); // This setting determines duration of autosiphon 
       printLcd(2,"");       
       relayOn(relay1Pin, false);
@@ -908,8 +910,7 @@ void loop()
 
 
   // TO DO: REMOVE THIS #################################################
-  Serial.print("End Depress Loop: ");
-  Serial.print ("B3 State= ");
+  Serial.print("END DEPRESS LOOP: B3 State= ");
   Serial.print (button3State);
   Serial.print ("; toggleState= ");
   Serial.print (button3ToggleState);
@@ -945,6 +946,7 @@ void loop()
 
   // DOOR OPEN LOOP EXIT ROUTINES
   //=======================================================================
+
   if(inDoorOpenLoop)
   {
     printLcd(2,""); 
