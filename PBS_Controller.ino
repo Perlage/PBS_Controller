@@ -90,8 +90,8 @@ boolean autoMode_1                   = false;   // Variable to help differentiat
 boolean platformLockedNew            = false;   // Variable to be set when platfrom first locks up. This is for autofill-on-doorclose function
 boolean platformStateUp              = false;   // true means platform locked in UP; toggled anytime S5 opens
 boolean FLAG_firstPass               = true;    // Variable to set for flagging first pass
-boolean FLAG_noRepressureOnResume    = false;   // Variable to prevent repressurization on resuming filling after stopping with button press
-boolean inPressureNullLoopExecuted   = false;   // ############################
+boolean inPressureNullLoopExecuted   = false;   // TO DO: Keep this?? ############################
+//boolean FLAG_noRepressureOnResume  = false;   // Variable to prevent repressurization on resuming filling after stopping with button press // PBSFIRM-6: Removed
 
 
 //Pressure variables
@@ -115,6 +115,7 @@ int autoPlatformDropDuration         = 1500;    // Duration of platform autodrop
 
 //Key performance parameters
 int autoSiphonDuration               = 3000;    // Duration of autosiphon function in ms //SACC: CHANGED FROM 2500 TO 5500 WITH LONGER TUBE FOR 750S
+int antiDripDuration                 = 1000;    // Duration of anti-drip autosiphon
 int foamDetectionDelay               = 2000;    // Amount of time to pause after foam detection
 int pausePlatformDrop                = 1000;    // Pause before platform drops after door automatically opens
  
@@ -261,12 +262,10 @@ void setup()
     digitalWrite(light3Pin, HIGH);
     delay(500);
     
-
   //============================================================================
   // NULL PRESSURE LOOP
   // Check for stuck pressurized bottle or implausibly low gas pressure at start 
   //============================================================================
-  
 
   int pressureIsNull = false;  // Don't know if pressure null yet so false
   boolean newMessage = false;
@@ -371,11 +370,8 @@ void setup()
   delay(100);
   digitalWrite(light1Pin, LOW);
   
-  relayOn(relay3Pin, false); // Turn off vent solenoid so doesn't get hot
-  
+  relayOn(relay3Pin, false); // Turn off vent solenoid so doesn't get hot  
 }
-
-
 
 //====================================================================================================================================
 // MAIN LOOP =========================================================================================================================
@@ -419,7 +415,7 @@ void loop()
   }
   
   // TO DO: REMOVE THIS ######################################
-  Serial.print("MAIN LOOP: B2 state: ");
+  Serial.print("MAIN LOOP           : B2 state: ");
   Serial.print (button2State);
   Serial.print ("; B2 toggleState= ");
   Serial.print (button2ToggleState);
@@ -590,7 +586,18 @@ void loop()
   int pressurizeCurrentTime = 0;
   int pressurizeStartTime = millis();
   
-  while((button2State == LOW || platformLockedNew == true) && switchDoorState == LOW && platformStateUp == true && FLAG_noRepressureOnResume == false && (P1 >= pressureOffset + pressureDeltaUp))
+  // TO DO: REMOVE THIS ######################################
+  Serial.print("BEFORE PRESSURE LOOP: B2 state: ");
+  Serial.print (button2State);
+  Serial.print ("; B2 toggleState= ");
+  Serial.print (button2ToggleState);
+  Serial.print (" B3 State= ");
+  Serial.print (button3State);
+  Serial.print ("; B3 toggleState= ");
+  Serial.print (button3ToggleState);
+  Serial.println("");
+  
+  while((button2State == LOW || platformLockedNew == true) && switchDoorState == LOW && platformStateUp == true && (P1 >= pressureOffset + pressureDeltaUp)) // PBSFIRM-6: Removed condition && FLAG_noRepressureOnResume == false
   { 
     inPressurizeLoop = true;
 
@@ -599,7 +606,18 @@ void loop()
       delay(500);                   //Make a slight delay in starting pressuriztion when door is first closed
       platformLockedNew = false;    //This is a "first pass" variable; reset to false to indicate that this is no longer the first pass
     }
-      
+
+  // TO DO: REMOVE THIS ######################################
+   Serial.print ("IN PRESSURE LOOP    : B2 state: ");
+  Serial.print (button2State);
+  Serial.print ("; B2 toggleState= ");
+  Serial.print (button2ToggleState);
+  Serial.print (" B3 State= ");
+  Serial.print (button3State);
+  Serial.print ("; B3 toggleState= ");
+  Serial.print (button3ToggleState);
+  Serial.println("");
+
     digitalWrite(light2Pin, HIGH);  //Light button when button state is low
     relayOn(relay3Pin, true);       //close S3 if not already
     relayOn(relay2Pin, true);       //open S2 to pressurize
@@ -702,13 +720,26 @@ void loop()
   // FILL LOOP
   //========================================================================================
   
+  //TO DO: REMOVE DEBUG CODE ######################################
+  Serial.print("BEFORE FILL LOOP    : B2 state: ");
+  Serial.print (button2State);
+  Serial.print ("; B2 toggleState= ");
+  Serial.print (button2ToggleState);
+  Serial.print (" B3 State= ");
+  Serial.print (button3State);
+  Serial.print ("; B3 toggleState= ");
+  Serial.print (button3ToggleState);
+  Serial.println("");
   
   pinMode(switchFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
     
   while(button2State == LOW && switchFillState == HIGH && switchDoorState == LOW && P1 < pressureOffset + pressureDeltaUp + pressureDeltaAutotamp) 
   { 
+    pinMode(switchFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
+    
     inFillLoop = true;
-    FLAG_noRepressureOnResume = false;
+
+    //FLAG_noRepressureOnResume = false; // PBSFIRM-6: Commented out
 
     digitalWrite(light2Pin, HIGH); //Light B2
     printLcd(2,"Filling..."); 
@@ -741,7 +772,7 @@ void loop()
     switchDoorState = digitalRead(switchDoorPin); //Check door switch    
     
     // TO DO: REMOVE THIS########################################
-    Serial.print ("FILL LOOP: B2 State= ");
+    Serial.print ("IN FILL LOOP: B2 State= ");
     Serial.print (button2State);
     Serial.print ("; B2 toggleState= ");
     Serial.print (button2ToggleState);
@@ -766,8 +797,22 @@ void loop()
     // CASE 1: Button2 pressed when filling (B2 low and toggle state true)
     if (button2State == HIGH)
     {
-      FLAG_noRepressureOnResume = true; 
-      //TO DO: Add anti-drip here
+      //FLAG_noRepressureOnResume = true; // PBSFIRM-6: COMMENTING THIS OUT FIXES THE BUG, BUT WE GET REPRESSURIZATION
+      
+      // Anti-drip rountine
+      digitalWrite(light2Pin, HIGH); 
+      relayOn(relay1Pin, true);
+      relayOn(relay2Pin, true);
+      
+      printLcd(2,"Anti drip..."); 
+      delay(antiDripDuration); // This setting determines duration of autosiphon 
+      printLcd(2,"");       
+      relayOn(relay1Pin, false);
+      relayOn(relay2Pin, false);
+      digitalWrite(light2Pin, LOW); 
+      
+      switchFillState = digitalRead(switchFillPin); 
+      delay (50);
     }
     
     // CASE 2: FillSwitch tripped--Overfill condition
@@ -910,7 +955,7 @@ void loop()
 
 
   // TO DO: REMOVE THIS #################################################
-  Serial.print("END DEPRESS LOOP: B3 State= ");
+  Serial.print("END DEPRESS LOOP    : B3 State= ");
   Serial.print (button3State);
   Serial.print ("; toggleState= ");
   Serial.print (button3ToggleState);
