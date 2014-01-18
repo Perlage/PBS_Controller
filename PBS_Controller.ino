@@ -11,10 +11,7 @@ Author:
 Copyright 2013, 2014  All rights reserved
 
 TO DO:
---Add routine to differentiate between stuck bottle (if pressure not falling, low pressure)
 --Add routine to check for cylinder going empty during bottling (take an initial pressure during startup)
---Anti drip routine when ending fill with button push?
---Turn off S3 when machine idle
 
 //===========================================================================  
 */
@@ -98,7 +95,7 @@ boolean inPressureNullLoopExecuted   = false;   // TO DO: Keep this?? ##########
 int P1                               = 0;       // Current pressure reading from sensor
 int startPressure                    = 0;       // Pressure at the start of filling cycle
 int pressureOffset                   = 35;      // Choose so that with cylinder off and IN and OUT tubes open, IDLE pressure = 0
-int pressureDeltaUp                  = 10;      // Pressure at which, during pressurization, full pressure is considered to have been reached //1-12 was 50 //TO DO: something odd here; needle valve corroding??
+int pressureDeltaUp                  = 50;      // Pressure at which, during pressurization, full pressure is considered to have been reached //1-12 was 50 //TO DO: something odd here; needle valve corroding??
 int pressureDeltaDown                = 40;      // Pressure at which, during depressurizing, pressure considered to be close enough to zero
 int pressureDeltaAutotamp            = 250;     // This is max pressure difference allowed on filling (i.e., limits fill speed)
 int pressureNull                     = 450;     // This is the threshold for the controller deciding that no gas source is attached. //TO DO: CHANGED TO 500 AND CORE FUNCTIONALITY BROKE.
@@ -226,13 +223,29 @@ void setup()
   // Initial pressure difference reading from sensor. High = unpressurized bottle
   //=============================================================================
   
-  relayOn(relay3Pin, true); // Open at earliest possibility to vent
-  relayOn(relay4Pin, true); // Turn on platform support immediately. Raises platform if no bottle; keeps stuck bottle in place
-
   // Read states
   switchFillState = digitalRead(switchFillPin);
   switchDoorState = digitalRead(switchDoorPin);  
   P1 = analogRead(sensor1Pin); 
+
+  relayOn(relay3Pin, true); // Open at earliest possibility to vent
+
+  // Turn on platform support immediately, but make sure door is closed so no pinching!
+  if (switchDoorState == LOW)
+    {
+      relayOn(relay4Pin, true); // Turn on platform support immediately. Raises platform if no bottle; keeps stuck bottle in place
+    }
+    else
+    {
+      while (switchDoorState == HIGH)
+      {
+        printLcd (3, "PLEASE CLOSE DOOR");
+        switchDoorState = digitalRead(switchDoorPin);  
+      }
+        delay(1000);
+        relayOn(relay4Pin, true);      
+        printLcd (3, "Initializing...");        
+    }    
   
   startPressure = P1;   // This is the starting pressure
 
@@ -319,18 +332,22 @@ void setup()
   
   if (inPressureNullLoop)
   {
-  
-    if(switchDoorState == LOW)
+    //Open door, but don't drop platform
+    while(switchDoorState == LOW)
     {
-      //Open door
+      inDoorOpenLoop = true;
       relayOn(relay6Pin, true);
-      delay(500);
+      switchDoorState = digitalRead(switchDoorPin);  
+    }
+    
+    if (inDoorOpenLoop == true)
+    {
+      inDoorOpenLoop = false;
       relayOn(relay6Pin, false);
       
-      //Drop plaform
-      relayOn(relay4Pin, false);
-      relayOn(relay5Pin, true);
-      delay(pausePlatformDrop);      
+      //Drop plaform //
+      //relayOn(relay4Pin, false);
+      //relayOn(relay5Pin, true);
     }  
 
     inPressureNullLoop = false;
@@ -340,7 +357,7 @@ void setup()
   //END NULL PRESSURE LOOP
   //====================================================================================
  
-  if (inPressureNullLoopExecuted == false)
+  if (inPressureNullLoopExecuted == false and switchDoorState == LOW) // Don't cycle platform up if door open (safety)
   {
     
     // For show--cycle platform
@@ -350,10 +367,15 @@ void setup()
     relayOn(relay5Pin, false);  
     
     // Open door if closed
-    if(switchDoorState == LOW)
+    while (switchDoorState == LOW)
     {
+      inDoorOpenLoop = true;
       relayOn(relay6Pin, true);
-      delay(500);
+      switchDoorState = digitalRead(switchDoorPin);  
+    }
+    if (inDoorOpenLoop == true)
+    {
+      inDoorOpenLoop = false;
       relayOn(relay6Pin, false);
     }
   }
@@ -370,7 +392,6 @@ void setup()
   delay(100);
   digitalWrite(light1Pin, LOW);
   
-  relayOn(relay3Pin, false); // Turn off vent solenoid so doesn't get hot  
 }
 
 //====================================================================================================================================
@@ -607,16 +628,16 @@ void loop()
       platformLockedNew = false;    //This is a "first pass" variable; reset to false to indicate that this is no longer the first pass
     }
 
-  // TO DO: REMOVE THIS ######################################
-   Serial.print ("IN PRESSURE LOOP    : B2 state: ");
-  Serial.print (button2State);
-  Serial.print ("; B2 toggleState= ");
-  Serial.print (button2ToggleState);
-  Serial.print (" B3 State= ");
-  Serial.print (button3State);
-  Serial.print ("; B3 toggleState= ");
-  Serial.print (button3ToggleState);
-  Serial.println("");
+    // TO DO: REMOVE THIS ######################################
+     Serial.print ("IN PRESSURE LOOP    : B2 state: ");
+    Serial.print (button2State);
+    Serial.print ("; B2 toggleState= ");
+    Serial.print (button2ToggleState);
+    Serial.print (" B3 State= ");
+    Serial.print (button3State);
+    Serial.print ("; B3 toggleState= ");
+    Serial.print (button3ToggleState);
+    Serial.println("");
 
     digitalWrite(light2Pin, HIGH);  //Light button when button state is low
     relayOn(relay3Pin, true);       //close S3 if not already
@@ -919,18 +940,19 @@ void loop()
   if(inDepressurizeLoop)
   { 
     printLcd(2, "");
-    relayOn(relay3Pin, false);     //Close bottle exhaust relay
+    //relayOn(relay3Pin, false);     //Used to close S3 here. Try leaving it open when in auto mode until platform drops
     
     // CASE 1: Button3 released
     if (button3State == HIGH)  
     { 
-      //Used to repressurize here; now we don't  
+      relayOn(relay3Pin, false);     //Used to repressurize here; now we don't  
       //TO DO: either a quick burst to clear the sensor, or check for overfill and tamp in case bottle foams up
     }
     
     // CASE 2: Foam tripped sensor
     if (switchFillState == LOW)
     {
+      relayOn(relay3Pin, false);     //
       printLcd(2, "Foam... wait");
       relayOn(relay2Pin, true);
       delay(foamDetectionDelay); // Wait a bit before proceeding    
@@ -952,7 +974,6 @@ void loop()
     
   digitalWrite(light3Pin, LOW);
   inDepressurizeLoop = false;
-
 
   // TO DO: REMOVE THIS #################################################
   Serial.print("END DEPRESS LOOP    : B3 State= ");
