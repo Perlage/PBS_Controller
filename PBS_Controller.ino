@@ -87,15 +87,13 @@ boolean autoMode_1                   = false;   // Variable to help differentiat
 boolean platformLockedNew            = false;   // Variable to be set when platfrom first locks up. This is for autofill-on-doorclose function
 boolean platformStateUp              = false;   // true means platform locked in UP; toggled anytime S5 opens
 boolean FLAG_firstPass               = true;    // Variable to set for flagging first pass
-boolean inPressureNullLoopExecuted   = false;   // TO DO: Keep this?? ############################
-//boolean FLAG_noRepressureOnResume  = false;   // Variable to prevent repressurization on resuming filling after stopping with button press // PBSFIRM-6: Removed
-
+boolean inPressureNullLoopExecuted   = false;   // Tells whether went through null loop or not
 
 //Pressure variables
 int P1                               = 0;       // Current pressure reading from sensor
 int startPressure                    = 0;       // Pressure at the start of filling cycle
 int pressureOffset                   = 35;      // Choose so that with cylinder off and IN and OUT tubes open, IDLE pressure = 0
-int pressureDeltaUp                  = 50;      // Pressure at which, during pressurization, full pressure is considered to have been reached //1-12 was 50 //TO DO: something odd here; needle valve corroding??
+int pressureDeltaUp                  = 50;      // Pressure at which, during pressurization, full pressure is considered to have been reached // Tried 10; went back to 50 to prevent repressurizing after fill button cycle
 int pressureDeltaDown                = 40;      // Pressure at which, during depressurizing, pressure considered to be close enough to zero
 int pressureDeltaAutotamp            = 250;     // This is max pressure difference allowed on filling (i.e., limits fill speed)
 int pressureNull                     = 450;     // This is the threshold for the controller deciding that no gas source is attached. //TO DO: CHANGED TO 500 AND CORE FUNCTIONALITY BROKE.
@@ -287,11 +285,14 @@ void setup()
   {
     inPressureNullLoop = true;
         
-    if (newMessage == false){
+    /*
+    if (newMessage == false)
+    {
       printLcd(0, "Bottle pressurized");
       printLcd(1, "Or gas pressure low");
       printLcd(2, "Checking. Wait...");
     }  
+    */
     
     pressurizeDuration = millis() - pressurizeStartTime; 
     
@@ -302,18 +303,18 @@ void setup()
       {  
         //Then there must be a pressurized bottle in place (bottle is already depressurizing because S3 opened above)
         pressureIsNull = false;
-        printLcd(0, "Bottle is ");
-        printLcd(1, "pressurized. ");
+        printLcd(0, "Pressurized bottle");
+        printLcd(1, "detected. ");
         printLcd(2, "Depressurizing...");
         newMessage = true;
       }
       else
       {
         //after an interval, P1 reading hasn't increased, so gas must be off
-        printLcd(0, "Gas off or empty.");
-        printLcd(1, "Please fix.");
+        printLcd(0, "Gas off or empty;");
+        printLcd(1, "fix to operate.");
         printLcd(2, "Continue...");
-        delay(2000);
+        delay(4000);
         newMessage = true;
         pressureIsNull = true;
       }
@@ -364,7 +365,9 @@ void setup()
     relayOn(relay4Pin, false);  
     relayOn(relay5Pin, true);
     delay(3000);  
-    relayOn(relay5Pin, false);  
+    relayOn(relay5Pin, false); 
+      
+    relayOn(relay3Pin, false); // Close this so solenoid doesn't overhead on normal startup
     
     // Open door if closed
     while (switchDoorState == LOW)
@@ -545,7 +548,6 @@ void loop()
   // PURGE INTERLOCK LOOP
   //=============================================================================================
   // Door must be closed, platform up, and pressure at zero
-  //TO DO: switch B1 and B2; toggle B1 on
   
   while(button2State == LOW && switchDoorState == HIGH && (P1 >= pressureOffset + pressureDeltaUp) && platformStateUp == false)
   {
@@ -629,7 +631,7 @@ void loop()
     }
 
     // TO DO: REMOVE THIS ######################################
-     Serial.print ("IN PRESSURE LOOP    : B2 state: ");
+    Serial.print ("IN PRESSURE LOOP    : B2 state: ");
     Serial.print (button2State);
     Serial.print ("; B2 toggleState= ");
     Serial.print (button2ToggleState);
@@ -755,9 +757,7 @@ void loop()
   pinMode(switchFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
     
   while(button2State == LOW && switchFillState == HIGH && switchDoorState == LOW && P1 < pressureOffset + pressureDeltaUp + pressureDeltaAutotamp) 
-  { 
-    pinMode(switchFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
-    
+  {     
     inFillLoop = true;
 
     //FLAG_noRepressureOnResume = false; // PBSFIRM-6: Commented out
@@ -857,7 +857,7 @@ void loop()
     // CASE 3: Bottles pressure dropped too much
     else 
     {
-      //TO DO: Can we just GOTO Pressure Loop?
+
       //=========================
       // REPRESSURIZE LOOP
       //=========================
@@ -906,7 +906,6 @@ void loop()
     printLcd(3, outputPSI); 
     
     //Allow momentary "burst" foam tamping
-    //TO DO: should this be a while statement to make continuous?
     button2State = !digitalRead(button2Pin);
       if(button2State == LOW)
       {
@@ -991,7 +990,6 @@ void loop()
   // DOOR OPENING LOOP
   // ======================================================================
  
-  // TO DO: Need to add opening door loop, to accomodate door getting blocked or sticking
   // Only activate door solenoid if door is already closed
   
   while((button3State == LOW || autoMode_1 == true) && switchDoorState == LOW && P1 > startPressure - pressureDeltaDown)
@@ -1019,7 +1017,7 @@ void loop()
     relayOn(relay6Pin, false);
     inDoorOpenLoop = false;
     digitalWrite(light3Pin, LOW);
-    button3State = HIGH; //TO DO: soleved one problem but caused another
+    button3State = HIGH; 
     
     // TO DO: REMOVE THIS #################################################
     Serial.print("End Door Loop: ");
