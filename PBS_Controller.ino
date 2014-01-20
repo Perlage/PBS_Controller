@@ -209,7 +209,12 @@ void setup()
   // Startup Routine
   //===================================================================================
   
-  // Note start time for depressurization of stuck bottle
+  // Read States. Get initial pressure difference reading from sensor. High = unpressurized bottle; low means pressurized bottle or no gas
+  startPressure = analogRead(sensor1Pin); 
+  switchDoorState = digitalRead(switchDoorPin);  
+
+  relayOn(relay3Pin, true); // Open at earliest possibility to vent  // Note start time for depressurization of stuck bottle
+
   int pressurizeStartTime = millis(); 
   int pressurizeDuration = 0;
   
@@ -219,17 +224,6 @@ void setup()
   printLcd (2, "");
   printLcd (3, "Initializing...");
   delay(1000); //Just to give a little time before platform goes up
-  
-  // Initial pressure difference reading from sensor. High = unpressurized bottle
-  //=============================================================================
-  
-  // Read states
-  //switchFillState  =  digitalRead(switchFillPin); //CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC Do we need this here?
-  switchDoorState = digitalRead(switchDoorPin);  
-  P1 = analogRead(sensor1Pin); 
-  startPressure = P1;   // This is the starting pressure
-
-  relayOn(relay3Pin, true); // Open at earliest possibility to vent
 
   // Turn on platform support immediately, but make sure door is closed so no pinching!
   if (switchDoorState == LOW)
@@ -280,57 +274,75 @@ void setup()
   //============================================================================
 
   int pressureIsNull = false;  // Don't know if pressure null yet so false
-  boolean newMessage = false;
+  
+  if (P1 < pressureNull)
+  {  
+     inPressureNullLoop = true;
+            
+     printLcd(0, "Bottle pressurized,");
+     printLcd(1, "Or gas pressure low.");
+     printLcd(2, "Open exhaust valve.");  //TO DO: make it so user has to press button to proceed
+     delay (2000);
 
-  while ( P1 < pressureNull && pressureIsNull == false)
-  {
-    inPressureNullLoop = true;
-        
-    /*
-    if (newMessage == false)
-    {
-      printLcd(0, "Bottle pressurized");
-      printLcd(1, "Or gas pressure low");
-      printLcd(2, "Checking. Wait...");
-    }  
-    */
-    
-    pressurizeDuration = millis() - pressurizeStartTime; 
-    
-    //try to determine whether low P1 reading means stuck pressurized bottle, or gas is off or cylinder empty
-    if (pressurizeDuration > 6000 && pressureIsNull == false)
-    {
-      if (P1 > startPressure + 20)  //e.g., pressure diff is rising (bottle pressure falling)
-      {  
+     pressurizeDuration = millis() - pressurizeStartTime; 
+     P1 = analogRead(sensor1Pin);
+     
+     //try to determine whether low P1 reading means stuck pressurized bottle, or gas is off or cylinder empty
+     if (P1 > startPressure + 20)  //e.g., pressure diff is rising (bottle pressure falling)
+     {
         //Then there must be a pressurized bottle in place (bottle is already depressurizing because S3 opened above)
         pressureIsNull = false;
         printLcd(0, "Pressurized bottle");
         printLcd(1, "detected. ");
         printLcd(2, "Depressurizing...");
-        newMessage = true;
+    
+        // Timing routine to sample pressure difference every 1000ms, and compare with previous reading
+        int T1 = millis(); 
+        int PTest1 = startPressure; //Assign PTest1 a very small value--i.e., the very first reading--to start
+        int PTest2 = analogRead(sensor1Pin);       
+              
+        //Continue to depressurize if PTest2 less than pressureNull OR pressure is drrpping by specified # of units per interval
+        //First condition prevents release of bottle if user closes needle valve, thus preventing venting, but bottle still high P
+        while (PTest2 < pressureNull || PTest2 >= PTest1 + 2) 
+        { 
+           if (millis() > T1 + 1000)
+           {
+              T1 = millis();
+              PTest1 = PTest2;
+           }  
+
+           PTest2 = analogRead(sensor1Pin);
+           
+           bottlePressurePSI = pressureConv(PTest2);
+           String (convPSI) = floatToString(buffer, bottlePressurePSI, 1);
+           String (outputPSI) = "Press. diff: " + convPSI + "psi";  
+           printLcd(3, outputPSI);         
+        }     
+        
       }
       else
       {
-        //after an interval, P1 reading hasn't increased, so gas must be off
-        printLcd(0, "Gas off or empty;");
-        printLcd(1, "fix to operate.");
-        printLcd(2, "Continue...");
-        delay(4000);
-        newMessage = true;
-        pressureIsNull = true;
+         //after an interval, P1 reading hasn't increased, so gas must be off
+         printLcd(0, "Gas off or empty;");
+         printLcd(1, "fix to operate.");
+         printLcd(2, "Continue...");
+         delay(4000);
+         pressureIsNull = true;
       }
-    }
+   
     
-    P1 = analogRead(sensor1Pin); 
+      P1 = analogRead(sensor1Pin); 
     
-    bottlePressurePSI = pressureConv(P1);
-    String (convPSI) = floatToString(buffer, bottlePressurePSI, 1);
-    String (outputPSI) = "Press. diff: " + convPSI + "psi";  
-    printLcd(3, outputPSI);     
+      bottlePressurePSI = pressureConv(P1);
+      String (convPSI) = floatToString(buffer, bottlePressurePSI, 1);
+      String (outputPSI) = "Press. diff: " + convPSI + "psi";  
+      printLcd(3, outputPSI);     
   }  
+ 
   
   // NULL PRESSURE EXIT ROUTINES
-  //================================
+  // No longer closing S3 at end of this to prevent popping in some edge cases of a very foamy bottle
+  //==================================================================================
   
   if (inPressureNullLoop)
   {
