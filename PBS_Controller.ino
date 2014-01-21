@@ -69,7 +69,7 @@ int relay5State      = HIGH;
 int relay6State      = HIGH;
 int switchFillState  = HIGH; 
 int switchDoorState  = HIGH;
-int switchCleanState = HIGH; //CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+int switchCleanState = HIGH; 
 
 //State variables set in loops
 boolean inPressureNullLoop           = false;
@@ -99,9 +99,9 @@ int pressureDeltaUp                  = 50;      // Pressure at which, during pre
 int pressureDeltaDown                = 40;      // Pressure at which, during depressurizing, pressure considered to be close enough to zero
 int pressureDeltaAutotamp            = 250;     // This is max pressure difference allowed on filling (i.e., limits fill speed)
 int pressureNull                     = 450;     // This is the threshold for the controller deciding that no gas source is attached. //TO DO: CHANGED TO 500 AND CORE FUNCTIONALITY BROKE.
-float PSI                            = 0;       // Current pressure reading n PSI
+float PSI                            = 0;       // Current pressure reading in PSI
 float startPressurePSI               = 0;       // Start pressure in PSI
-float bottlePressurePSI              = 0;       // Bottle pressure In PSI (i.e., StartPressure - PSI
+float bottlePressurePSI              = 0;       // Bottle pressure in PSI (i.e., StartPressure - PSI)
 
 //variables for platform function and timing
 int timePlatformInit;                           // Time in ms going into loop
@@ -293,6 +293,10 @@ void setup()
      printLcd(1, "Or gas pressure low.");
      printLcd(2, "");  
      printLcd(3, "Analyzing...");     
+
+     digitalWrite(buzzerPin, HIGH); 
+     delay(250);
+     digitalWrite(buzzerPin, LOW);
      delay (2000);
 
      pressurizeDuration = millis() - pressurizeStartTime; 
@@ -307,6 +311,10 @@ void setup()
         printLcd(1, "detected. Open valve");
         printLcd(2, "Depressurizing...");
         printLcd(3, "");
+       
+        digitalWrite(buzzerPin, HIGH); 
+        delay(250);
+        digitalWrite(buzzerPin, LOW);
     
         // Timing routine to sample pressure difference every 1000ms, and compare with previous reading
         unsigned long T1 = millis(); 
@@ -354,12 +362,15 @@ void setup()
       }
       else
       {
+        // GASS OFF: After an interval, P1 reading hasn't increased, so gas must be off        
         P1 = startPressure; 
+        
+        digitalWrite(buzzerPin, HIGH); 
+        delay(250);
+        digitalWrite(buzzerPin, LOW);
         
         while (P1 < pressureNull)
         {
-          
-          //after an interval, P1 reading hasn't increased, so gas must be off
           printLcd(0, "Gas off or empty;");
           printLcd(1, "check tank & hoses.");
           printLcd(2, "B3 opens door.");
@@ -633,7 +644,7 @@ void loop()
   
   // PURGE INTERLOCK LOOP
   //=============================================================================================
-  // Door must be closed, platform up, and pressure at zero
+  // Door must be OPEN, platform DOWN, and pressure DIFF near max (i.e. no bottle)
   
   while(button2State == LOW && switchDoorState == HIGH && (P1 >= pressureOffset + pressureDeltaUp) && platformStateUp == false)
   {
@@ -818,7 +829,7 @@ void loop()
   if (inEmergencyDepressurizeLoop)
   {
     printLcd (2, "");
-    button2State = LOW;
+    button2State = LOW;  //TO DO: SHOULDN'T THIS BE HIGH? This might happen after a post-door open foam up--dont want to continue
     inEmergencyDepressurizeLoop = false;
   }  
   
@@ -841,8 +852,9 @@ void loop()
   Serial.println("");
   
   pinMode(switchFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
-    
-  while(button2State == LOW && switchFillState == HIGH && switchDoorState == LOW && P1 < pressureOffset + pressureDeltaUp + pressureDeltaAutotamp) 
+  
+  // Added startPressure condition to prevent condition where B2 can start spewing if 1) CO2 off, 2) keg pressurized, 3) gas line disconnected and liquid line connected
+  while(button2State == LOW && switchFillState == HIGH && switchDoorState == LOW && startPressure > pressureNull && P1 < (pressureOffset + pressureDeltaUp + pressureDeltaAutotamp)) 
   {     
     inFillLoop = true;
 
