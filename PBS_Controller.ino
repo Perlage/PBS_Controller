@@ -853,7 +853,7 @@ void loop()
   
   pinMode(switchFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
   
-  // Added startPressure condition to prevent condition where B2 can start spewing if 1) CO2 off, 2) keg pressurized, 3) gas line disconnected and liquid line connected
+  // 01-21 Added startPressure condition to absolutely prevent condition where B2 can start spewing if 1) CO2 off, 2) keg pressurized, 3) gas line disconnected and liquid line connected
   while(button2State == LOW && switchFillState == HIGH && switchDoorState == LOW && startPressure > pressureNull && P1 < (pressureOffset + pressureDeltaUp + pressureDeltaAutotamp)) 
   {     
     inFillLoop = true;
