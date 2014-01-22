@@ -17,8 +17,8 @@ TO DO:
 */
 
 //Version control variables
-String (versionSoftwareTag) = "v1.0" ; //Current version of controller
-String (versionHardwareTag) = "v0.4.0"  ; //Addition of safety door rev'd PBS from 0.4.0 to 0.5.0
+String (versionSoftwareTag) = "v0.5.0.0" ; //Current version of controller. Clean switch rev'd to 0.5.0.0
+String (versionHardwareTag) = "v0.5.0.0" ; //Addition of safety door rev'd PBS to 0.4.0.0; safety switch to 0.5.0.0
 
 //Library includes
 #include <Wire.h> 
@@ -228,6 +228,51 @@ void setup()
   printLcd (2, "");
   printLcd (3, "Initializing...");
   delay(1000); //Just to give a little time before platform goes up
+  
+  //=================================================================================
+  // MENU ROUTINE
+  //=================================================================================
+ 
+  boolean button1State     = !digitalRead(button1Pin); 
+  boolean button1StateMENU = !digitalRead(button1Pin); 
+  boolean button2StateMENU = !digitalRead(button2Pin); 
+  boolean button3StateMENU = !digitalRead(button3Pin); 
+  boolean inMenuLoop = false;
+  
+  
+  while (button1State == LOW)
+  {
+    inMenuLoop = true;
+    
+    printLcd (0, "Setup Menu. Press...");
+    printLcd (1, "B2: Autosiphon time");
+    printLcd (2, "B2: ...");
+    printLcd (3, "B3: Exit");
+    
+    button1StateMENU = !digitalRead(button1Pin); 
+    button2StateMENU = !digitalRead(button2Pin); 
+    button3StateMENU = !digitalRead(button3Pin); 
+    
+    if (button2StateMENU == LOW){
+      autoSiphonDuration = 6000;
+      printLcd (3, "Set to 6000 ms");
+    }  
+    if (button3StateMENU == LOW){
+      button1State = HIGH;
+    }  
+  }
+  while (inMenuLoop)
+  {
+    inMenuLoop = false;
+    
+    printLcd (0, "");
+    printLcd (1, "");
+    printLcd (2, "");
+    printLcd (3, "Exiting menu...");  
+    delay(1000);  
+  }  
+  // END MENU ROUTINE
+  //=================================================================================  
 
   // Turn on platform support immediately, but make sure door is closed so no pinching!
   if (switchDoorState == LOW)
