@@ -17,14 +17,15 @@ TO DO:
 */
 
 //Version control variables
-String (versionSoftwareTag) = "v1.0" ; //Current version of controller
-String (versionHardwareTag) = "v0.4.0"  ; //Addition of safety door rev'd PBS from 0.4.0 to 0.5.0
+String (versionSoftwareTag) = "v0.5.0.0" ; //Current version of controller. Clean switch rev'd to 0.5.0.0
+String (versionHardwareTag) = "v0.5.0.0" ; //Addition of safety door rev'd PBS to 0.4.0.0; safety switch to 0.5.0.0
 
 //Library includes
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 #include <math.h> //pressureOffset
 #include "floatToString.h"
+#include <EEPROM.h>
 
 LiquidCrystal_I2C lcd(0x3F,20,4);  
 
@@ -94,7 +95,7 @@ boolean inPressureNullLoopExecuted   = false;   // Tells whether went through nu
 //Pressure variables
 int P1                               = 0;       // Current pressure reading from sensor
 int startPressure                    = 0;       // Pressure at the start of filling cycle
-int pressureOffset                   = 35;      // Choose so that with cylinder off and IN and OUT tubes open, IDLE pressure = 0
+int pressureOffset                       ;      // Was 35; now set through EEPROM in initial factory calibration, and read into pressureOffset during Setup loop
 int pressureDeltaUp                  = 50;      // Pressure at which, during pressurization, full pressure is considered to have been reached // Tried 10; went back to 50 to prevent repressurizing after fill button cycle
 int pressureDeltaDown                = 40;      // Pressure at which, during depressurizing, pressure considered to be close enough to zero
 int pressureDeltaAutotamp            = 250;     // This is max pressure difference allowed on filling (i.e., limits fill speed)
@@ -228,6 +229,70 @@ void setup()
   printLcd (2, "");
   printLcd (3, "Initializing...");
   delay(1000); //Just to give a little time before platform goes up
+  
+  //=================================================================================
+  // MENU AND EEPROM CALIBRATION ROUTINE
+  //=================================================================================
+ 
+  boolean button1State     = !digitalRead(button1Pin); 
+  boolean button1StateMENU = !digitalRead(button1Pin); 
+  boolean button2StateMENU = !digitalRead(button2Pin); 
+  boolean button3StateMENU = !digitalRead(button3Pin); 
+  delay(100);
+  boolean inMenuLoop = false;
+  
+  // Write null pressure to EEPROM
+  // Hold down all three buttons on startup
+  if (button1StateMENU == LOW && button2StateMENU == LOW && button3StateMENU == LOW){
+    pressureOffset = analogRead(sensor1Pin); 
+    delay(100);
+    EEPROM.write(0, pressureOffset);
+
+    String (convOffset) = floatToString(buffer, pressureOffset, 1);
+    String (outputOffset) = "pressureOffset: " + convOffset;  
+    printLcd(3, outputOffset);
+    delay(5000);
+    printLcd(3, "");
+  }  
+  
+  //Write the actual nullPressure to pressureNull
+  pressureNull = EEPROM.read(0);
+  
+  while (button1State == LOW)
+  {
+    inMenuLoop = true;
+    
+    printLcd (0, "Setup Menu. Press...");
+    printLcd (1, "");
+    printLcd (2, "B2: Autosiphon time");
+    printLcd (3, "B3: Exit");
+    
+    button1StateMENU = !digitalRead(button1Pin); 
+    button2StateMENU = !digitalRead(button2Pin); 
+    button3StateMENU = !digitalRead(button3Pin); 
+    
+    if (button2StateMENU == LOW){
+      autoSiphonDuration = 7500;
+      printLcd (2, "Inc. to 7500 ms");
+      delay(2000);
+    }  
+    if (button3StateMENU == LOW){
+      button1State = HIGH;
+    }  
+  }
+  while (inMenuLoop)
+  {
+    inMenuLoop = false;
+    printLcd (3, "Exiting menu...");  
+    delay(1000);  
+    printLcd (0, "Perlini Bottling");
+    printLcd (1, "System, " + versionSoftwareTag);
+    printLcd (2, "");
+    printLcd (3, "Initializing...");
+    delay(1000); //Just to give a little time before platform goes up    
+  }  
+  // END MENU ROUTINE
+  //=================================================================================  
 
   // Turn on platform support immediately, but make sure door is closed so no pinching!
   if (switchDoorState == LOW)
