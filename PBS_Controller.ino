@@ -95,7 +95,7 @@ boolean inPressureNullLoopExecuted   = false;   // Tells whether went through nu
 //Pressure variables
 int P1                               = 0;       // Current pressure reading from sensor
 int startPressure                    = 0;       // Pressure at the start of filling cycle
-int pressureOffset                       ;      // Was 35; now set through EEPROM in initial factory calibration, and read into pressureOffset during Setup loop
+int pressureOffset;                             // Was 35; now set through EEPROM in initial factory calibration, and read into pressureOffset during Setup loop
 int pressureDeltaUp                  = 50;      // Pressure at which, during pressurization, full pressure is considered to have been reached // Tried 10; went back to 50 to prevent repressurizing after fill button cycle
 int pressureDeltaDown                = 40;      // Pressure at which, during depressurizing, pressure considered to be close enough to zero
 int pressureDeltaAutotamp            = 250;     // This is max pressure difference allowed on filling (i.e., limits fill speed)
@@ -206,6 +206,29 @@ void setup()
   lcd.init();
   lcd.backlight();
   
+  // ==============================================================================
+  // EEPROM CALIBRATION
+  // Write null pressure to EEPROM. Hold down all three buttons on startup
+  // ==============================================================================
+
+  if (button1State == LOW && button2State == LOW && button3State == LOW){
+    pressureOffset = analogRead(sensor1Pin); 
+    delay(100);
+    EEPROM.write(0, pressureOffset);
+
+    String (convOffset) = floatToString(buffer, pressureOffset, 1);
+    String (outputOffset) = "pressureOffset: " + convOffset;  
+    printLcd(3, outputOffset);
+    delay(5000);
+    printLcd(3, "");
+  }    
+
+  //Write the actual nullPressure to pressureNull
+  pressureOffset = EEPROM.read(0);
+
+  // END EEPROM 
+  // ==============================================================================
+    
   //===================================================================================
   // Startup Routine
   //===================================================================================
@@ -229,9 +252,9 @@ void setup()
   printLcd (2, "");
   printLcd (3, "Initializing...");
   delay(1000); //Just to give a little time before platform goes up
-  
+
   //=================================================================================
-  // MENU AND EEPROM CALIBRATION ROUTINE
+  // MENU ROUTINE
   //=================================================================================
  
   boolean button1State     = !digitalRead(button1Pin); 
@@ -240,24 +263,7 @@ void setup()
   boolean button3StateMENU = !digitalRead(button3Pin); 
   delay(100);
   boolean inMenuLoop = false;
-  
-  // Write null pressure to EEPROM
-  // Hold down all three buttons on startup
-  if (button1StateMENU == LOW && button2StateMENU == LOW && button3StateMENU == LOW){
-    pressureOffset = analogRead(sensor1Pin); 
-    delay(100);
-    EEPROM.write(0, pressureOffset);
 
-    String (convOffset) = floatToString(buffer, pressureOffset, 1);
-    String (outputOffset) = "pressureOffset: " + convOffset;  
-    printLcd(3, outputOffset);
-    delay(5000);
-    printLcd(3, "");
-  }  
-  
-  //Write the actual nullPressure to pressureNull
-  pressureNull = EEPROM.read(0);
-  
   while (button1State == LOW)
   {
     inMenuLoop = true;
@@ -351,127 +357,127 @@ void setup()
   int pressureIsNull = false;  // Don't know if pressure null yet so false
   
   if (startPressure < pressureNull)
-  {  
-     inPressureNullLoop = true;
+  {
+    inPressureNullLoop = true;
             
-     printLcd(0, "Bottle pressurized,");
-     printLcd(1, "Or gas pressure low.");
-     printLcd(2, "");  
-     printLcd(3, "Analyzing...");     
+    printLcd(0, "Bottle pressurized,");
+    printLcd(1, "Or gas pressure low.");
+    printLcd(2, "");  
+    printLcd(3, "Analyzing...");     
 
-     digitalWrite(buzzerPin, HIGH); 
-     delay(250);
-     digitalWrite(buzzerPin, LOW);
-     delay (2000);
+    digitalWrite(buzzerPin, HIGH); 
+    delay(250);
+    digitalWrite(buzzerPin, LOW);
+    delay (2000);
 
-     pressurizeDuration = millis() - pressurizeStartTime; 
-     int PTest1 = analogRead(sensor1Pin);
+    pressurizeDuration = millis() - pressurizeStartTime; 
+    int PTest1 = analogRead(sensor1Pin);
      
-     //try to determine whether low P1 reading means stuck pressurized bottle, or gas is off or cylinder empty
-     if (PTest1 > startPressure + 20)  //If true, pressure diff is rising; i.e., bottle is pressurized and bottle pressure is falling
-     {
-        //Then there must be a pressurized bottle in place (bottle is already depressurizing because S3 opened above)
-        pressureIsNull = false;
-        printLcd(0, "Pressurized bottle");
-        printLcd(1, "detected. Open valve");
-        printLcd(2, "Depressurizing...");
-        printLcd(3, "");
-       
-        digitalWrite(buzzerPin, HIGH); 
-        delay(250);
-        digitalWrite(buzzerPin, LOW);
-    
-        // Timing routine to sample pressure difference every 1000ms, and compare with previous reading
-        unsigned long T1 = millis(); 
-        PTest1 = startPressure; //Assign PTest1 smallest possible value--i.e., the very first reading--to start
-        int PTest2 = analogRead(sensor1Pin);   
-              
-        //Continue to depressurize if PTest2 less than pressureNull OR pressure is drrpping by specified # of units per interval
-        //First condition prevents release of bottle if user closes needle valve, thus preventing venting, but bottle still high P
-        while ((PTest2 < pressureNull) || (PTest2 >= PTest1 + 2)) 
-        { 
-
+    //try to determine whether low P1 reading means stuck pressurized bottle, or gas is off or cylinder empty
+    if (PTest1 > startPressure + 20)  //If true, pressure diff is rising; i.e., bottle is pressurized and bottle pressure is falling
+    {
+      //CASE 1: PRESSURISZED BOTTLE. There must be a pressurized bottle in place (bottle is already depressurizing because S3 opened above)
+      pressureIsNull = false;
+      printLcd(0, "Pressurized bottle");
+      printLcd(1, "detected. Open valve");
+      printLcd(2, "Depressurizing...");
+      printLcd(3, "");
+     
+      digitalWrite(buzzerPin, HIGH); 
+      delay(250);
+      digitalWrite(buzzerPin, LOW);
+  
+      // Timing routine to sample pressure difference every 1000ms, and compare with previous reading
+      unsigned long T1 = millis(); 
+      PTest1 = startPressure; //Assign PTest1 smallest possible value--i.e., the very first reading--to start
+      int PTest2 = analogRead(sensor1Pin);   
+            
+      //Continue to depressurize if PTest2 less than pressureNull OR pressure is drrpping by specified # of units per interval
+      //First condition prevents release of bottle if user closes needle valve, thus preventing venting, but bottle still high P
+      while ((PTest2 < pressureNull) || (PTest2 >= PTest1 + 2)) 
+      { 
+        //Every 1000ms, make PTest1 equal to current PTest2 and get new pressure for PTest2
+        if (millis() > T1 + 1000)
+        {
+          T1 = millis(); //Make T1 equal new start time
+          PTest1 = PTest2; 
+          PTest2 = analogRead(sensor1Pin);
+          
           /*
-          // TO DO: Remove #############################################
-          Serial.print ("Condition1: ");
-          Serial.print (PTest2 >= PTest1 + 2);
-          Serial.print ("; Condition2: ");
-          Serial.print (PTest2 < pressureNull);
+          // TO DO: Remove ###########################################
+          Serial.print ("Time: ");
+          Serial.print (T1);
           Serial.println ();
           */
-          
-          // TO DO: Remove #############################################
-          //String (convPSI1) = floatToString(buffer, PTest1, 1);
-          //String (convPSI2) = floatToString(buffer, PTest2, 1);
-          //String (outputTEST1) = "P1: " + convPSI1 + " P2: " + convPSI2;  
-          //printLcd(2, outputTEST1);   
-        
-          //Every 1000ms, make PTest1 equal to current PTest2 and get new pressure for PTest2
-          if (millis() > T1 + 1000)
-          {
-            T1 = millis(); //Make T1 equal new start time
-            PTest1 = PTest2; 
-            PTest2 = analogRead(sensor1Pin);
-            
-            /*
-            // TO DO: Remove ###########################################
-            Serial.print ("Time: ");
-            Serial.print (T1);
-            Serial.println ();
-            */
-          }  
-            
-          int PCurrent = analogRead(sensor1Pin);
-           
-          bottlePressurePSI = pressureConv(PCurrent);
-          String (convPSI) = floatToString(buffer, bottlePressurePSI, 1);
-          String (outputPSI) = "Press. diff: " + convPSI + "psi";  
-          printLcd(3, outputPSI);         
-        }
-      }
-      else
-      {
-        // GASS OFF: After an interval, P1 reading hasn't increased, so gas must be off        
-        P1 = startPressure; 
-        
-        digitalWrite(buzzerPin, HIGH); 
-        delay(250);
-        digitalWrite(buzzerPin, LOW);
-        
-        while (P1 < pressureNull)
-        {
-          printLcd(0, "Gas off or empty;");
-          printLcd(1, "check tank & hoses.");
-          printLcd(2, "B3 opens door.");
-          printLcd(3, "Waiting...");
-          pressureIsNull = true;
-          
-          //Read sensors
-          P1 = analogRead(sensor1Pin); 
-          button3State = !digitalRead(button3Pin);
-          switchDoorState = digitalRead(switchDoorPin);  
-                
-          while(button3State == LOW && switchDoorState == LOW)
-          {
-            inDoorOpenLoop = true;
-            relayOn(relay6Pin, true);
-            switchDoorState = digitalRead(switchDoorPin);  
-          }
-          if (inDoorOpenLoop == true)
-          {
-            inDoorOpenLoop = false;
-            relayOn(relay6Pin, false);
-          }  
         }  
+                    
+        int PCurrent = analogRead(sensor1Pin);
+         
+        bottlePressurePSI = pressureConv(PCurrent);
+        String (convPSI) = floatToString(buffer, bottlePressurePSI, 1);
+        String (outputPSI) = "Press. diff: " + convPSI + "psi";  
+        printLcd(3, outputPSI);         
+
+        /*
+        // TO DO: Remove #############################################
+        Serial.print ("Condition1: ");
+        Serial.print (PTest2 >= PTest1 + 2);
+        Serial.print ("; Condition2: ");
+        Serial.print (PTest2 < pressureNull);
+        Serial.println ();
+        */
+        
+        // TO DO: Remove #############################################
+        //String (convPSI1) = floatToString(buffer, PTest1, 1);
+        //String (convPSI2) = floatToString(buffer, PTest2, 1);
+        //String (outputTEST1) = "P1: " + convPSI1 + " P2: " + convPSI2;  
+        //printLcd(2, outputTEST1);          
       }
+    }
+    else
+    {
+      // GASS OFF: After an interval, P1 reading hasn't increased, so gas must be off        
+      P1 = startPressure; 
+      
+      digitalWrite(buzzerPin, HIGH); 
+      delay(250);
+      digitalWrite(buzzerPin, LOW);
+      
+      while (P1 < pressureNull)
+      {
+        printLcd(0, "Gas off or empty;");
+        printLcd(1, "check tank & hoses.");
+        printLcd(2, "B3 opens door.");
+        printLcd(3, "Waiting...");
+        pressureIsNull = true;
+        
+        //Read sensors
+        P1 = analogRead(sensor1Pin); 
+        button3State = !digitalRead(button3Pin);
+        switchDoorState = digitalRead(switchDoorPin);  
+              
+        while(button3State == LOW && switchDoorState == LOW)
+        {
+          inDoorOpenLoop = true;
+          relayOn(relay6Pin, true);
+          switchDoorState = digitalRead(switchDoorPin);  
+        }
+        
+        if (inDoorOpenLoop == true)
+        {
+          inDoorOpenLoop = false;
+          relayOn(relay6Pin, false);
+        }  
+      }  
+    }
     
-      P1 = analogRead(sensor1Pin); 
-    
-      bottlePressurePSI = pressureConv(P1);
-      String (convPSI) = floatToString(buffer, bottlePressurePSI, 1);
-      String (outputPSI) = "Press. diff: " + convPSI + "psi";  
-      printLcd(3, outputPSI);     
-  }  
+    P1 = analogRead(sensor1Pin); 
+  
+    bottlePressurePSI = pressureConv(P1);
+    String (convPSI) = floatToString(buffer, bottlePressurePSI, 1);
+    String (outputPSI) = "Press. diff: " + convPSI + "psi";  
+    printLcd(3, outputPSI);     
+  }      
   
   // NULL PRESSURE EXIT ROUTINES
   // No longer closing S3 at end of this to prevent popping in some edge cases of a very foamy bottle
@@ -969,13 +975,41 @@ void loop()
   Serial.print (button3ToggleState);
   Serial.println("");
   */
-  
+  P1 = analogRead (sensor1Pin);
+  Serial.print("BEFORE FILL: Start Pressure= ");
+  Serial.print (startPressure);
+  Serial.print ("; P1= ");
+  Serial.print (P1);
+  Serial.println("");
+    
   pinMode(switchFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
-  
+
+  // FINAL PRESSURE CHECK BEFORE FILL LOOP
+  // Make sure liquid can't dispense without a pressurized bottle
+  while (P1 < pressureNull)
+  {
+    printLcd (0, "Pressure has dropped");
+    printLcd (1, "below threshold.");
+    printLcd (2, "Check tank & hoses.");
+    
+    P1 = analogRead(sensor1Pin);
+    
+    float pressurePSI = pressureConv(P1);
+    String (convPSI) = floatToString(buffer, pressurePSI, 1);
+    String (outputPSI) = "Pressure: " + convPSI + " psi";
+    printLcd (3, outputPSI); 
+  }  
+
   // 01-21 Added startPressure condition to absolutely prevent condition where B2 can start spewing if 1) CO2 off, 2) keg pressurized, 3) gas line disconnected and liquid line connected
   while(button2State == LOW && switchFillState == HIGH && switchDoorState == LOW && startPressure > pressureNull && P1 < (pressureOffset + pressureDeltaUp + pressureDeltaAutotamp)) 
   {     
     inFillLoop = true;
+
+    Serial.print("IN FILL: Start Pressure= ");
+    Serial.print (startPressure);
+    Serial.print ("; P1= ");
+    Serial.print (P1);
+    Serial.println("");
 
     pinMode(switchFillPin, INPUT_PULLUP); // TO DO: See above comment above...is this still needed?
     //FLAG_noRepressureOnResume = false; // PBSFIRM-6: Commented out
