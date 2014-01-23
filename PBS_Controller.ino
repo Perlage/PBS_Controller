@@ -84,6 +84,7 @@ boolean inDepressurizeLoop           = false;
 boolean inPlatformLowerLoop          = false;
 boolean inDoorOpenLoop               = false;
 boolean inCleanLoop                  = false; 
+boolean inPressureSaggedLoop         = false;
 
 //Key logical states
 boolean autoMode_1                   = false;   // Variable to help differentiate between states reached automatically vs manually 
@@ -91,6 +92,7 @@ boolean platformLockedNew            = false;   // Variable to be set when platf
 boolean platformStateUp              = false;   // true means platform locked in UP; toggled anytime S5 opens
 boolean FLAG_firstPass               = true;    // Variable to set for flagging first pass
 boolean inPressureNullLoopExecuted   = false;   // Tells whether went through null loop or not
+boolean inPressurizeLoopExecuted     = false;    // ###########################################################
 
 //Pressure variables
 int P1                               = 0;       // Current pressure reading from sensor
@@ -672,6 +674,7 @@ void loop()
   }  
 
   // PLATFORM RAISING LOOP EXIT ROUTINES
+  // =======================================================================================
   if (inPlatformLoop)
   {
     if (timePlatformRising >= timePlatformLock)
@@ -714,6 +717,7 @@ void loop()
 
     timePlatformRising = 0;
     inPlatformLoop = false;
+    inPressurizeLoopExecuted = false;
   }
   
   // END PLATFORM RAISING LOOP
@@ -802,35 +806,60 @@ void loop()
   Serial.println("");
   */
   
+  
   while((button2State == LOW || platformLockedNew == true) && switchDoorState == LOW && platformStateUp == true && (P1 >= pressureOffset + pressureDeltaUp)) // PBSFIRM-6: Removed condition && FLAG_noRepressureOnResume == false
   { 
     inPressurizeLoop = true;
-
+    inPressurizeLoopExecuted = true; //############################
+    
     if (platformLockedNew == true)
     {
-      delay(500);                   //Make a slight delay in starting pressuriztion when door is first closed
-      pressurizeStartTime = millis();
-      platformLockedNew = false;    //This is a "first pass" variable; reset to false to indicate that this is no longer the first pass
+      delay(250);   //Make a slight delay in starting pressuriztion when door is first closed
+      pressurizeStartTime = millis(); //startTime for no bottle test below
     }
     
-    digitalWrite(light2Pin, HIGH);  //Light button when button state is low
-    relayOn(relay3Pin, true);       //close S3 if not already
+    //Open gas-in relay, close gas-out
+    relayOn(relay3Pin, false);      //close S3 if not already 
     relayOn(relay2Pin, true);       //open S2 to pressurize
-     
-    //NO BOTTLE TEST: Check to see if bottle is pressurizing; if PTest not falling, must be no bottle 
-    pressurizeDuration = millis() - pressurizeStartTime;
-    
-    if (pressurizeDuration < 250){
-      PTest1 = analogRead(sensor1Pin);
-    }
-    if (pressurizeDuration < 500){
-      PTest2 = analogRead(sensor1Pin);
-    }  
-    if (pressurizeDuration > 500 && (PTest1 - PTest2) < 25 ){
-      button2State = HIGH; 
-      PTestFail = true;
-    }
+    digitalWrite(light2Pin, HIGH);  //Light button when button state is low
 
+    //NO BOTTLE TEST: Check to see if bottle is pressurizing; if PTest not falling, must be no bottle 
+    while (platformLockedNew == true)
+    {
+      pressurizeDuration = millis() - pressurizeStartTime; // Get the duration
+      if (pressurizeDuration < 50)
+      {
+        PTest1 = analogRead(sensor1Pin);                   //Take a reading at 50ms after pressurization begins
+      }
+      if (pressurizeDuration < 100) 
+      {
+        PTest2 = analogRead(sensor1Pin);                   //Take a reading at 100ms after pressurization begins
+      }  
+      if (pressurizeDuration > 100)                        //After 100ms, test
+      {
+        if (PTest1 - PTest2 < 10)                          //If there is less than a 10 unit difference, must be no bottle in place
+        {
+          button2State = HIGH; 
+          button2ToggleState = true;   
+          PTestFail = true;
+          platformLockedNew = false;
+        }
+        else
+        {
+          platformLockedNew = false;
+        }  
+      }
+      
+      //TO DO: REMOVE ########################################
+      Serial.print ("T= ");
+      Serial.print (pressurizeDuration);
+      Serial.print ("; P1= ");
+      Serial.print (PTest1);
+      Serial.print ("; P2= ");
+      Serial.print (PTest2);
+      Serial.println("");
+    }
+    
     //Read sensors
     switchDoorState = digitalRead(switchDoorPin); //Check door switch    
     P1 = analogRead(sensor1Pin);
@@ -866,16 +895,7 @@ void loop()
   Serial.print (button3ToggleState);
   Serial.println("");
   */
-  /*
-  //TO DO: REMOVE ########################################
-  Serial.print ("T= ");
-  Serial.print (pressurizeDuration);
-  Serial.print ("; P1= ");
-  Serial.print (PTest1);
-  Serial.print ("; P2= ");
-  Serial.print (PTest2);
-  Serial.println("");
-  */
+
     
   // PRESSURIZE LOOP EXIT ROUTINES
   //===================================
@@ -883,7 +903,7 @@ void loop()
   if(inPressurizeLoop){
     relayOn(relay2Pin, false);    //close S2 because we left PressureLoop
     digitalWrite(light2Pin, LOW); //Turn off B2 light
-    inPressurizeLoop = false;
+    inPressurizeLoopExecuted = true; // If we get here, we ran the pressurize loop. Use this to prevent filling w/ no pressurization
     
     //PRESSURE TEST EXIT ROUTINE
     if (PTestFail == true)
@@ -907,10 +927,12 @@ void loop()
       digitalWrite(relay5Pin, LOW); 
       delay (3000);
       digitalWrite(relay5Pin, HIGH); 
+      
       //Reset variables
       PTestFail = false;      
       timePlatformRising = 0;
       platformStateUp = false;      
+      inPressurizeLoopExecuted = false;
     }
     
     //Door opened while bottle pressurized...emergency dump of pressure  
@@ -924,41 +946,42 @@ void loop()
   // END PRESSURIZE LOOP
   //========================================================================================
   
-  //========================================================================================
-  // EMERGENCY DEPRESSURIZE LOOP
-  // Depressurize anytime door opens when pressurized above low threshold
-  //========================================================================================
+/*
+  // ==================================================================================  
+  // FINAL PRESSURE CHECK BEFORE FILL LOOP
+  // Make ABSOLUTELY sure liquid can't dispense without a pressurized bottle
+  // ==================================================================================
 
-  LABEL_inEmergencyDepressurizeLoop:    
-  int inEmergencyDepressurizeLoop = false;
-  
-  while (switchDoorState == HIGH && (P1 <= startPressure - pressureDeltaDown))
+  while (P1 < pressureNull)
   {
-    inEmergencyDepressurizeLoop = true;
-    relayOn(relay3Pin, true);  
-    printLcd (2, "Close door...");
+    inPressureSaggedLoop = true;
     
-    float pressurePSI = startPressurePSI - pressureConv(P1);
-    String (convPSI) = floatToString(buffer, pressurePSI, 1);
-    String (outputPSI) = "Bottle Press: " + convPSI;
-    printLcd(3, outputPSI);     
+    printLcd (0, "Pressure has dropped");
+    printLcd (1, "below threshold.");
+    printLcd (2, "Check tank & hoses.");
     
-    switchDoorState = digitalRead(switchDoorPin); //Check door switch    
     P1 = analogRead(sensor1Pin);
+    
+    float pressurePSI = pressureConv(P1);
+    String (convPSI) = floatToString(buffer, pressurePSI, 1);
+    String (outputPSI) = "Pressure: " + convPSI + " psi";
+    printLcd (3, outputPSI); 
   }  
-  
-  // EMERGENCY DEPRESSURIZE LOOP EXIT ROUTINES
-  //========================================================================================
-  if (inEmergencyDepressurizeLoop)
-  {
-    printLcd (2, "");
-    button2State = LOW;  //TO DO: SHOULDN'T THIS BE HIGH? This might happen after a post-door open foam up--dont want to continue
-    inEmergencyDepressurizeLoop = false;
-  }  
-  
-  // END EMERGENCY DEPRESSURIZE LOOP
-  //========================================================================================
 
+  if (inPressureSaggedLoop)
+  {
+    printLcd (0, "");
+    printLcd (1, "");
+    printLcd (2, "Fixing...");
+    delay(1000);
+    inPressureSaggedLoop = false;
+  }
+  
+  // END PRESSURESAGGEDLOOP
+  // ==============================================================================================
+*/
+
+  
   //========================================================================================
   // FILL LOOP
   //========================================================================================
@@ -975,6 +998,7 @@ void loop()
   Serial.print (button3ToggleState);
   Serial.println("");
   */
+
   P1 = analogRead (sensor1Pin);
   Serial.print("BEFORE FILL: Start Pressure= ");
   Serial.print (startPressure);
@@ -984,24 +1008,8 @@ void loop()
     
   pinMode(switchFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
 
-  // FINAL PRESSURE CHECK BEFORE FILL LOOP
-  // Make sure liquid can't dispense without a pressurized bottle
-  while (P1 < pressureNull)
-  {
-    printLcd (0, "Pressure has dropped");
-    printLcd (1, "below threshold.");
-    printLcd (2, "Check tank & hoses.");
-    
-    P1 = analogRead(sensor1Pin);
-    
-    float pressurePSI = pressureConv(P1);
-    String (convPSI) = floatToString(buffer, pressurePSI, 1);
-    String (outputPSI) = "Pressure: " + convPSI + " psi";
-    printLcd (3, outputPSI); 
-  }  
-
   // 01-21 Added startPressure condition to absolutely prevent condition where B2 can start spewing if 1) CO2 off, 2) keg pressurized, 3) gas line disconnected and liquid line connected
-  while(button2State == LOW && switchFillState == HIGH && switchDoorState == LOW && startPressure > pressureNull && P1 < (pressureOffset + pressureDeltaUp + pressureDeltaAutotamp)) 
+  while(button2State == LOW && switchFillState == HIGH && switchDoorState == LOW && inPressurizeLoopExecuted == true && P1 < (pressureOffset + pressureDeltaUp + pressureDeltaAutotamp)) 
   {     
     inFillLoop = true;
 
@@ -1152,11 +1160,51 @@ void loop()
       // END REPRESSUIZE LOOP   
       //=============================================     
     }  
-
+    inPressurizeLoopExecuted = false;
     inFillLoop = false;
     printLcd(0, "B2 toggles fill;");  
     printLcd(1, "B3 toggles exhaust");  
   }
+
+  // END FILL LOOP EXIT ROUTINE
+  //========================================================================================
+
+  //========================================================================================
+  // EMERGENCY DEPRESSURIZE LOOP
+  // Depressurize anytime door opens when pressurized above low threshold
+  //========================================================================================
+
+  LABEL_inEmergencyDepressurizeLoop:    
+  int inEmergencyDepressurizeLoop = false;
+  
+  while (switchDoorState == HIGH && (P1 <= startPressure - pressureDeltaDown))
+  {
+    inEmergencyDepressurizeLoop = true;
+    relayOn(relay3Pin, true);  
+    printLcd (2, "Close door...");
+    
+    float pressurePSI = startPressurePSI - pressureConv(P1);
+    String (convPSI) = floatToString(buffer, pressurePSI, 1);
+    String (outputPSI) = "Bottle Press: " + convPSI;
+    printLcd(3, outputPSI);     
+    
+    switchDoorState = digitalRead(switchDoorPin); //Check door switch    
+    P1 = analogRead(sensor1Pin);
+  }  
+  
+  // EMERGENCY DEPRESSURIZE LOOP EXIT ROUTINES
+  //========================================================================================
+  if (inEmergencyDepressurizeLoop)
+  {
+    printLcd (2, "");
+    button2State = LOW;  //TO DO: SHOULDN'T THIS BE HIGH? This might happen after a post-door open foam up--dont want to continue
+    relayOn(relay3Pin, false);  
+    inEmergencyDepressurizeLoop = false;
+  }  
+  
+  // END EMERGENCY DEPRESSURIZE LOOP
+  //========================================================================================
+
 
   //================================================================================
   // DEPRESSURIZE LOOP
