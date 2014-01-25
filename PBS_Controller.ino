@@ -47,8 +47,8 @@ const int buzzerPin     = 13;     // pin for buzzer
 // sensor1 measures bottle. "1" or "" refers to bottle
 // sensor2 measures regulator. "2" refers to regulator
 
-const int sensor1Pin    = A1;     // pin for preasure sensor1 // 1-23 NOW BOTTLE
-const int sensor2Pin    = A0;     // pin for pressure sensor2 // 1-23 NOW REGULATOR. 
+const int sensor1Pin    = A1;     // pin for preasure sensor1 // 1-23 NOW BOTTLE PRESSURE
+const int sensor2Pin    = A0;     // pin for pressure sensor2 // 1-23 NOW REGULATOR PRESSURE. 
 const int switchCleanPin= A2;     // pin for cleaning mode switch 
 const int light1Pin     = A3;     // pin for button 1 light 
 const int light2Pin     = A4;     // pin for button 2 light
@@ -100,12 +100,9 @@ int P2                               = 0;       // Current pressure reading from
 int pressureOffset;                             // Zero offset for bottle sensor1. Set through EEPROM in initial factory calibration, and read into pressureOffset during Setup loop
 int pressureOffset2;                            // zero offest for regulator sensor2
 int pressureDeltaUp                  = 50;      // Pressure at which, during pressurization, full pressure is considered to have been reached // Tried 10; went back to 50 to prevent repressurizing after fill button cycle
-int pressureDeltaDown                = 40;      // Pressure at which, during depressurizing, pressure considered to be close enough to zero
+int pressureDeltaDown                = 38;      // Pressure at which, during depressurizing, pressure considered to be close enough to zero// 38 works out to 3.0 psi 
 int pressureDeltaAutotamp            = 250;     // This is max pressure difference allowed on filling (i.e., limits fill speed)
 int pressureNull                     = 200;     // This is the threshold for the controller deciding that no gas source is attached. 
-float PSI                            = 0;       // Current pressure reading P1 in PSI
-float PSI2                           = 0;       // Current pressure reading of P2 in PSI 
-float bottlePressurePSI              = 0;       // Bottle pressure in PSI (i.e., StartPressure - PSI)
 
 //variables for platform function and timing
 int timePlatformInit;                           // Time in ms going into loop
@@ -125,6 +122,10 @@ int button2StateTEMP                 = HIGH;
 int button3StateTEMP                 = HIGH;
 boolean button2ToggleState           = false;
 boolean button3ToggleState           = false;
+
+//System variables      
+int numberCycles;                                // Number of cycles since factory reset, measured by number of platform PLUS fill loop being executed
+boolean inFillLoopExecuted           = false;    // True of FillLoop is dirty. Used to compute numberCycles
 
 char buffer[25]; // Used in LCD write routines
 
@@ -231,28 +232,47 @@ void setup()
   
   if (button1State == LOW && button2State == LOW && button3State == LOW)
   {
-    pressureOffset  = analogRead(sensor1Pin); 
-    pressureOffset2 = analogRead(sensor2Pin); 
-    delay(100);
-
-    EEPROM.write(0, pressureOffset);  //zero offset for sensor1 (bottle)
-    EEPROM.write(1, pressureOffset2); //Zero offset for sensor2 (regulator)
+    printLcd(0, "Setting EEPROM...");
+    delay (2000);
+    
+    //Show old offset values
+    pressureOffset = EEPROM.read(0);
+    pressureOffset2 = EEPROM.read(1);
 
     String (convOffset) = floatToString(buffer, pressureOffset, 1);
     String (convOffset2) = floatToString(buffer, pressureOffset2, 1);
 
-    String (outputOffset) = "Offset1: " + convOffset; 
-    String (outputOffset2) = "Offset2: " + convOffset2; 
+    String (outputOffset) = "Old Offset1: " + convOffset; 
+    String (outputOffset2) = "Old Offset2: " + convOffset2; 
 
     printLcd(2, outputOffset);
     printLcd(3, outputOffset2);
-    delay(5000);
+    delay (4000);
+
+    //Get new offset values
+    pressureOffset  = analogRead(sensor1Pin); 
+    pressureOffset2 = analogRead(sensor2Pin); 
+    //numberCycles = 0; //Number of lifetime cycles
+    
+    EEPROM.write (0, pressureOffset);  //Zero offset for sensor1 (bottle)
+    EEPROM.write (1, pressureOffset2); //Zero offset for sensor2 (regulator)
+    //EEPROM.write (2, numberCycles);    //Set number of cycles to zero
+
+    convOffset = floatToString(buffer, pressureOffset, 1);
+    convOffset2 = floatToString(buffer, pressureOffset2, 1);
+
+    outputOffset = "New Offset1: " + convOffset; 
+    outputOffset2 = "New Offset2: " + convOffset2; 
+
+    printLcd(2, outputOffset);
+    printLcd(3, outputOffset2);
+    delay(4000);
 
     printLcd(2, "");
     printLcd(3, "");
   }    
 
-  //Write the actual nullPressure to pressureNull
+  //Read the values into pressureOffset and pressureOffset2
   pressureOffset = EEPROM.read(0);
   pressureOffset2 = EEPROM.read(1);
 
@@ -282,6 +302,11 @@ void setup()
   printLcd (2, "");
   printLcd (3, "Initializing...");
   delay(1000); //Just to give a little time before platform goes up
+    
+  numberCycles = EEPROM.read (2);  //Read number of cycles
+  String (convInt) = floatToString(buffer, numberCycles, 0);
+  String (outputInt) = "Total cycles: " + convInt;
+  printLcd(2, outputInt); 
 
   //=================================================================================
   // MENU ROUTINE
@@ -326,7 +351,8 @@ void setup()
     printLcd (1, "System, " + versionSoftwareTag);
     printLcd (2, "");
     printLcd (3, "Initializing...");
-    delay(1000); //Just to give a little time before platform goes up    
+    delay(1000); //Just to give a little time before platform goes up  
+    
   }  
   // END MENU ROUTINE
   //=================================================================================  
@@ -380,7 +406,16 @@ void setup()
   //digitalWrite(light2Pin, LOW);
   digitalWrite(light3Pin, HIGH);
   delay(500);
-
+  
+  //Burst gas
+  for (int n = 0; n <= 2; n++)
+  {
+    digitalWrite(relay2Pin, LOW);
+    delay (50);
+    digitalWrite(relay2Pin, HIGH);
+    delay (50);
+  }
+  
   //============================================================================
   // NULL PRESSURE ROUTINES
   // Check for stuck pressurized bottle or implausibly low gas pressure at start 
@@ -407,8 +442,8 @@ void setup()
     {
       P1 = analogRead(sensor1Pin);
 
-      bottlePressurePSI = pressureConv(P1);
-      String (convPSI) = floatToString(buffer, bottlePressurePSI, 1);
+      float PSI = pressureConv(P1);
+      String (convPSI) = floatToString(buffer, PSI, 1);
       String (outputPSI) = "Pressure: " + convPSI + " psi";  
       printLcd(3, outputPSI);  
     } 
@@ -542,7 +577,6 @@ void setup()
   digitalWrite(light2Pin, LOW);
   delay(100);
   digitalWrite(light1Pin, LOW);
-  
 }
 
 //====================================================================================================================================
@@ -551,6 +585,8 @@ void setup()
 
 void loop()
 {
+  Serial.print ("MAIN LOOP");
+  Serial.println ();
   
   //MAIN LOOP IDLE FUNCTIONS
   //=====================================================================
@@ -639,6 +675,9 @@ void loop()
   
   while (button1State == LOW && platformStateUp == false && switchDoorState == HIGH && (timePlatformRising < timePlatformLock)) 
   { 
+    Serial.print ("PLATFORM UP");
+    Serial.println ();
+
     inPlatformLoop = true; 
     digitalWrite(light1Pin, HIGH);
     
@@ -677,17 +716,30 @@ void loop()
       platformLockedNew = true; //Pass this to PressureLoop for autopressurize on door close--better than trying to pass button2State = LOW, which causes problems
       
       // Read new starting pressure 
-      // This used to be in the platform DOWN exit loop
-      
       delay(50); // Brief delay to account for moving gas
       P1 = analogRead(sensor1Pin); //Bottle Pressure
       P2 = analogRead(sensor2Pin); //Regulator Pressure
       
-      PSI2 = pressureConv2(P2); 
+      float PSI2 = pressureConv2(P2); 
       String (convPSI) = floatToString(buffer, PSI2, 1);
       String (outputPSI) = "Pressure: " + convPSI + " psi";
       printLcd(3, outputPSI); 
       
+      if (inFillLoopExecuted)
+      {
+        numberCycles = EEPROM.read (2);  //Read number of cycles
+        delay(10);
+        numberCycles = numberCycles + 1; //Increment
+        delay(10);
+        EEPROM.write (2, numberCycles);  //write back to EEPROM
+        inFillLoopExecuted = false;
+      }
+      
+      numberCycles = EEPROM.read (2);  //Read number of cycles
+      String (convInt) = floatToString(buffer, numberCycles, 0);
+      String (outputInt) = "Total fills: " + convInt;
+      printLcd(2, outputInt); 
+      delay(1000);
     }  
     else    
     {
@@ -782,34 +834,39 @@ void loop()
   
   while((button2State == LOW || platformLockedNew == true) && switchDoorState == LOW && platformStateUp == true && (P1 - pressureOffset <= P2 - pressureOffset2 - pressureDeltaUp)) 
   { 
+    Serial.print ("PRESSURIZE");
+    Serial.println ();
+
     inPressurizeLoop = true;
-    
+
+    // Only want to run this once per platformUp--not on subsequent repressurizations within a cycle 
     if (platformLockedNew == true)
     {
-      delay(250);   //Make a slight delay in starting pressuriztion when door is first closed
-      pressurizeStartTime = millis(); //startTime for no bottle test below
+      delay(250);                                           //Make a slight delay in starting pressuriztion when door is first closed
+      pressurizeStartTime = millis();                       //startTime for no bottle test below. 
     }
     
     //Open gas-in relay, close gas-out
-    relayOn(relay3Pin, false);      //close S3 if not already 
-    relayOn(relay2Pin, true);       //open S2 to pressurize
-    digitalWrite(light2Pin, HIGH);  //Light button when button state is low
+    relayOn(relay3Pin, false);                              //close S3 if not already 
+    relayOn(relay2Pin, true);                               //open S2 to pressurize
+    digitalWrite(light2Pin, HIGH);                       
 
     //NO BOTTLE TEST: Check to see if bottle is pressurizing; if PTest not falling, must be no bottle 
-    while (platformLockedNew == true)
+
+    while (platformLockedNew == true)                       //First time through loop with platform up 
     {
-      pressurizeDuration = millis() - pressurizeStartTime; // Get the duration
+      pressurizeDuration = millis() - pressurizeStartTime;  //Get the duration
       if (pressurizeDuration < 50){
-        PTest1 = analogRead(sensor1Pin);                   //Take a reading at 50ms after pressurization begins
+        PTest1 = analogRead(sensor1Pin);                    //Take a reading at 50ms after pressurization begins
       }
       if (pressurizeDuration < 100){
-        PTest2 = analogRead(sensor1Pin);                   //Take a reading at 100ms after pressurization begins
+        PTest2 = analogRead(sensor1Pin);                    //Take a reading at 100ms after pressurization begins
       }  
       if (pressurizeDuration > 100){                        //After 100ms, test
         if (PTest2 - PTest1 < 10){                          //If there is less than a 10 unit difference, must be no bottle in place
           button2State = HIGH; 
           button2ToggleState = true;                        //Need this to keep toggle routine below from changing button2state back to LOW 
-          PTestFail = true;
+          PTestFail = true;                                 //If true, no bottle. EXIT 
         }  
         platformLockedNew = false;
       }
@@ -831,8 +888,8 @@ void loop()
     }  
       
     printLcd(2,"Pressurizing..."); 
-    bottlePressurePSI = pressureConv(P1);
-    String (convPSI) = floatToString(buffer, bottlePressurePSI, 1);
+    float PSI = pressureConv(P1);
+    String (convPSI) = floatToString(buffer, PSI, 1);
     String (outputPSI) = "Bottle Press: " + convPSI; + "psi";
     printLcd(3, outputPSI); 
   }
@@ -852,7 +909,6 @@ void loop()
     {
       printLcd (2, "No bottle, or leak");
       printLcd (3, "Wait...");
-
       digitalWrite(light1Pin, LOW); 
       delay (2000);
 
@@ -878,7 +934,7 @@ void loop()
     }
     
     //Door opened while bottle pressurized...emergency dump of pressure  
-    if (switchDoorState == HIGH)
+    if (platformStateUp == true && switchDoorState == HIGH)
     { 
       goto LABEL_inEmergencyDepressurizeLoop;
     }  
@@ -900,8 +956,12 @@ void loop()
   // With two sensors, the pressure condition should absolutely prevent any liquid sprewing. pressureDeltaAutotamp ensures: a) filling can't go too fast; b) can't dispense w/ no bottle
   while(button2State == LOW && switchFillState == HIGH && switchDoorState == LOW && (P1 - pressureOffset) > pressureDeltaAutotamp) 
   {     
+    Serial.print ("FILL LOOP");
+    Serial.println ();
+
     inFillLoop = true;
-  
+    inFillLoopExecuted = true; //This is an "is dirty" variable for counting lifetime bottles. Reset in platformUp loop.
+
     //pinMode(switchFillPin, INPUT_PULLUP); // TO DO: See above comment above...is this still needed?
     
     //while the button is  pressed, fill the bottle: open S1 and S3
@@ -967,7 +1027,6 @@ void loop()
     {
       
       // Anti-drip rountine
-      //digitalWrite(light2Pin, HIGH); //Don't light button for automatic processes
       relayOn(relay1Pin, true);
       relayOn(relay2Pin, true);
       
@@ -985,7 +1044,6 @@ void loop()
     // CASE 2: FillSwitch tripped--Overfill condition
     else if (inFillLoop && switchFillState == LOW) 
     {
-      //digitalWrite(light2Pin, HIGH); //Don't light buttons for automatic processes
       relayOn(relay1Pin, true);
       relayOn(relay2Pin, true);
       
@@ -994,23 +1052,22 @@ void loop()
       printLcd(2,"");       
       relayOn(relay1Pin, false);
       relayOn(relay2Pin, false);
-      //digitalWrite(light2Pin, LOW); 
       
       switchFillState = digitalRead(switchFillPin); 
       delay (50); 
       
       button3State = LOW; // This make AUTO-depressurize after overfill
+
     }
-    
-    // CASE 3: Bottle pressure dropped below Deltatamp threshold
     else 
     {
+      // CASE 3: Bottle pressure dropped below Deltatamp threshold
 
       //=============================================
       // REPRESSURIZE LOOP
       //=============================================
       
-      while ((P1 - pressureOffset) <= (P2 - pressureOffset2) - pressureDeltaUp)
+      while (platformStateUp == true && switchDoorState == LOW && (P1 - pressureOffset) <= (P2 - pressureOffset2) - pressureDeltaUp)
       {
         inPressurizeLoop = true;
         digitalWrite(light2Pin, HIGH); 
@@ -1051,16 +1108,22 @@ void loop()
   LABEL_inEmergencyDepressurizeLoop:    
   int inEmergencyDepressurizeLoop = false;
   
-  
-  while (switchDoorState == HIGH && (P1 - pressureOffset > pressureDeltaDown))
+  while (switchDoorState == HIGH && platformStateUp == true && (P1 - pressureOffset > pressureDeltaDown))
   {
+    Serial.print ("EMERGENCY DEPRESSURIZE");
+    Serial.println ();
 
     inEmergencyDepressurizeLoop = true;
     relayOn(relay3Pin, true);  
-    printLcd (2, "Close door...");
+    printLcd (2, "CLOSE DOOR! Venting");
     
-    float pressurePSI = pressureConv(P1);
-    String (convPSI) = floatToString(buffer, pressurePSI, 1);
+    digitalWrite(buzzerPin, HIGH); 
+    delay(100);
+    digitalWrite(buzzerPin, LOW);
+    delay(100);
+      
+    float PSI = pressureConv(P1);
+    String (convPSI) = floatToString(buffer, PSI, 1);
     String (outputPSI) = "Bottle Press: " + convPSI;
     printLcd(3, outputPSI);     
     
@@ -1090,14 +1153,16 @@ void loop()
   
   while(button3State == LOW && switchFillState == HIGH && (P1 - pressureOffset >= pressureDeltaDown)) 
   {  
+    Serial.print ("DEPRESSURIZE LOOP");
+    Serial.println ();
 
     inDepressurizeLoop = true;
     digitalWrite(light3Pin, HIGH);
 
     relayOn(relay3Pin, true); //Open Gas Out solenoid
     
-    float pressurePSI = pressureConv(P1);
-    String (convPSI) = floatToString(buffer, pressurePSI, 1);
+    float PSI = pressureConv(P1);
+    String (convPSI) = floatToString(buffer, PSI, 1);
     String (outputPSI) = "Bottle Press: " + convPSI;
     printLcd(3, outputPSI); 
     
@@ -1163,10 +1228,10 @@ void loop()
     // CASE 2: Foam tripped sensor
     if (switchFillState == LOW)
     {
-      relayOn(relay3Pin, false);     //
-      printLcd(2, "Foam... wait");
+      relayOn(relay3Pin, false);  
+      printLcd(2, "Foam detected...wait");
       relayOn(relay2Pin, true);
-      delay(foamDetectionDelay); // Wait a bit before proceeding    
+      delay(foamDetectionDelay);    // Wait a bit before proceeding    
 
       relayOn(relay2Pin, false);
       switchFillState = HIGH;
@@ -1198,6 +1263,9 @@ void loop()
   
   while((button3State == LOW || autoMode_1 == true) && switchDoorState == LOW && (P1 - pressureOffset) <= pressureDeltaDown)
   {
+    Serial.print ("DOOR OPENING");
+    Serial.println ();
+
     inDoorOpenLoop = true;
 
     printLcd(2,"Opening door..."); 
@@ -1233,9 +1301,13 @@ void loop()
   // ===========================================================================================
 
   LABEL_PlatformLowerLoop:
-
-  while((button3State == LOW || autoMode_1 == true) && switchDoorState == HIGH && (P1 - pressureOffset) <= pressureDeltaDown)
+  
+  // 1-24 Added switchFillState == HIGH to prevent 
+  while((button3State == LOW || autoMode_1 == true) && switchDoorState == HIGH && switchFillState == HIGH && (P1 - pressureOffset) <= pressureDeltaDown)
   {
+    Serial.print ("PLATFORM DOWN");
+    Serial.println ();
+
     inPlatformLowerLoop = true;
     relayOn(relay4Pin, false); // Finally can close platform up solenoid
     printLcd(2, "Lowering platform..."); 
@@ -1250,7 +1322,7 @@ void loop()
     }
     else
     {
-      relayOn(relay3Pin, true);  // May as well leave this open? YES. Liquid is still outgassing.
+      relayOn(relay3Pin, true);  // May as well leave this open? YES. Liquid is still outgassing.//TO DO: Don't need this here?? it's already open?
       relayOn(relay5Pin, true);  // Open cylinder exhaust
       digitalWrite(light3Pin, HIGH); 
     }
@@ -1258,6 +1330,7 @@ void loop()
     P1 = analogRead(sensor1Pin);
     button3State = !digitalRead(button3Pin);
     switchDoorState =  digitalRead(switchDoorPin);
+    switchFillState =  digitalRead(switchFillPin);
     delay(50);
   }
 
@@ -1268,7 +1341,7 @@ void loop()
   {
     //close platform release 
     printLcd(2,"");
-    relayOn(relay3Pin, false);
+    relayOn(relay3Pin, false); 
     relayOn(relay5Pin, false);
     relayOn(relay6Pin, false); //Release door solenoid
     digitalWrite(light3Pin, LOW); //TOTC
@@ -1284,8 +1357,9 @@ void loop()
     P1 = analogRead(sensor1Pin); //If we've lowered the platform, assume we've gone through a cycle and store the startPressure again
     P2 = analogRead(sensor2Pin); 
     
-    float startPressurePSI = pressureConv(P2); 
-    String (convPSI) = floatToString(buffer, startPressurePSI, 1);
+    //I DONT THINK WE NEED THIS
+    float PSI = pressureConv(P2); 
+    String (convPSI) = floatToString(buffer, PSI, 1);
     String (outputPSI) = "Reg. Press: " + convPSI + " psi";
     printLcd(3, outputPSI); 
     
