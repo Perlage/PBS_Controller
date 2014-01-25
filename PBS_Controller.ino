@@ -569,7 +569,7 @@ void setup()
   // User instructions
   printLcd(0, "Insert bottle;");
   printLcd(1, "B1 raises platform");
-  printLcd(2, "Ready.");
+  printLcd(2, "Ready...");
 
   delay(500);
   digitalWrite(light3Pin, LOW);
@@ -628,22 +628,27 @@ void loop()
   int pressure2Idle;  
   float pressureIdlePSI;  
   float pressure2IdlePSI;  
-
-  if (platformStateUp == false) 
-  {
+  float pressureDiffIdlePSI;
+  
+//  if (platformStateUp == false) 
+//  {
     pressureIdle = analogRead(sensor1Pin); 
     pressure2Idle = analogRead(sensor2Pin);
           
     pressureIdlePSI = pressureConv(pressureIdle); 
     pressure2IdlePSI = pressureConv2(pressure2Idle); 
+    pressureDiffIdlePSI =  pressure2IdlePSI - pressureIdlePSI;
     
     String (convPSI) = floatToString(buffer, pressureIdlePSI, 1);
     String (convPSI2) = floatToString(buffer, pressure2IdlePSI, 1);
+    String (convPSIDiff) = floatToString(buffer, pressureDiffIdlePSI, 1);
 
-    //String (outputPSI) = "Pb:" + convPSI + "Pr:" + convPSI2 + " psi";
-    String (outputPSI) = "Pressure: " + convPSI2 + " psi";
+    String (outputPSI) = "B " + convPSI + " R " + convPSI2 + " D " + convPSIDiff;
+    //String (outputPSI) = "Pressure: " + convPSI2 + " psi";
+ 
     printLcd(3, outputPSI); 
-  }
+       
+//  }
   
   // =====================================================================================  
   // CLEANING ROUTINES
@@ -658,7 +663,7 @@ void loop()
   else
   {
     //inCleanLoop = false;
-    printLcd (2, "Ready.");
+    printLcd (2, "Ready...");
   }
 
   // END CLEANING ROUTINES
@@ -714,17 +719,7 @@ void loop()
       digitalWrite(light1Pin, LOW); //Decided to turn this off. Lights should be lit only if pressing button or releasing it can change a state. 
       platformStateUp = true;
       platformLockedNew = true; //Pass this to PressureLoop for autopressurize on door close--better than trying to pass button2State = LOW, which causes problems
-      
-      // Read new starting pressure 
-      delay(50); // Brief delay to account for moving gas
-      P1 = analogRead(sensor1Pin); //Bottle Pressure
-      P2 = analogRead(sensor2Pin); //Regulator Pressure
-      
-      float PSI2 = pressureConv2(P2); 
-      String (convPSI) = floatToString(buffer, PSI2, 1);
-      String (outputPSI) = "Pressure: " + convPSI + " psi";
-      printLcd(3, outputPSI); 
-      
+            
       if (inFillLoopExecuted)
       {
         numberCycles = EEPROM.read (2);  //Read number of cycles
@@ -733,13 +728,11 @@ void loop()
         delay(10);
         EEPROM.write (2, numberCycles);  //write back to EEPROM
         inFillLoopExecuted = false;
-      }
-      
+      }      
       numberCycles = EEPROM.read (2);  //Read number of cycles
       String (convInt) = floatToString(buffer, numberCycles, 0);
       String (outputInt) = "Total fills: " + convInt;
       printLcd(2, outputInt); 
-      delay(1000);
     }  
     else    
     {
@@ -842,7 +835,7 @@ void loop()
     // Only want to run this once per platformUp--not on subsequent repressurizations within a cycle 
     if (platformLockedNew == true)
     {
-      delay(250);                                           //Make a slight delay in starting pressuriztion when door is first closed
+      //delay(250);                                           //Make a slight delay in starting pressuriztion when door is first closed
       pressurizeStartTime = millis();                       //startTime for no bottle test below. 
     }
     
@@ -859,17 +852,26 @@ void loop()
       if (pressurizeDuration < 50){
         PTest1 = analogRead(sensor1Pin);                    //Take a reading at 50ms after pressurization begins
       }
-      if (pressurizeDuration < 100){
+      if (pressurizeDuration < 150){
         PTest2 = analogRead(sensor1Pin);                    //Take a reading at 100ms after pressurization begins
       }  
-      if (pressurizeDuration > 100){                        //After 100ms, test
-        if (PTest2 - PTest1 < 10){                          //If there is less than a 10 unit difference, must be no bottle in place
+      if (pressurizeDuration > 150){                        //After 100ms, test
+        if (PTest2 - PTest1 < 15){                          //If there is less than a 10 unit difference, must be no bottle in place
           button2State = HIGH; 
           button2ToggleState = true;                        //Need this to keep toggle routine below from changing button2state back to LOW 
           PTestFail = true;                                 //If true, no bottle. EXIT 
         }  
         platformLockedNew = false;
       }
+      /*
+      Serial.print ("T= "); 
+      Serial.print (pressurizeDuration);
+      Serial.print (" P1= ");  
+      Serial.print (PTest1);
+      Serial.print (" P2= "); 
+      Serial.print (PTest2);
+      Serial.println ();
+      */
     }
     
     //Read sensors
