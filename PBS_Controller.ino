@@ -23,7 +23,7 @@ String (versionHardwareTag) = "v0.6.0.0" ; // 2nd sensor rev'd to v0.6
 #include <math.h> //pressureOffset
 #include "floatToString.h"
 #include <EEPROM.h>
-#include <avr/pgmspace.h> // 1-26 Added for PROGMEM function--doesn't work yet
+#include <avr/pgmspace.h> // 1-26 Added for PROGMEM function
 
 LiquidCrystal_I2C lcd(0x3F,20,4);  
 
@@ -128,7 +128,7 @@ boolean button3ToggleState           = false;
 //System variables      
 int numberCycles;                                // Number of cycles since factory reset, measured by number of platform PLUS fill loop being executed
 boolean inFillLoopExecuted           = false;    // True of FillLoop is dirty. Used to compute numberCycles
-char buffer[25];                                 // Used in LCD write routines // 1-26 Changed from 25 to 20 //CHANGED BACK TO 25!! SEEMS TO BE IMPORTANT!
+char buffer[25];                                 // Used in float to string conv // 1-26 Changed from 25 to 20 //CHANGED BACK TO 25!! SEEMS TO BE IMPORTANT!
 
 // Declare functions
 // =====================================================================
@@ -180,9 +180,80 @@ float pressureConv2(int P2)
   return pressurePSI2;
 }
 
-//=======================================================================================
+//=====================================================================================
+// FLASH MEMORY STRING HANDLING
+//=====================================================================================
+
+//Write text to char strings. Previously used const_char at start of line; this didn't work
+
+char strLcd_0 [] PROGMEM = "Perlini Bottling";
+char strLcd_1 [] PROGMEM = "System, ";
+char strLcd_2 [] PROGMEM = "Total cycles";
+char strLcd_3 [] PROGMEM = "Initializing...";
+
+char strLcd_4 [] PROGMEM = "***MENU*** Press...";
+char strLcd_5 [] PROGMEM = "B1: Manual Mode";
+char strLcd_6 [] PROGMEM = "B2: Autosiphon time";
+char strLcd_7 [] PROGMEM = "B3: Exit Menu";
+
+char strLcd_8 [] PROGMEM = "MANUAL MODE";
+char strLcd_9 [] PROGMEM = "Insert bottle;";
+char strLcd_10[] PROGMEM = "Clean switch raises";
+char strLcd_11[] PROGMEM = "and lowers platform.";
+
+char strLcd_12[] PROGMEM = "B1: Gas IN";
+char strLcd_13[] PROGMEM = "B2: Liquid IN";
+char strLcd_14[] PROGMEM = "B3: Gas OUT";
+char strLcd_15[] PROGMEM = "Switch: UP/DOWN";
+
+char strLcd_16[] PROGMEM = "Ending Manual Mode.";
+char strLcd_17[] PROGMEM = "";
+char strLcd_18[] PROGMEM = "Continuing....";
+char strLcd_19[] PROGMEM = "";
+
+char strLcd_20[] PROGMEM = "Pressurized bottle";
+char strLcd_21[] PROGMEM = "detected. Open valve";
+char strLcd_22[] PROGMEM = "Depressurizing....";
+char strLcd_23[] PROGMEM = ""; //Don't write to this?--this line is for pressure reading
+
+char strLcd_24[] PROGMEM = "Gas off or empty;";
+char strLcd_25[] PROGMEM = "check tank & hoses.";
+char strLcd_26[] PROGMEM = "B3 opens door.";
+char strLcd_27[] PROGMEM = "Waiting...";
+
+char strLcd_28[] PROGMEM = "Press B3 to lower";
+char strLcd_29[] PROGMEM = "platform.";
+char strLcd_30[] PROGMEM = "Depressurized.";
+char strLcd_31[] PROGMEM = "";
+
+char strLcd_32[] PROGMEM = "Insert bottle;";
+char strLcd_33[] PROGMEM = "B1 raises platform";
+char strLcd_34[] PROGMEM = "Ready...";
+char strLcd_35[] PROGMEM = "";
+
+//Write to string table. PROGMEM moved from front of line to end; this made it work
+const char *strLcdTable[] PROGMEM =  // Name of table following * is arbitrary
+{   
+  strLcd_0, strLcd_1, strLcd_2, strLcd_3,
+  strLcd_4, strLcd_5, strLcd_6, strLcd_7,
+  strLcd_8, strLcd_9, strLcd_10, strLcd_11,
+  strLcd_12, strLcd_13, strLcd_14, strLcd_15,
+  strLcd_16, strLcd_17, strLcd_18, strLcd_19,
+  strLcd_20, strLcd_21, strLcd_22, strLcd_23,
+  strLcd_24, strLcd_25, strLcd_26, strLcd_27,
+  strLcd_28, strLcd_29, strLcd_30, strLcd_31,
+  strLcd_32, strLcd_33, strLcd_34, strLcd_35,
+};
+
+char bufferP[30];      // make sure this is large enough for the largest string it must hold
+byte strIndex;  // Used to refer to index of the string in *srtLcdTable (e.g., strLcd_0 has strLcdIndex = 0
+
+//=====================================================================================
+
+
+//=====================================================================================
 // SETUP LOOP
-//=======================================================================================
+//=====================================================================================
 
 void setup()
 {
@@ -302,37 +373,16 @@ void setup()
   String (convInt) = floatToString(buffer, numberCycles, 0);
   String (outputInt) = "Total cycles: " + convInt;
 
-  /*
-  //================================================
-  // FLASH MEMORY STRING HANDLING
-  //================================================
-  //prog_char messageLcd[10];
-  prog_char strLcd_0[] PROGMEM = "Perlini Bottling";
-  prog_char strLcd_1[] PROGMEM = "System, " + versionSoftwareTag";
-  prog_char strLcd_2[] PROGMEM = "";
-  prog_char strLcd_3[] PROGMEM = "Initializing...";
-  
-  PROGMEM const char *strLcdTable[] = 	   // change "string_table" name to suit
-  {   
-    strLcd_0,
-    strLcd_1,
-    strLcd_2,
-    strLcd_3,
-  };
-  
-  char buffer[20];    // make sure this is large enough for the largest string it must hold
-  //================================================
-
-  //strcpy_P(buffer, (char*)pgm_read_word(&(strLcdTable[0])));
-  //strcpy_P(buffer, (char*)pgm_read_word(&(strLcdTable[1])));
-  //strcpy_P(buffer, (char*)pgm_read_word(&(strLcdTable[3])));  
-  */
-
   //Initial user message
-  printLcd (0, "Perlini Bottling");
-  printLcd (1, "System, " + versionSoftwareTag);
-  printLcd (2, outputInt);
-  printLcd (3, "Inititalizing...");
+  strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[0])));
+  printLcd (strIndex, bufferP);                                        // "Perlini Bottling"
+  strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[1])));
+  printLcd (1, bufferP + versionSoftwareTag);                          // "System, " + versionSoftwareTag
+  //strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[2])));
+  printLcd (2, outputInt);                                             // outputInt
+  strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[3])));
+  printLcd (3, bufferP);                                               // "Initializing..."
+
   delay(1000); //Just to give a little time before platform goes up
   
   //=================================================================================
@@ -353,11 +403,16 @@ void setup()
   {
     inMenuLoop = true;
     
-    printLcd (0, "*MENU* Press...");
-    printLcd (1, "B1: Manual Mode");
-    printLcd (2, "B2: Autosiphon time");
-    printLcd (3, "B3: Exit Menu");
-  
+    //printLcd (0, "***MENU*** Press...");
+    //printLcd (1, "B1: Manual Mode");
+    //printLcd (2, "B2: Autosiphon time");
+    //printLcd (3, "B3: Exit Menu");
+
+    // Write Main Menu options    
+    for (int n = 4; n <= 7; n++){
+      strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
+      printLcd (n % 4, bufferP);}
+
     button1State = !digitalRead(button1Pin); 
     delay (100);
   }  
@@ -374,10 +429,15 @@ void setup()
       inManualMode = true;
       inMenuLoop = false;
 
-      printLcd (0, "MANUAL MODE");
-      printLcd (1, "Insert bottle;");
-      printLcd (2, "Clean switch raises");
-      printLcd (3, "and lowers platform.");
+      //printLcd (0, "MANUAL MODE");
+      //printLcd (1, "Insert bottle;");
+      //printLcd (2, "Clean switch raises");
+      //printLcd (3, "and lowers platform.");
+
+      // Write Manual Mode intro menu text    
+      for (int n = 8; n <= 11; n++){
+        strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
+        printLcd (n % 4, bufferP);}
       
       relayOn (relay6Pin, true);
       delay (1000);
@@ -428,10 +488,17 @@ void setup()
       relayOn (relay4Pin, true);
       
       //Moved this into the exit routine so it's not being written to in every loop
-      printLcd (0, "B1: Gas IN");
-      printLcd (1, "B2: Liquid IN");
-      printLcd (2, "B3: Gas OUT");
+      //printLcd (0, "B1: Gas IN");
+      //printLcd (1, "B2: Liquid IN");
+      //printLcd (2, "B3: Gas OUT");
       //printLcd (3, "Switch: UP/DOWN");  
+
+      // Write Manual Mode menu text    
+      for (int n = 12; n <= 15; n++){
+        strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
+        printLcd (n % 4, bufferP);}
+
+      delay (2000); // Give time to read the 4th line
     }  
   }
   
@@ -454,34 +521,28 @@ void setup()
     P1 = analogRead(sensor1Pin); 
     P2 = analogRead(sensor2Pin); 
     
-    String (outputPSI); 
-    
-    int Tsec1 = millis() % 1000;
-    if (Tsec1 < 200)
-    {    
-      PSI = pressureConv(P1); 
-      PSI2 = pressureConv2(P2); 
-      PSIDiff =  PSI2 - PSI;
+    PSI = pressureConv(P1); 
+    PSI2 = pressureConv2(P2); 
+    PSIDiff =  PSI2 - PSI;
 
-      String (convPSI) = floatToString(buffer, PSI, 1);
-      String (convPSI2) = floatToString(buffer, PSI2, 1);
-      String (convPSIDiff) = floatToString(buffer, PSIDiff, 1);
-      String (outputPSI) = "B " + convPSI + " R " + convPSI2 + " D " + convPSIDiff;
-      printLcd(3, outputPSI); 
+    String (convPSI) = floatToString(buffer, PSI, 1);
+    String (convPSI2) = floatToString(buffer, PSI2, 1);
+    String (convPSIDiff) = floatToString(buffer, PSIDiff, 1);
+    String (outputPSI) = "B " + convPSI + " R " + convPSI2 + " D " + convPSIDiff;
+    printLcd(3, outputPSI); 
 
-      /*
-      Serial.print ("Tsec1 ");
-      Serial.print (Tsec1);
-      Serial.print (" PSI ");
-      Serial.print (convPSI);
-      Serial.print (" PSI2 ");
-      Serial.print (convPSI2);
-      Serial.print (" Diff ");
-      Serial.print (convPSIDiff);
-      Serial.println ();
-      */
-    }
-    
+    /*
+    Serial.print ("Tsec1 ");
+    Serial.print (Tsec1);
+    Serial.print (" PSI ");
+    Serial.print (convPSI);
+    Serial.print (" PSI2 ");
+    Serial.print (convPSI2);
+    Serial.print (" Diff ");
+    Serial.print (convPSIDiff);
+    Serial.println ();
+    */
+  
     // B1: GAS IN =================================
     if (button1State == LOW)
     {
@@ -535,10 +596,16 @@ void setup()
       inManualMode_FLAG = false; 
       platformStateUp = false; // We need this here to get into right state after init?
 
-      printLcd (0, "Ending Manual Mode.");
-      printLcd (1, " ");
-      printLcd (2, " ");
-      printLcd (3, "Continuing....");
+      //printLcd (0, "Ending Manual Mode.");
+      //printLcd (1, " ");
+      //printLcd (2, " ");
+      //printLcd (3, "Continuing....");
+
+      // Write Manual Mode exit text    
+      for (int n = 16; n <= 19; n++){
+        strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
+        printLcd (n % 4, bufferP);}
+
       delay (500);
     }
   }  
@@ -600,17 +667,6 @@ void setup()
   digitalWrite(light3Pin, HIGH);
   delay(500);
   
-  /* DON'T LIKE THIS
-  //Burst gas
-  for (int n = 0; n <= 2; n++)
-  {
-    digitalWrite(relay2Pin, LOW);
-    delay (50);
-    digitalWrite(relay2Pin, HIGH);
-    delay (50);
-  }
-  */
-  
   //============================================================================
   // NULL PRESSURE ROUTINES
   // Check for stuck pressurized bottle or implausibly low gas pressure at start 
@@ -624,10 +680,15 @@ void setup()
   {
     inPressurizedBottleLoop = true;
 
-    printLcd(0, "Pressurized bottle");
-    printLcd(1, "detected. Open valve");
-    printLcd(2, "Depressurizing...");
-    printLcd(3, "");
+    //printLcd(0, "Pressurized bottle");
+    //printLcd(1, "detected. Open valve");
+    //printLcd(2, "Depressurizing...");
+    //printLcd(3, "");
+
+    // Write Pressurized bottle warning   
+    for (int n = 20; n <= 23; n++){
+      strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
+      printLcd (n % 4, bufferP);}
    
     digitalWrite(buzzerPin, HIGH); 
     delay(250);
@@ -649,10 +710,15 @@ void setup()
   {
     inPressureNullLoop = true;
 
-    printLcd(0, "Gas off or empty;");
-    printLcd(1, "check tank & hoses.");
-    printLcd(2, "B3 opens door.");
-    printLcd(3, "Waiting...");
+    //printLcd(0, "Gas off or empty;");
+    //printLcd(1, "check tank & hoses.");
+    //printLcd(2, "B3 opens door.");
+    //printLcd(3, "Waiting...");
+
+    // Write Null Pressure warning 
+    for (int n = 24; n <= 27; n++){
+      strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
+      printLcd (n % 4, bufferP);}
         
     digitalWrite(buzzerPin, HIGH); 
     delay(250);
@@ -704,9 +770,14 @@ void setup()
     {  
       button3State = !digitalRead(button3Pin);
 
-      printLcd(0, "Press B3 to lower");
-      printLcd(1, "platform.");
-      printLcd(2, "Depressurized.");
+      //printLcd(0, "Press B3 to lower");
+      //printLcd(1, "platform.");
+      //printLcd(2, "Depressurized.");
+
+      // Write Null Pressure platform drop text
+      for (int n = 28; n <= 31; n++){
+        strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
+        printLcd (n % 4, bufferP);}
     }
   } 
 
@@ -761,10 +832,14 @@ void setup()
     }
   }
  
-  // User instructions
-  printLcd(0, "Insert bottle;");
-  printLcd(1, "B1 raises platform");
-  printLcd(2, "Ready...");
+  //printLcd(0, "Insert bottle;");
+  //printLcd(1, "B1 raises platform");
+  //printLcd(2, "Ready...");
+
+  // Write initial instructions for normal startup
+  for (int n = 32; n <= 35; n++){
+    strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
+    printLcd (n % 4, bufferP);}  
 
   delay(500);
   digitalWrite(light3Pin, LOW);
