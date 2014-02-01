@@ -128,6 +128,7 @@ boolean button3ToggleState           = false;
 int numberCycles;                                // Number of cycles since factory reset, measured by number of platform PLUS fill loop being executed
 boolean inFillLoopExecuted           = false;    // True of FillLoop is dirty. Used to compute numberCycles
 char buffer[25];                                 // Used in float to string conv // 1-26 Changed from 25 to 20 //CHANGED BACK TO 25!! SEEMS TO BE IMPORTANT!
+char bufferF[20];                                // Try using to blank line before F() function
 
 // Declare functions
 // =====================================================================
@@ -177,6 +178,18 @@ float pressureConv2(int P2)
   float pressurePSI2;
   pressurePSI2 = (P2 - pressureOffset2) * 0.078688; 
   return pressurePSI2;
+}
+
+// FUNCTION Door Open Routine // DOESNT WORK
+void doorOpen()
+{
+  switchDoorState = digitalRead(switchDoorPin); 
+  while (switchDoorState == LOW)
+  {
+    relayOn (relay6Pin, true);  // Open door
+    switchDoorState = digitalRead(switchDoorPin); 
+  }
+  relayOn (relay6Pin, false);
 }
 
 //=====================================================================================
@@ -457,12 +470,7 @@ void setup()
         printLcd (n % 4, bufferP);}
       */
       
-      while (switchDoorState == LOW) 
-      {
-        relayOn (relay6Pin, true);
-        switchDoorState = digitalRead(switchDoorPin);
-      }
-      relayOn (relay6Pin, false); //Don't leave open--relay gets HOT
+      doorOpen(); //Opens door if closed
     } 
 
     // MENU2============================
@@ -510,7 +518,7 @@ void setup()
   float PSIDiff;
   boolean inManualModeLoop = false;
       
-  while (inManualMode == true)
+  while (inManualMode == true && !(button2State == LOW)) // Button2 exits manual mode
   {
     //printLcd (0, "Insert Bottle.");
     //printLcd (1, "Clean switch:Up/Down");
@@ -520,18 +528,15 @@ void setup()
     //Controlling platform with cleaning switch 
     switchCleanState = digitalRead(switchCleanPin); 
     switchDoorState = digitalRead(switchDoorPin); 
+
+    //button1State = !digitalRead(button1Pin); 
+    button2State = !digitalRead(button2Pin); 
     button3State = !digitalRead(button3Pin); 
     delay(20);
     
-    if (switchDoorState == LOW && button3State == LOW)
-    {
-      while (switchDoorState == LOW)
-      {
-        relayOn (relay6Pin, true);
-        switchDoorState = digitalRead(switchDoorPin); 
-      }  
-      relayOn (relay6Pin, false);
-    }  
+    //Opens door if inadvertently closed
+    if (switchDoorState == LOW && button3State == LOW){
+      doorOpen();}  
 
     // MAIN MANUAL MODE LOOP 
     // =================================================   
@@ -612,7 +617,6 @@ void setup()
  
     //MANUAL MODE LOOP EXIT ROUTINES 
     //==================================================
-    
     if (inManualModeLoop)
     {
       inManualModeLoop = false;
@@ -623,16 +627,12 @@ void setup()
         relayOn (relay3Pin, true);
       }
       
-      while (switchDoorState == LOW)
-      {
-        relayOn (relay6Pin, true);  // Open door
-        switchDoorState = digitalRead(switchDoorPin); 
-      }
-      relayOn (relay6Pin, false);
+      doorOpen();
  
       relayOn (relay4Pin, false); // Drop platform when pressure low
       relayOn (relay5Pin, true);
-
+      
+      //Write user instructions
       lcd.setCursor (0, 0);
       lcd.print (F(" ***MANUAL MODE***  "));
       lcd.setCursor (0, 1);
@@ -853,6 +853,8 @@ void setup()
     relayOn(relay5Pin, true);
     delay (3000);
     relayOn(relay5Pin, false);
+    
+    pressureRegStartUp = analogRead (sensor2Pin); // Get GOOD start pressure for emergency lock loop
   }
 
   // END NULL PRESSURE LOOP
@@ -917,7 +919,7 @@ void loop()
   button3StateTEMP = !digitalRead(button3Pin); 
   switchDoorState  =  digitalRead(switchDoorPin);
   switchCleanState =  digitalRead(switchCleanPin);
-  delay(25);  
+  delay(10);  
 
   //Check Button2 toggle state
   //======================================================================
@@ -931,6 +933,7 @@ void loop()
     button2ToggleState = false; //buttonState remains HIGH
   }
   //Check Button3 toggle state
+  //======================================================================
   if (button3StateTEMP == LOW && button3ToggleState == false){  //ON push
     button3State = LOW;         //goto while loop
   }
@@ -950,35 +953,72 @@ void loop()
   float pressure2IdlePSI;  
   float pressureDiffIdlePSI;
   
-  if (platformStateUp == false) //i.e., platform down
-  {    
-    pressureIdle = analogRead(sensor1Pin); 
-    pressure2Idle = analogRead(sensor2Pin);
-          
-    pressureIdlePSI = pressureConv(pressureIdle); 
-    pressure2IdlePSI = pressureConv2(pressure2Idle); 
-    pressureDiffIdlePSI =  pressure2IdlePSI - pressureIdlePSI;
-    
-    String (convPSI) = floatToString(buffer, pressureIdlePSI, 1);
-    String (convPSI2) = floatToString(buffer, pressure2IdlePSI, 1);
-    String (convPSIDiff) = floatToString(buffer, pressureDiffIdlePSI, 1);
-    String (outputPSI) = "R:" + convPSI2 + " B:" + convPSI + " d:" + convPSIDiff;
-    //String (outputPSI) = "Pressure: " + convPSI2 + " psi ";
-    printLcd(3, outputPSI); 
-
-    // Check to see if pressure has dropped (only when idle and plaform is down
-    if (pressure2Idle < pressureNull)
-    {
-      printLcd (0, "Pressure has dropped.");
-      printLcd (1, "Check CO2 tank.");
+  pressureIdle = analogRead(sensor1Pin); 
+  pressure2Idle = analogRead(sensor2Pin);
+        
+  pressureIdlePSI = pressureConv(pressureIdle); 
+  pressure2IdlePSI = pressureConv2(pressure2Idle); 
+  pressureDiffIdlePSI =  pressure2IdlePSI - pressureIdlePSI;
   
-      digitalWrite (buzzerPin, HIGH); 
-      delay (100);
-      digitalWrite (buzzerPin, LOW);
-      delay (100);
-    }
+  String (convPSI) = floatToString(buffer, pressureIdlePSI, 1);
+  String (convPSI2) = floatToString(buffer, pressure2IdlePSI, 1);
+  String (convPSIDiff) = floatToString(buffer, pressureDiffIdlePSI, 1);
+  String (outputPSI) = "R:" + convPSI2 + " B:" + convPSI + " d:" + convPSIDiff;
+  //String (outputPSI) = "Pressure: " + convPSI2 + " psi ";
+
+  if (platformStateUp == false) //Only print to LCD when platform is down
+  {    
+    printLcd(3, outputPSI); 
   }
   
+  // EMERGENCY PLATFORM LOCK LOOP: 
+  // Lock platform if gas pressure drops while bottle pressurized  
+  //========================================================================
+
+  Serial.print ("StartPress: "); 
+  Serial.print (pressureRegStartUp);  
+  Serial.print (" P1: "); 
+  Serial.print (P1);  
+  Serial.print (" P2: "); 
+  Serial.print (pressure2Idle); 
+  Serial.println ();
+
+  boolean inEmergencyLockLoop = false;
+  while (pressure2Idle < pressureRegStartUp - 50)
+  {
+    inEmergencyLockLoop = true;
+
+    lcd.setCursor (0, 0);
+    lcd.print (F("Pressure dropped... "));
+    lcd.setCursor (0, 1); 
+    lcd.print (F("Check CO2 tank.     "));
+    
+    //If bottle is pressurized, also lock the platform
+    if (P1 - pressureOffset > pressureNull)
+    {
+      relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
+      lcd.setCursor (0, 2);
+      lcd.print (F("Platform locked.    "));
+    }  
+    //relayOn (relay3Pin, true);  // Depressurize bottle
+    pressure2Idle = analogRead(sensor2Pin);
+
+    digitalWrite (buzzerPin, HIGH); 
+    delay (100);
+    digitalWrite (buzzerPin, LOW);
+    delay (100);
+  } 
+  
+  if (inEmergencyLockLoop)
+  {
+    inEmergencyLockLoop = false;
+    relayOn (relay4Pin, true);     // Lock platform so platform doesn't creep down with pressurized bottle
+    //relayOn (relay3Pin, false);  // Depressurize bottle
+  }  
+  
+  //END EMERGENCY PLATFORM LOCK LOOP
+  //======================================================================================  
+
   // =====================================================================================  
   // CLEANING ROUTINES
   // =====================================================================================  
@@ -986,19 +1026,15 @@ void loop()
   if (switchCleanState == LOW)
   {
     //inCleanLoop = true; //TO DO: IS THIS NEEDED?
-
-    //lcd.setCursor (0, 2);
-    //lcd.print (F("IN CLEANING MODE..."));
-    printLcd (2, "IN CLEANING MODE...");
     switchFillState = HIGH;
+    lcd.setCursor (0, 2);
+    lcd.print (F("IN CLEANING MODE... "));
   }
   else
   {
     //inCleanLoop = false;
-
-    //lcd.setCursor (0, 2);
-    //lcd.print (F("NORMAL MODE Ready..."));
-    printLcd (2, "Ready...");
+    lcd.setCursor (0, 2);
+    lcd.print (F("Ready... "));
   }
 
   // END CLEANING ROUTINES
