@@ -751,7 +751,7 @@ void setup()
       printLcd (n % 4, bufferP);}
    
     digitalWrite(buzzerPin, HIGH); 
-    delay(250);
+    delay(1000);
     digitalWrite(buzzerPin, LOW);
 
     while (P1 - pressureOffset > pressureDeltaDown)
@@ -812,56 +812,14 @@ void setup()
   
   if (inPressurizedBottleLoop)
   {
-    //Open door, but don't drop platform--allow to degas
-    while (switchDoorState == LOW)
-    {
-      inDoorOpenLoop = true;
-      relayOn(relay6Pin, true);
-      switchDoorState = digitalRead(switchDoorPin);
-    }
-    
-    if (inDoorOpenLoop == true)
-    {
-      inDoorOpenLoop = false;
-      relayOn(relay6Pin, false);
-    }      
-
-    while (button3State == HIGH)
-    {  
-      button3State = !digitalRead(button3Pin);
-
-      //printLcd(0, "Press B3 to lower");
-      //printLcd(1, "platform.");
-      //printLcd(2, "Depressurized.");
-
-      // Write Null Pressure platform drop text
-      for (int n = 28; n <= 31; n++){
-        strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-        printLcd (n % 4, bufferP);}
-    }
+    //Open door, allow to degas
+    delay(1000);
+    doorOpen();  
   } 
 
   if (inPressureNullLoop)
   {
-    //Open door, drop platform
-    while(switchDoorState == LOW)
-    {
-      inDoorOpenLoop = true;
-      relayOn(relay6Pin, true);
-      switchDoorState = digitalRead(switchDoorPin);  
-    }
-    if (inDoorOpenLoop == true)
-    {
-      inDoorOpenLoop = false;
-      relayOn(relay6Pin, false);
-    }  
-
-    //Drop plaform 
-    relayOn(relay4Pin, false);
-    relayOn(relay5Pin, true);
-    delay (3000);
-    relayOn(relay5Pin, false);
-    
+    doorOpen();     //Open door
     pressureRegStartUp = analogRead (sensor2Pin); // Get GOOD start pressure for emergency lock loop
   }
 
@@ -869,30 +827,17 @@ void setup()
   // ====================================================================================
 
   // Do the normal ending when pressure is OK
-  if (inPressureNullLoop == false && inPressurizedBottleLoop == false && switchDoorState == LOW) 
-  {
+
+  // Drop platform, which had been raised before nullpressure checks
+  relayOn(relay4Pin, false);  
+  relayOn(relay5Pin, true);
+  delay(3000);  
+  relayOn(relay5Pin, false); 
     
-    // Drop platform, which had been raised before nullpressure checks
-    relayOn(relay4Pin, false);  
-    relayOn(relay5Pin, true);
-    delay(3000);  
-    relayOn(relay5Pin, false); 
-      
-    relayOn(relay3Pin, false); // Close this so solenoid doesn't overhead on normal startup
-    
-    // Open door if closed
-    while (switchDoorState == LOW)
-    {
-      inDoorOpenLoop = true;
-      relayOn(relay6Pin, true);
-      switchDoorState = digitalRead(switchDoorPin);  
-    }
-    if (inDoorOpenLoop == true)
-    {
-      inDoorOpenLoop = false;
-      relayOn(relay6Pin, false);
-    }
-  }
+  relayOn(relay3Pin, false); // Close this so solenoid doesn't overhead on normal startup
+  
+  // Open door if closed
+  doorOpen();
  
   //printLcd(0, "Insert bottle;");
   //printLcd(1, "B1 raises platform");
@@ -974,10 +919,10 @@ void loop()
   String (outputPSI) = "R:" + convPSI2 + " B:" + convPSI + " d:" + convPSIDiff;
   //String (outputPSI) = "Pressure: " + convPSI2 + " psi ";
 
-  if (platformStateUp == false) //Only print to LCD when platform is down
-  {    
+  //if (platformStateUp == false) //Only print to LCD when platform is down
+  //{    
     printLcd(3, outputPSI); 
-  }
+  //}
   
   // EMERGENCY PLATFORM LOCK LOOP: 
   // Lock platform if gas pressure drops while bottle pressurized  
@@ -1004,6 +949,21 @@ void loop()
     lcd.print (F("Pressure dropped... "));
     lcd.setCursor (0, 1); 
     lcd.print (F("Check CO2 tank.     "));
+    lcd.setCursor (0, 12); 
+    lcd.print (F("                    "));
+    
+    pressureIdle = analogRead(sensor1Pin); 
+    pressure2Idle = analogRead(sensor2Pin);
+          
+    pressureIdlePSI = pressureConv(pressureIdle); 
+    pressure2IdlePSI = pressureConv2(pressure2Idle); 
+    pressureDiffIdlePSI =  pressure2IdlePSI - pressureIdlePSI;
+    
+    String (convPSI) = floatToString(buffer, pressureIdlePSI, 1);
+    String (convPSI2) = floatToString(buffer, pressure2IdlePSI, 1);
+    String (convPSIDiff) = floatToString(buffer, pressureDiffIdlePSI, 1);
+    String (outputPSI) = "R:" + convPSI2 + " B:" + convPSI + " d:" + convPSIDiff;    
+    printLcd (3, outputPSI);
     
     //If bottle is pressurized, also lock the platform
     if (P1 - pressureOffset > pressureNull)
@@ -1019,9 +979,8 @@ void loop()
     if (buzzOnce == false)
     {
       digitalWrite (buzzerPin, HIGH); 
-      delay (100);
+      delay (2000);
       digitalWrite (buzzerPin, LOW);
-      delay (100);
       buzzOnce = true;
     }
   } 
@@ -1031,6 +990,8 @@ void loop()
     inEmergencyLockLoop = false;
     relayOn (relay4Pin, true);     // Lock platform so platform doesn't creep down with pressurized bottle
     //relayOn (relay3Pin, false);  // Depressurize bottle
+
+    delay(1000);
     lcd.setCursor (0, 0);
     lcd.print (F("                    "));
     lcd.setCursor (0, 1);
