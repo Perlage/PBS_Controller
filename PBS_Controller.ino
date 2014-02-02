@@ -59,21 +59,21 @@ const int light3Pin     = A5;     // pin for button 3 light
 // ===========================================================================  
 
 //Component states //FEB 1: Changed from int to boolean. 300 byte drop in program size
-boolean button1State     = HIGH;
-boolean button2State     = HIGH; 
-boolean button3State     = HIGH;
-boolean light1State      = LOW;
-boolean light2State      = LOW;
-boolean light3State      = LOW;
-boolean relay1State      = HIGH;
-boolean relay2State      = HIGH;
-boolean relay3State      = HIGH;
-boolean relay4State      = HIGH;
-boolean relay5State      = HIGH;
-boolean relay6State      = HIGH;
-boolean switchFillState  = HIGH; 
-boolean switchDoorState  = HIGH;
-boolean switchCleanState = HIGH; 
+boolean button1State                 = HIGH;
+boolean button2State                 = HIGH; 
+boolean button3State                 = HIGH;
+boolean light1State                  = LOW;
+boolean light2State                  = LOW;
+boolean light3State                  = LOW;
+boolean relay1State                  = HIGH;
+boolean relay2State                  = HIGH;
+boolean relay3State                  = HIGH;
+boolean relay4State                  = HIGH;
+boolean relay5State                  = HIGH;
+boolean relay6State                  = HIGH;
+boolean switchFillState              = HIGH; 
+boolean switchDoorState              = HIGH;
+boolean switchCleanState             = HIGH; 
 
 //State variables set in loops
 boolean inPressureNullLoop           = false;
@@ -395,6 +395,8 @@ void setup()
   // STARTUP ROUTINE
   //===================================================================================
   
+  relayOn(relay3Pin, true); // Open at earliest possibility to vent  
+  
   // Read the offset values into pressureOffset and pressureOffset2
   pressureOffset = EEPROM.read(0);
   pressureOffset2 = EEPROM.read(1);
@@ -409,8 +411,6 @@ void setup()
   // pressureNull = 200/508 * (pressureRegStartUp - pressureOffset2);
   // pressureDeltaAutotamp  = 250/508 * (pressureRegStartUp - pressureOffset2);
 
-  relayOn(relay3Pin, true); // Open at earliest possibility to vent  
-  
   numberCycles = EEPROM.read (2);  //Read number of cycles
   String (convInt) = floatToString(buffer, numberCycles, 0);
   String (outputInt) = "Total cycles: " + convInt;
@@ -468,17 +468,6 @@ void setup()
     {
       inManualMode = true;
       inMenuLoop = false;
-      
-      /*
-      lcd.setCursor (0, 0);
-      lcd.print (F(" ***MANUAL MODE***  "));
-      lcd.setCursor (0, 1);
-      lcd.print (F("Insert bottle       "));
-      lcd.setCursor (0, 2);
-      lcd.print (F("Switch: Platfrom UP "));
-      lcd.setCursor (0, 3);
-      lcd.print (F("B3: Opens door      "));
-      */
       
       //printLcd (0, "MANUAL MODE");
       //printLcd (1, "Insert bottle.");
@@ -567,25 +556,13 @@ void setup()
       //Raise platform
       relayOn (relay5Pin, false);
       relayOn (relay4Pin, true);
-      
-      /*
-      lcd.setCursor (0, 0);
-      lcd.print (F("B1: Gas IN          "));
-      lcd.setCursor (0, 1);
-      lcd.print (F("B2: Liquid IN       "));
-      lcd.setCursor (0, 2);
-      lcd.print (F("B3: Gas OUT         "));
-      //lcd.setCursor (0, 3);
-      //lcd.print (F(""));
-      */
-      
+        
       //Write user instructions
       //printLcd (0, "B1: Gas IN");
       //printLcd (1, "B2: Liquid IN");
       //printLcd (2, "B3: Gas OUT");
       //Line 3 reserved for pressure readings
 
-      
       // Write Manual Mode menu text. Only write lines 0,1,2 
       for (int n = 12; n <= 14; n++){
         strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
@@ -636,7 +613,6 @@ void setup()
       lcd.print (F("                    "));
       lcd.setCursor (0, 1);
       lcd.print (F("                    "));
-      
       
       while (P1 - pressureOffset > pressureDeltaDown)
       {
@@ -813,19 +789,12 @@ void setup()
       //Read sensors
       P2 = analogRead(sensor2Pin); 
       button3State = !digitalRead(button3Pin);
-      switchDoorState = digitalRead(switchDoorPin);  
+      switchDoorState = digitalRead(switchDoorPin); 
+      delay(25); 
             
-      while(button3State == LOW && switchDoorState == LOW)
+      if (button3State == LOW)
       {
-        inDoorOpenLoop = true;
-        relayOn(relay6Pin, true);
-        switchDoorState = digitalRead(switchDoorPin);  
-      }
-      
-      if (inDoorOpenLoop == true)
-      {
-        inDoorOpenLoop = false;
-        relayOn(relay6Pin, false);
+        doorOpen();
       }  
     }  
   }
@@ -897,6 +866,22 @@ void loop()
   switchDoorState  =  digitalRead(switchDoorPin);
   switchCleanState =  digitalRead(switchCleanPin);
   delay(10);  
+
+  if (switchDoorState == LOW && platformStateUp == false)
+  {
+    lcd.setCursor (0, 0);
+    lcd.print (F("                    "));
+    lcd.setCursor (0, 1);
+    lcd.print (F("B3 opens door       ")); 
+  }
+  if (switchDoorState == HIGH && platformStateUp == false)
+  {
+   
+    lcd.setCursor (0, 0);
+    lcd.print (F("Insert bottle;      "));
+    lcd.setCursor (0, 1);
+    lcd.print (F("B1 raises platform  "));  
+  }  
 
   //Check Button2 toggle state
   //======================================================================
@@ -973,7 +958,7 @@ void loop()
     lcd.print (F("Pressure dropped... "));
     lcd.setCursor (0, 1); 
     lcd.print (F("Check CO2 tank.     "));
-    lcd.setCursor (0, 12); 
+    lcd.setCursor (0, 2); 
     lcd.print (F("                    "));
     
     pressureIdle = analogRead(sensor1Pin); 
@@ -1012,7 +997,7 @@ void loop()
   if (inEmergencyLockLoop)
   {
     inEmergencyLockLoop = false;
-    relayOn (relay4Pin, true);     // Lock platform so platform doesn't creep down with pressurized bottle
+    //relayOn (relay4Pin, true);     // Lock platform so platform doesn't creep down with pressurized bottle
     //relayOn (relay3Pin, false);  // Depressurize bottle
 
     delay(1000);
