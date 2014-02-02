@@ -14,8 +14,8 @@ Copyright 2013, 2014  All rights reserved
 */
 
 //Version control variables
-String (versionSoftwareTag) = "v0.6.0.0" ; // 2nd pressure sensor rev'd to 0.6
-String (versionHardwareTag) = "v0.6.0.0" ; // 2nd sensor rev'd to v0.6
+String (versionSoftwareTag) = "v0.6.1.0" ;     // 2nd pressure sensor rev'd to 0.6
+String (versionHardwareTag) = "v0.6.0.0" ;     // 2nd sensor rev'd to v0.6
 
 //Library includes
 #include <Wire.h> 
@@ -23,32 +23,32 @@ String (versionHardwareTag) = "v0.6.0.0" ; // 2nd sensor rev'd to v0.6
 #include <math.h> 
 #include "floatToString.h"               
 #include <EEPROM.h>
-#include <avr/pgmspace.h> // 1-26 Added for PROGMEM function
+#include <avr/pgmspace.h>                      // 1-26 Added for PROGMEM function
 
 LiquidCrystal_I2C lcd(0x3F,20,4);  
 
 // Pin assignments
-const int button1Pin    =  0;     // pin for button 1 B1 (Raise platform) RX=0;
-const int button2Pin    =  1;     // pin for button 2 B2 (Fill/purge)     TX=1; 
-// 2 SDA for LCD           2;  
-// 3 SDL for LCD           3;
-const int button3Pin    =  4;     // pin for button 3 B3 (Depressurize and lower) 
-const int relay1Pin     =  5;     // pin for relay1 S1 (liquid fill)
-const int relay2Pin     =  6;     // pin for relay2 S2 (bottle gas inlet)
-const int relay3Pin     =  7;     // pin for relay3 S3 (bottle gas vent)
-const int relay4Pin     =  8;     // pin for relay4 S4 (pneumatic lift gas in)
-const int relay5Pin     =  9;     // pin for relay5 S5 (pneumatic lift gas in)
-const int relay6Pin     = 10;     // pin for relay6 S6 (door lock solenoid)
-const int switchFillPin = 11;     // pin for fill sensor F1 -- DO NOT PUT THIS ON PIN 13
-const int switchDoorPin = 12;     // pin for door switch
-const int buzzerPin     = 13;     // pin for buzzer
+const int button1Pin                 =  0;     // pin for button 1 B1 (Raise platform) RX=0;
+const int button2Pin                 =  1;     // pin for button 2 B2 (Fill/purge)     TX=1; 
+// 2 SDA for LCD                     =  2;  
+// 3 SDL for LCD                     =  3;
+const int button3Pin                 =  4;     // pin for button 3 B3 (Depressurize and lower) 
+const int relay1Pin                  =  5;     // pin for relay1 S1 (liquid fill)
+const int relay2Pin                  =  6;     // pin for relay2 S2 (bottle gas inlet)
+const int relay3Pin                  =  7;     // pin for relay3 S3 (bottle gas vent)
+const int relay4Pin                  =  8;     // pin for relay4 S4 (pneumatic lift gas in)
+const int relay5Pin                  =  9;     // pin for relay5 S5 (pneumatic lift gas in)
+const int relay6Pin                  = 10;     // pin for relay6 S6 (door lock solenoid)
+const int switchFillPin              = 11;     // pin for fill sensor F1 -- DO NOT PUT THIS ON PIN 13
+const int switchDoorPin              = 12;     // pin for door switch
+const int buzzerPin                  = 13;     // pin for buzzer
 
-const int sensor1Pin    = A1;     // pin for preasure sensor1 // 1-23 NOW BOTTLE PRESSURE
-const int sensor2Pin    = A0;     // pin for pressure sensor2 // 1-23 NOW REGULATOR PRESSURE. 
-const int switchCleanPin= A2;     // pin for cleaning mode switch 
-const int light1Pin     = A3;     // pin for button 1 light 
-const int light2Pin     = A4;     // pin for button 2 light
-const int light3Pin     = A5;     // pin for button 3 light
+const int sensor1Pin                 = A1;     // pin for preasure sensor1 // 1-23 NOW BOTTLE PRESSURE
+const int sensor2Pin                 = A0;     // pin for pressure sensor2 // 1-23 NOW REGULATOR PRESSURE. 
+const int switchCleanPin             = A2;     // pin for cleaning mode switch 
+const int light1Pin                  = A3;     // pin for button 1 light 
+const int light2Pin                  = A4;     // pin for button 2 light
+const int light3Pin                  = A5;     // pin for button 3 light
 
 // A0 formerly was sensor1, which is closest to what we now call bottle pressure, and A1 was unused. 
 // So switched sensor1 to A1 to make code changes easier. All reads of sensor1 will now read bottle pressure
@@ -258,7 +258,7 @@ char strLcd_19[] PROGMEM = "                    ";
 char strLcd_20[] PROGMEM = "Pressurized bottle  ";
 char strLcd_21[] PROGMEM = "detected. Open valve";
 char strLcd_22[] PROGMEM = "Depressurizing....  ";
-char strLcd_23[] PROGMEM = ""; //Don't write to this?--this line is for pressure reading
+char strLcd_23[] PROGMEM = ""                    ;   // Don't write to this?--this line is for pressure reading
 
 char strLcd_24[] PROGMEM = "Gas off or empty;   ";
 char strLcd_25[] PROGMEM = "check tank & hoses. ";
@@ -278,15 +278,15 @@ char strLcd_35[] PROGMEM = "                    ";
 //Write to string table. PROGMEM moved from front of line to end; this made it work
 const char *strLcdTable[] PROGMEM =  // Name of table following * is arbitrary
 {   
-  strLcd_0, strLcd_1, strLcd_2, strLcd_3,       //Startup text
-  strLcd_4, strLcd_5, strLcd_6, strLcd_7,
-  strLcd_8, strLcd_9, strLcd_10, strLcd_11,
-  strLcd_12, strLcd_13, strLcd_14, strLcd_15,
-  strLcd_16, strLcd_17, strLcd_18, strLcd_19,
-  strLcd_20, strLcd_21, strLcd_22, strLcd_23,
-  strLcd_24, strLcd_25, strLcd_26, strLcd_27,
-  strLcd_28, strLcd_29, strLcd_30, strLcd_31,
-  strLcd_32, strLcd_33, strLcd_34, strLcd_35,
+  strLcd_0, strLcd_1, strLcd_2, strLcd_3,           // Startup text
+  strLcd_4, strLcd_5, strLcd_6, strLcd_7,           // Menu text     
+  strLcd_8, strLcd_9, strLcd_10, strLcd_11,         // Manual Mode intro
+  strLcd_12, strLcd_13, strLcd_14, strLcd_15,       // Manual Mode detail
+  strLcd_16, strLcd_17, strLcd_18, strLcd_19,       // Manual Mode exit
+  strLcd_20, strLcd_21, strLcd_22, strLcd_23,       // Pressurized bottle
+  strLcd_24, strLcd_25, strLcd_26, strLcd_27,       // Null pressure warning
+  strLcd_28, strLcd_29, strLcd_30, strLcd_31,       // Depressurize loop exit
+  strLcd_32, strLcd_33, strLcd_34, strLcd_35,       // Insert bottle
 };
 
 char bufferP[30];      // make sure this is large enough for the largest string it must hold
@@ -338,11 +338,11 @@ void setup()
   lcd.init();
   lcd.backlight();
   
-  // ==============================================================================
+  // =====================================================================================
   // EEPROM CALIBRATION 
   // Write null pressure to EEPROM. 
   // WITH GAS OFF AND PRESSURE RELEASED FROM HOSES, Hold down all three buttons on startup 
-  // ==============================================================================
+  // =====================================================================================
 
   readButtons(); 
 
@@ -389,7 +389,7 @@ void setup()
   }    
 
   // END EEPROM SET
-  // ==============================================================================
+  // ==================================================================================
     
   //===================================================================================
   // STARTUP ROUTINE
@@ -492,7 +492,7 @@ void setup()
       lcd.setCursor (0, 1);
       lcd.print (F("Increased to 7500ms "));
       lcd.setCursor (0, 2);
-      lcd.print (F(""));
+      lcd.print (F("                    "));
 
       delay(2000);
     }  
@@ -683,7 +683,7 @@ void setup()
     }  
     else
     {
-      relayOn(relay4Pin, true);  // Turn on platform support immediately. Raises platform if no bottle; keeps stuck bottle in place
+      relayOn(relay4Pin, true);   // Turn on platform support immediately. Raises platform if no bottle; keeps stuck bottle in place
     }
   }
   else
@@ -815,7 +815,8 @@ void setup()
   {
     //Open door, allow to degas
     delay(1000);
-    doorOpen();  
+    doorOpen(); 
+    pressureRegStartUp = analogRead (sensor2Pin); // Get GOOD start pressure for emergency lock loop
   } 
 
   if (inPressureNullLoop)
@@ -873,7 +874,7 @@ void loop()
   button3StateTEMP = !digitalRead(button3Pin); 
   switchDoorState  =  digitalRead(switchDoorPin);
   switchCleanState =  digitalRead(switchCleanPin);
-  delay(10);  
+  delay(10);
 
   if (switchDoorState == LOW && platformStateUp == false)
   {
@@ -957,6 +958,7 @@ void loop()
   
   boolean inEmergencyLockLoop = false;
   boolean buzzOnce = false;
+  boolean platformEmergencyLock = false;
   
   while (pressure2Idle < pressureRegStartUp - 75) // Hardcoded number to determine what consitutes a pressure drop--try 50
   {
@@ -965,7 +967,10 @@ void loop()
     //If bottle is pressurized, also lock the platform
     if (P1 - pressureOffset > pressureNull)
     {
+      platformEmergencyLock = true;
       relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
+      relayOn (relay3Pin, true);    // Shall we vent the bottle??
+
       lcd.setCursor (0, 2);
       lcd.print (F("Platform locked.    "));
     }  
@@ -1006,9 +1011,14 @@ void loop()
   if (inEmergencyLockLoop)
   {
     inEmergencyLockLoop = false;
-    //relayOn (relay4Pin, true);     // Lock platform so platform doesn't creep down with pressurized bottle
-    //relayOn (relay3Pin, false);  // Depressurize bottle
-
+    // Run this condition if had pressurized bottle
+    if (platformEmergencyLock == true)
+    {
+      relayOn (relay4Pin, true);       // Re-open platform UP solenoid 
+      relayOn (relay3Pin, false);      // Re close vent if opened 
+      platformEmergencyLock = false;
+    }
+      
     delay(1000);
     lcd.setCursor (0, 0);
     lcd.print (F("B2 toggles filling; "));
