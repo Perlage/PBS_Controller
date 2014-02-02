@@ -632,10 +632,31 @@ void setup()
     {
       inManualModeLoop = false;
       
+      lcd.setCursor (0, 0);
+      lcd.print (F("                    "));
+      lcd.setCursor (0, 1);
+      lcd.print (F("                    "));
+      
+      
       while (P1 - pressureOffset > pressureDeltaDown)
       {
         P1 = analogRead(sensor1Pin); 
         relayOn (relay3Pin, true);
+        
+        readInputs();
+      
+        PSI = pressureConv(P1); 
+        PSI2 = pressureConv2(P2); 
+        PSIDiff =  PSI2 - PSI;
+    
+        String (convPSI) = floatToString(buffer, PSI, 1);
+        String (convPSI2) = floatToString(buffer, PSI2, 1);
+        String (convPSIDiff) = floatToString(buffer, PSIDiff, 1);
+        String (outputPSI) = "R:" + convPSI2 + " B:" + convPSI + " d:" + convPSIDiff;
+        printLcd(3, outputPSI); 
+       
+        lcd.setCursor (0, 2);
+        lcd.print (F("Depressurizing...   "));
       }
       
       doorOpen();
@@ -664,8 +685,8 @@ void setup()
     //printLcd (2, " ");
     //printLcd (3, "Continuing....");
     
-    // Write Manual Mode exit text    
-    for (int n = 16; n <= 19; n++){
+    // Write Manual Mode exit text // JUST FIRST 3 LINES
+    for (int n = 16; n <= 18; n++){
       strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
       printLcd (n % 4, bufferP);}
   }
@@ -698,10 +719,13 @@ void setup()
     delay(500);
     relayOn(relay5Pin, false); // Close if not already   
     relayOn(relay4Pin, true);  // Raise platform     
-      lcd.setCursor (0, 0);
-      lcd.print (F("Perlini Bottling    "));
-      lcd.setCursor (0, 3);
-      lcd.print (F("Initializing...     "));
+
+    lcd.setCursor (0, 0);
+    lcd.print (F("Perlini Bottling    "));
+    lcd.setCursor (0, 1);
+    lcd.print (F("System              "));
+    lcd.setCursor (0, 3);
+    lcd.print (F("Initializing...     "));
   }    
 
   // Blinks lights and give time to degas stuck bottle
