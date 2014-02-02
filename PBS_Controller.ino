@@ -676,7 +676,15 @@ void setup()
   if (switchDoorState == LOW)
   {
     relayOn(relay5Pin, false); // Close if not already
-    relayOn(relay4Pin, true);  // Turn on platform support immediately. Raises platform if no bottle; keeps stuck bottle in place
+
+    if (P2 - pressureOffset2 < pressureNull)
+    {
+      relayOn(relay4Pin, false);  // Lock platform if regulator pressure is low to help keep platform up.
+    }  
+    else
+    {
+      relayOn(relay4Pin, true);  // Turn on platform support immediately. Raises platform if no bottle; keeps stuck bottle in place
+    }
   }
   else
   {
@@ -739,7 +747,7 @@ void setup()
   if (P1 - pressureOffset > pressureDeltaDown) 
   {
     inPressurizedBottleLoop = true;
-
+    
     //printLcd(0, "Pressurized bottle");
     //printLcd(1, "detected. Open valve");
     //printLcd(2, "Depressurizing...");
@@ -870,9 +878,9 @@ void loop()
   if (switchDoorState == LOW && platformStateUp == false)
   {
     lcd.setCursor (0, 0);
-    lcd.print (F("                    "));
-    lcd.setCursor (0, 1);
     lcd.print (F("B3 opens door       ")); 
+    lcd.setCursor (0, 1);
+    lcd.print (F("                    "));
   }
   if (switchDoorState == HIGH && platformStateUp == false)
   {
@@ -937,7 +945,7 @@ void loop()
   // Lock platform if gas pressure drops while bottle pressurized  
   //========================================================================
 
-  
+  /*
   Serial.print ("StartPress: "); 
   Serial.print (pressureRegStartUp);  
   Serial.print (" P1: "); 
@@ -945,15 +953,23 @@ void loop()
   Serial.print (" P2: "); 
   Serial.print (pressure2Idle); 
   Serial.println ();
-  
+  */
   
   boolean inEmergencyLockLoop = false;
   boolean buzzOnce = false;
   
-  while (pressure2Idle < pressureRegStartUp - 50) // Hardcoded number to determine what consitutes a pressure drop--try 50
+  while (pressure2Idle < pressureRegStartUp - 75) // Hardcoded number to determine what consitutes a pressure drop--try 50
   {
     inEmergencyLockLoop = true;
 
+    //If bottle is pressurized, also lock the platform
+    if (P1 - pressureOffset > pressureNull)
+    {
+      relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
+      lcd.setCursor (0, 2);
+      lcd.print (F("Platform locked.    "));
+    }  
+    
     lcd.setCursor (0, 0);
     lcd.print (F("Pressure dropped... "));
     lcd.setCursor (0, 1); 
@@ -974,13 +990,6 @@ void loop()
     String (outputPSI) = "R:" + convPSI2 + " B:" + convPSI + " d:" + convPSIDiff;    
     printLcd (3, outputPSI);
     
-    //If bottle is pressurized, also lock the platform
-    if (P1 - pressureOffset > pressureNull)
-    {
-      relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
-      lcd.setCursor (0, 2);
-      lcd.print (F("Platform locked.    "));
-    }  
     //relayOn (relay3Pin, true);  // Depressurize bottle
     pressure2Idle = analogRead(sensor2Pin);
 
@@ -1002,9 +1011,9 @@ void loop()
 
     delay(1000);
     lcd.setCursor (0, 0);
-    lcd.print (F("                    "));
+    lcd.print (F("B2 toggles filling; "));
     lcd.setCursor (0, 1);
-    lcd.print (F("                    "));
+    lcd.print (F("B3 toggles exhaust. "));
     lcd.setCursor (0, 2);
     lcd.print (F("Problem corrected..."));
     delay(1000);
