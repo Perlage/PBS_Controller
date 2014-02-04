@@ -105,6 +105,12 @@ int pressureDeltaAutotamp            = 250;     // This is max pressure differen
 int pressureNull                     = 200;     // This is the threshold for the controller deciding that no gas source is attached. 
 int pressureRegStartUp;                         // Starting regulator pressure. Will use to detect pressure sag during session; and to find proportional values for key pressure variables (e.g. pressureDeltaAutotamp)
 
+int pressureIdle;                               // Used for Main Loop pressure measurements
+int pressure2Idle;  
+float pressureIdlePSI;  
+float pressure2IdlePSI;  
+float pressureDiffIdlePSI;
+
 //variables for platform function and timing
 int timePlatformInit;                           // Time in ms going into loop
 int timePlatformCurrent;                        // Time in ms currently in loop
@@ -118,7 +124,7 @@ int antiDripDuration                 = 1000;    // Duration of anti-drip autosip
 int foamDetectionDelay               = 2000;    // Amount of time to pause after foam detection
 int pausePlatformDrop                = 1000;    // Pause before platform drops after door automatically opens
  
-//Variables for button toggle states //FEB 1: changed TEMP states from int to boolean
+//Variables for button toggle states 
 boolean button2StateTEMP             = HIGH;
 boolean button3StateTEMP             = HIGH;
 boolean button2ToggleState           = false;
@@ -224,6 +230,24 @@ void readInputs()
   delay (20); //debounce
 }
 
+// FUNCTION: Pressure reading/conversion/output
+String pressureOutput()
+{
+  pressureIdle = analogRead(sensor1Pin); 
+  pressure2Idle = analogRead(sensor2Pin);
+        
+  pressureIdlePSI = pressureConv(pressureIdle); 
+  pressure2IdlePSI = pressureConv2(pressure2Idle); 
+  pressureDiffIdlePSI =  pressure2IdlePSI - pressureIdlePSI;
+  
+  String (convPSI) = floatToString(buffer, pressureIdlePSI, 1);
+  String (convPSI2) = floatToString(buffer, pressure2IdlePSI, 1);
+  String (convPSIDiff) = floatToString(buffer, pressureDiffIdlePSI, 1);
+  String (outputPSI) = "Reg:" + convPSI2 + " Bottle:" + convPSI;
+  //String (outputPSI) = "R:" + convPSI2 + " B:" + convPSI + " d:" + convPSIDiff; 
+  return outputPSI;
+}  
+
 //=====================================================================================
 // FLASH MEMORY STRING HANDLING
 //=====================================================================================
@@ -231,8 +255,8 @@ void readInputs()
 //Write text to char strings. Previously used const_char at start of line; this didn't work
 
 char strLcd_0 [] PROGMEM = "Perlini Bottling    ";
-char strLcd_1 [] PROGMEM = "System,             ";
-char strLcd_2 [] PROGMEM = "Total cycles        ";
+char strLcd_1 [] PROGMEM = "System, v1.0        ";
+char strLcd_2 [] PROGMEM = "                    ";
 char strLcd_3 [] PROGMEM = "Initializing...     ";
 
 char strLcd_4 [] PROGMEM = "***MENU*** Press... ";
@@ -240,10 +264,10 @@ char strLcd_5 [] PROGMEM = "B1: Manual Mode     ";
 char strLcd_6 [] PROGMEM = "B2: Autosiphon time ";
 char strLcd_7 [] PROGMEM = "B3: Exit Menu       ";
 
-char strLcd_8 [] PROGMEM = "MANUAL MODE         ";
-char strLcd_9 [] PROGMEM = "Insert bottle;      ";
-char strLcd_10[] PROGMEM = "Clean switch raises ";
-char strLcd_11[] PROGMEM = "and lowers platform.";
+char strLcd_8 [] PROGMEM = " ***MANUAL MODE***  ";
+char strLcd_9 [] PROGMEM = "Insert bottle...    ";
+char strLcd_10[] PROGMEM = "Mode switch: Up/Down";
+char strLcd_11[] PROGMEM = "B3: Opens door.     ";
 
 char strLcd_12[] PROGMEM = "B1: Gas IN          ";
 char strLcd_13[] PROGMEM = "B2: Liquid IN       ";
@@ -641,14 +665,20 @@ void setup()
       relayOn (relay5Pin, true);
       
       //Write user instructions
+      /*
       lcd.setCursor (0, 0);
       lcd.print (F(" ***MANUAL MODE***  "));
       lcd.setCursor (0, 1);
-      lcd.print (F("Insert bottle       "));
+      lcd.print (F("Insert bottle.      "));
       lcd.setCursor (0, 2);
-      lcd.print (F("Switch: Platfrom UP "));
+      lcd.print (F("Mode switch: Up/Down"));
       lcd.setCursor (0, 3);
-      lcd.print (F("B3: Opens door      "));
+      lcd.print (F("B3: Opens door.     "));
+      */
+      
+      for (int n = 8; n <= 11; n++){
+        strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
+        printLcd (n % 4, bufferP);}
     }  
   }  
 
@@ -668,6 +698,9 @@ void setup()
   }
  
   // END MANUAL MODE
+  //=================================================================================
+ 
+  // RESUME NORMAL STARTUP
   //=================================================================================
 
   switchDoorState = digitalRead(switchDoorPin); 
@@ -704,12 +737,19 @@ void setup()
     relayOn(relay5Pin, false); // Close if not already   
     relayOn(relay4Pin, true);  // Raise platform     
 
+    /*
     lcd.setCursor (0, 0);
     lcd.print (F("Perlini Bottling    "));
     lcd.setCursor (0, 1);
     lcd.print (F("System              "));
     lcd.setCursor (0, 3);
     lcd.print (F("Initializing...     "));
+    */
+    
+    //Re-write intro text
+    for (int n = 0; n <= 3; n++){
+      strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
+      printLcd (n % 4, bufferP);}
   }    
 
   // Blinks lights and give time to degas stuck bottle
@@ -916,30 +956,13 @@ void loop()
   }
    
   // Main Loop pressure measurement
-  // Will only get continuous measurement if platform state is down, so we aren't overwriting current state informtion during press/fill/depress
-
-  int pressureIdle;  
-  int pressure2Idle;  
-  float pressureIdlePSI;  
-  float pressure2IdlePSI;  
-  float pressureDiffIdlePSI;
+  //String(outputPSI);
+  String outputPSI = pressureOutput();
+  printLcd(3, outputPSI); 
   
-  pressureIdle = analogRead(sensor1Pin); 
-  pressure2Idle = analogRead(sensor2Pin);
-        
-  pressureIdlePSI = pressureConv(pressureIdle); 
-  pressure2IdlePSI = pressureConv2(pressure2Idle); 
-  pressureDiffIdlePSI =  pressure2IdlePSI - pressureIdlePSI;
-  
-  String (convPSI) = floatToString(buffer, pressureIdlePSI, 1);
-  String (convPSI2) = floatToString(buffer, pressure2IdlePSI, 1);
-  String (convPSIDiff) = floatToString(buffer, pressureDiffIdlePSI, 1);
-  String (outputPSI) = "R:" + convPSI2 + " B:" + convPSI + " d:" + convPSIDiff;
-  //String (outputPSI) = "Pressure: " + convPSI2 + " psi ";
-
   //if (platformStateUp == false) //Only print to LCD when platform is down
   //{    
-    printLcd(3, outputPSI); 
+  //  printLcd(3, outputPSI); 
   //}
   
   // EMERGENCY PLATFORM LOCK LOOP: 
@@ -960,11 +983,12 @@ void loop()
   boolean buzzOnce = false;
   boolean platformEmergencyLock = false;
   
+  // If pressure drops, go into this loop and wait for user to fix
   while (pressure2Idle < pressureRegStartUp - 75) // Hardcoded number to determine what consitutes a pressure drop--try 50
   {
     inEmergencyLockLoop = true;
 
-    //If bottle is pressurized, also lock the platform
+    //If bottle is pressurized (along with pressure sagging), also lock the platform
     if (P1 - pressureOffset > pressureNull)
     {
       platformEmergencyLock = true;
@@ -982,21 +1006,9 @@ void loop()
     lcd.setCursor (0, 2); 
     lcd.print (F("                    "));
     
-    pressureIdle = analogRead(sensor1Pin); 
-    pressure2Idle = analogRead(sensor2Pin);
-          
-    pressureIdlePSI = pressureConv(pressureIdle); 
-    pressure2IdlePSI = pressureConv2(pressure2Idle); 
-    pressureDiffIdlePSI =  pressure2IdlePSI - pressureIdlePSI;
-    
-    String (convPSI) = floatToString(buffer, pressureIdlePSI, 1);
-    String (convPSI2) = floatToString(buffer, pressure2IdlePSI, 1);
-    String (convPSIDiff) = floatToString(buffer, pressureDiffIdlePSI, 1);
-    String (outputPSI) = "R:" + convPSI2 + " B:" + convPSI + " d:" + convPSIDiff;    
+    // Pressure measurement and output
+    String outputPSI = pressureOutput();
     printLcd (3, outputPSI);
-    
-    //relayOn (relay3Pin, true);  // Depressurize bottle
-    pressure2Idle = analogRead(sensor2Pin);
 
     //Only sound buzzer once
     if (buzzOnce == false)
@@ -1087,6 +1099,8 @@ void loop()
     if (timePlatformRising >= timePlatformLock)
     {
       // PlatformLoop lockin reached
+      platformStateUp = true;
+      platformLockedNew = true; //Pass this to PressureLoop for autopressurize on door close--better than trying to pass button2State = LOW, which causes problems
 
       lcd.setCursor (0, 0);
       lcd.print (F("To fill, close door "));
@@ -1102,8 +1116,6 @@ void loop()
       relayOn(relay4Pin, true);  // Slight leak causes platform to fall over time--so leave open 
       relayOn(relay5Pin, false); 
       digitalWrite(light1Pin, LOW); //Decided to turn this off. Lights should be lit only if pressing button or releasing it can change a state. 
-      platformStateUp = true;
-      platformLockedNew = true; //Pass this to PressureLoop for autopressurize on door close--better than trying to pass button2State = LOW, which causes problems
             
       if (inFillLoopExecuted)
       {
@@ -1229,7 +1241,6 @@ void loop()
     digitalWrite(light2Pin, HIGH);                       
 
     //NO BOTTLE TEST: Check to see if bottle is pressurizing; if PTest not falling, must be no bottle 
-
     while (platformLockedNew == true)                       //First time through loop with platform up 
     {
       pressurizeDuration = millis() - pressurizeStartTime;  //Get the duration
@@ -1286,7 +1297,7 @@ void loop()
   }
     
   // PRESSURIZE LOOP EXIT ROUTINES
-  //===================================
+  //=======================================================================================
   
   if(inPressurizeLoop)
   {
@@ -1343,7 +1354,7 @@ void loop()
   P1 = analogRead (sensor1Pin);
   P2 = analogRead (sensor2Pin);
 
-  //pinMode(switchFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
+  pinMode(switchFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
 
   // With two sensors, the pressure condition should absolutely prevent any liquid sprewing. pressureDeltaAutotamp ensures: a) filling can't go too fast; b) can't dispense w/ no bottle
   while(button2State == LOW && switchFillState == HIGH && switchDoorState == LOW && (P1 - pressureOffset) > pressureDeltaAutotamp) 
@@ -1351,7 +1362,7 @@ void loop()
     inFillLoop = true;
     inFillLoopExecuted = true; //This is an "is dirty" variable for counting lifetime bottles. Reset in platformUp loop.
 
-    //pinMode(switchFillPin, INPUT_PULLUP); // TO DO: See above comment above...is this still needed?
+    pinMode(switchFillPin, INPUT_PULLUP); // TO DO: See above comment above...is this still needed?
     
     //while the button is  pressed, fill the bottle: open S1 and S3
     relayOn(relay1Pin, true);
@@ -1451,7 +1462,6 @@ void loop()
     else 
     {
       // CASE 3: Bottle pressure dropped below Deltatamp threshold; i.e., filling too fast
-
       //=============================================
       // REPRESSURIZE LOOP
       //=============================================
@@ -1550,14 +1560,16 @@ void loop()
   //========================================================================================
 
 
-  //================================================================================
+  //========================================================================================
   // DEPRESSURIZE LOOP
-  //================================================================================
+  //========================================================================================
 
   LABEL_inDepressurizeLoop:
   
   while(button3State == LOW && switchFillState == HIGH && (P1 - pressureOffset >= pressureDeltaDown)) 
   {  
+    pinMode(switchFillPin, INPUT_PULLUP); // TO DO: Zach added this to Fill loop--let's try it here too
+
     inDepressurizeLoop = true;
     digitalWrite(light3Pin, HIGH);
 
@@ -1574,7 +1586,7 @@ void loop()
       {
         digitalWrite(light2Pin, HIGH); 
         relayOn(relay2Pin, true);
-        delay(50);
+        delay(50);  // Burst duration
         relayOn(relay2Pin, false);
         digitalWrite(light2Pin, LOW);
       }
@@ -1656,11 +1668,11 @@ void loop()
    }
   
   // END DEPRESSURIZE LOOP
-  //=======================================================================
+  //============================================================================================
 
-  // ======================================================================
+  // ===========================================================================================
   // DOOR OPENING LOOP
-  // ======================================================================
+  // ===========================================================================================
  
   // Only activate door solenoid if door is already closed
   
@@ -1682,7 +1694,7 @@ void loop()
   }
 
   // DOOR OPEN LOOP EXIT ROUTINES
-  //=======================================================================
+  //============================================================================================
 
   if(inDoorOpenLoop)
   {
@@ -1762,7 +1774,7 @@ void loop()
   } 
   
   // END PLAFORM LOWER LOOP
-  //=====================================================================================================
+  //============================================================================================
 }
 
 //=======================================================================================================
@@ -1771,9 +1783,9 @@ void loop()
 
 
 /*
-// ======================================================================================================
+// =============================================================================================
 // CODE FRAGMENTS 
-// ======================================================================================================
+// =============================================================================================
   
 
 /* THIS FUNCTION ADDED BY MATT
