@@ -161,8 +161,7 @@ void printLcd (int line, String newString)
 // Allows relay states to be easily be changed from HI=on to LOW=on
 void relayOn(int pinNum, boolean on){
   if(on){
-    digitalWrite(pinNum, LOW); //turn relay on
-  }
+    digitalWrite(pinNum, LOW);} //turn relay on
   else{
     digitalWrite(pinNum, HIGH); //turn relay off
   }
@@ -436,10 +435,6 @@ void setup()
   // 40 psi = 543 units (with ~35 unit offset). So comparisons should be done on 508 units
   // pressureNull = 200/508 * (pressureRegStartUp - pressureOffset2);
   // pressureDeltaAutotamp  = 250/508 * (pressureRegStartUp - pressureOffset2);
-
-  numberCycles = EEPROM.read (2);
-  String (convInt) = floatToString(buffer, numberCycles, 0);
-  String (outputInt) = "Total fills: " + convInt;
 
   //Initial user message
   lcd.setCursor (0, 0); 
@@ -718,13 +713,13 @@ void setup()
   {
     if (P2 - pressureOffset2 < pressureNull)
     {
-      relayOn(relay4Pin, false);
+      relayOn(relay4Pin, false);   // When input pressure low, close S4 to conserve gas and keep platform up (it should be closed already)
       lcd.setCursor (0, 2);
       lcd.print (F("Platform locked..."));
+      delay (500); // Can delete later
     }
     else
     {  
-      relayOn(relay5Pin, false);   // Close if not already
       relayOn(relay4Pin, true);    // Turn on platform support immediately. Raises platform if no bottle; keeps stuck bottle in place
     }
   }  
@@ -743,7 +738,7 @@ void setup()
       delay(100);
     }
     delay(500);                // A little delay after closing door before raising platform
-    relayOn(relay4Pin, true);  // Raise platform     
+    relayOn(relay4Pin, true);  // Now Raise platform     
 
     /*
     lcd.setCursor (0, 0);
@@ -761,7 +756,10 @@ void setup()
   }
 
   //NOW print lifetime fills
-  printLcd (2, outputInt); // Print lifetime fills
+  numberCycles = EEPROM.read (2);
+  String (convInt) = floatToString(buffer, numberCycles, 0);
+  String (outputInt) = "Total fills: " + convInt;
+  printLcd (2, outputInt);
 
   // Blinks lights and give time to de-pressurize stuck bottle
   for (int n = 0; n < 1; n++)
@@ -868,12 +866,14 @@ void setup()
     delay(1000);
     doorOpen(); 
     pressureRegStartUp = analogRead (sensor2Pin); // Get GOOD start pressure for emergency lock loop
+    inPressurizedBottleLoop = false;
   } 
 
   if (inPressureNullLoop)
   {
     doorOpen();
     pressureRegStartUp = analogRead (sensor2Pin); // Get GOOD start pressure for emergency lock loop
+    inPressureNullLoop = false;
   }
 
   // END NULL PRESSURE LOOP
@@ -886,7 +886,6 @@ void setup()
   relayOn(relay5Pin, true);
   delay(3000);  
   relayOn(relay5Pin, false); 
-    
   relayOn(relay3Pin, false); // Close this so solenoid doesn't overhead on normal startup
   
   // Open door if closed
@@ -930,9 +929,9 @@ void loop()
   if (switchDoorState == LOW && platformStateUp == false)
   {
     lcd.setCursor (0, 0);
-    lcd.print (F("B3 opens door       ")); 
+    lcd.print (F("B3 opens door;      ")); 
     lcd.setCursor (0, 1);
-    lcd.print (F("                    "));
+    lcd.print (F("then insert bottle. "));
   }
   if (switchDoorState == HIGH && platformStateUp == false)
   {
@@ -940,7 +939,7 @@ void loop()
     lcd.setCursor (0, 0);
     lcd.print (F("Insert bottle;      "));
     lcd.setCursor (0, 1);
-    lcd.print (F("B1 raises platform  "));  
+    lcd.print (F("B1 raises platform. "));  
   }  
 
   //Check Button2 toggle state
@@ -990,11 +989,11 @@ void loop()
   */
   
   boolean inEmergencyLockLoop = false;
-  boolean buzzOnce = false;
   boolean platformEmergencyLock = false;
+  boolean buzzOnce = false;
   
   // If pressure drops, go into this loop and wait for user to fix
-  while (pressure2Idle < pressureRegStartUp - 75) // Hardcoded number to determine what consitutes a pressure drop--try 50
+  while (pressure2Idle < pressureRegStartUp - 75) // Hardcoded number to determine what consitutes a pressure drop.
   {
     inEmergencyLockLoop = true;
 
@@ -1002,15 +1001,22 @@ void loop()
     pressure2Idle = analogRead(sensor2Pin); 
     
     //If bottle is pressurized (along with pressure sagging), also lock the platform
-    if (pressureIdle - pressureOffset > pressureNull)
+    if (pressureIdle - pressureOffset > pressureDeltaDown)
     {
       platformEmergencyLock = true;
       relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
-      relayOn (relay3Pin, true);    // Shall we vent the bottle??
+      relayOn (relay3Pin, true);    // Vent the bottle to be safe
 
       lcd.setCursor (0, 2);
       lcd.print (F("Platform locked.    "));
-      delay(2000);
+
+      if (buzzOnce == false)
+      {
+        digitalWrite (buzzerPin, HIGH); 
+        delay (2000);
+        digitalWrite (buzzerPin, LOW);
+        buzzOnce = true;
+      }
     }  
     
     lcd.setCursor (0, 0);
