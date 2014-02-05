@@ -754,7 +754,7 @@ void setup()
     lcd.print (F("Initializing...     "));
     */
     
-    //Re-write intro text
+    //Re-write intro text // NOT SURE IF NEED TO REWRITE ANYTHING BUT LINE 2
     for (int n = 0; n <= 3; n++){
       strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
       printLcd (n % 4, bufferP);} 
