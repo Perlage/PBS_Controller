@@ -6,7 +6,7 @@ Perlini Bottling System v1.0
 Author: 
   Evan Wallace
   Perlage Systems, Inc.
-  Seattle WA USA
+  Seattle, WA 98101 USA
   
 Copyright 2013, 2014  All rights reserved
 
@@ -630,9 +630,9 @@ void setup()
       inManualModeLoop = false;
       
       lcd.setCursor (0, 0);
-      lcd.print (F("                    "));
+      lcd.print (F(" ***MANUAL MODE***  "));
       lcd.setCursor (0, 1);
-      lcd.print (F("                    "));
+      lcd.print (F("Control w/ valve... "));
       
       while (P1 - pressureOffset > pressureDeltaDown)
       {
@@ -983,8 +983,11 @@ void loop()
   {
     inEmergencyLockLoop = true;
 
+    pressureIdle = analogRead(sensor1Pin); 
+    pressure2Idle = analogRead(sensor2Pin); 
+    
     //If bottle is pressurized (along with pressure sagging), also lock the platform
-    if (P1 - pressureOffset > pressureNull)
+    if (pressureIdle - pressureOffset > pressureNull)
     {
       platformEmergencyLock = true;
       relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
@@ -992,6 +995,7 @@ void loop()
 
       lcd.setCursor (0, 2);
       lcd.print (F("Platform locked.    "));
+      delay(2000);
     }  
     
     lcd.setCursor (0, 0);
