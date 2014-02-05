@@ -327,7 +327,7 @@ const char *strLcdTable[] PROGMEM =  // Name of table following * is arbitrary
 void setup()
 {
   //Setup pins
-  pinMode(button1Pin, INPUT);  //Changed buttons 1,2,3 from PULLUP to regular when starting to use touchbuttons, which use a pulldown resistor
+  pinMode(button1Pin, INPUT);  //Changed buttons 1,2,3 from PULLUP to regular when starting to use touchbuttons, which use a pulldown resistor. Unpushed state is LOW
   pinMode(button2Pin, INPUT);
   pinMode(button3Pin, INPUT);  
   pinMode(relay1Pin, OUTPUT);      
@@ -352,7 +352,7 @@ void setup()
   digitalWrite(relay5Pin, HIGH); 
   digitalWrite(relay6Pin, HIGH);
   
-  //set to HIGH which "open" for touchbuttons
+  //set to HIGH which "open" for touchbuttons // TO DO: Wait--LOW is open...doesn't matter cause we read buttons immed?
   digitalWrite(button1Pin, HIGH); 
   digitalWrite(button2Pin, HIGH);
   digitalWrite(button3Pin, HIGH);
@@ -526,6 +526,7 @@ void setup()
     // MENU3============================
     if (button3StateMENU == LOW)
     {
+      //Continue with startup routine
       inMenuLoop = false;
       //delay(500);  
       lcd.setCursor (0, 0);
@@ -533,7 +534,6 @@ void setup()
       printLcd (1, "System, " + versionSoftwareTag);
       lcd.setCursor (0, 2);
       lcd.print (F("Exiting menu...     "));
-      //delay(1000); //Just to give a little time before platform goes up  
     }  
   }
 
