@@ -447,9 +447,10 @@ void setup()
   printLcd (1, "System, " + versionSoftwareTag);
   lcd.setCursor (0, 3); 
   lcd.print (F("Initializing..."));
-    
-  delay(1000); //Just to give a little time before platform goes up
-  printLcd (2, outputInt); // Print lifetime fills
+  
+  // NO DELAYS!! may have pressurized bottle    
+  //delay(1000); //Just to give a little time before platform goes up 
+  //printLcd (2, outputInt); // Print lifetime fills
   
   //=================================================================================
   // MENU ROUTINE
@@ -700,27 +701,40 @@ void setup()
   // END MANUAL MODE
   //=================================================================================
  
+  //=================================================================================
   // RESUME NORMAL STARTUP
   //=================================================================================
 
+  // Get fresh pressure and door state measurements
   switchDoorState = digitalRead(switchDoorPin); 
+  P1 = analogRead(sensor1Pin);
+  P2 = analogRead(sensor2Pin);
+  
+  relayOn(relay5Pin, false); // Close if not already
 
-  // Turn on platform support immediately, but make sure door is closed so no pinching!
-  if (switchDoorState == LOW)
+  // PLATFROM LOCK OR SUPPORT ROUTINE. DO THESE FIRST FOR SAFETY
+  // IMMEDIATELY lock platform if P2 is low and P1 is high, or apply platform support if P1 and P2 high
+  if (P1 - pressureOffset > pressureDeltaDown)
   {
-    relayOn(relay5Pin, false); // Close if not already
-
-    if (P2 - pressureOffset2 < pressureNull){
-      relayOn(relay4Pin, false);}  // Lock platform if regulator pressure is low to help keep platform up.
-    else {
-      relayOn(relay4Pin, true);}   // Turn on platform support immediately. Raises platform if no bottle; keeps stuck bottle in place
-  }
+    if (P2 - pressureOffset2 < pressureNull)
+    {
+      relayOn(relay4Pin, false);
+      lcd.setCursor (0, 2);
+      lcd.print (F("Platform locked..."));
+    }
+    else
+    {  
+      relayOn(relay5Pin, false);   // Close if not already
+      relayOn(relay4Pin, true);    // Turn on platform support immediately. Raises platform if no bottle; keeps stuck bottle in place
+    }
+  }  
+  // But if P1 is not high, then there is no bottle, or bottle pressure is low. So raise platform--but take time to make user close door, so no pinching
   else
   {
-    while (switchDoorState == HIGH)
+    while (switchDoorState == HIGH) // Make sure door is closed
     {
       switchDoorState = digitalRead(switchDoorPin); 
-      lcd.setCursor (0, 0);
+      lcd.setCursor (0, 2);
       lcd.print (F("PLEASE CLOSE DOOR..."));
 
       digitalWrite(buzzerPin, HIGH); 
@@ -728,9 +742,7 @@ void setup()
       digitalWrite(buzzerPin, LOW);
       delay(100);
     }
-
-    delay(500);
-    relayOn(relay5Pin, false); // Close if not already   
+    delay(500);                // A little delay after closing door before raising platform
     relayOn(relay4Pin, true);  // Raise platform     
 
     /*
@@ -745,10 +757,13 @@ void setup()
     //Re-write intro text
     for (int n = 0; n <= 3; n++){
       strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-      printLcd (n % 4, bufferP);}
-  }    
+      printLcd (n % 4, bufferP);} 
+  }
 
-  // Blinks lights and give time to degas stuck bottle
+  //NOW print lifetime fills
+  printLcd (2, outputInt); // Print lifetime fills
+
+  // Blinks lights and give time to de-pressurize stuck bottle
   for (int n = 0; n < 1; n++)
   {
     digitalWrite(light1Pin, HIGH);
