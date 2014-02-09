@@ -1007,11 +1007,10 @@ void loop()
       relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
       relayOn (relay3Pin, true);    // Vent the bottle to be safe
 
-      lcd.setCursor (0, 2);
-      lcd.print (F("Platform locked.    "));
-
       if (buzzOnce == false)
       {
+        lcd.setCursor (0, 2);
+        lcd.print (F("Platform locked.    "));
         digitalWrite (buzzerPin, HIGH); 
         delay (2000);
         digitalWrite (buzzerPin, LOW);
