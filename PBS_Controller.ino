@@ -255,7 +255,6 @@ void pressureDump()
   relayOn(relay3Pin, false);  
 }
 
-
 // FUNCTION: Read Buttons
 // ======================================================================================
 void readButtons()
@@ -743,7 +742,7 @@ void setup()
     }
     else
     {  
-      relayOn(relay4Pin, true);    // Turn on platform support immediately. Raises platform if no bottle; keeps stuck bottle in place
+      relayOn(relay4Pin, true);    // Turn on platform support immediately if P2 high--keeps stuck bottle in place
     }
   }  
   // But if P1 is not high, then there is no bottle, or bottle pressure is low. So raise platform--but take time to make user close door, so no pinching
