@@ -247,7 +247,7 @@ void readInputs()
 }
 
 // FUNCTION: Pressure reading/conversion/output
-String pressureOutput()
+void pressureOutput()
 {
   P1 = analogRead(sensorP1Pin); 
   P2 = analogRead(sensorP2Pin);
@@ -293,6 +293,7 @@ void platformUpLoop()
     printLcd(2, platformStatus);  
 
     button1State = !digitalRead(button1Pin); 
+    switchDoorState = digitalRead(switchDoorPin);
   }  
 
   // PLATFORM RAISING LOOP EXIT ROUTINES
@@ -838,10 +839,11 @@ void setup()
     inPressureNullLoop = false;
   }
 
-  // END NULL PRESSURE LOOP
+  // END NULL PRESSURE ROUTINE
   // ====================================================================================
 
-  // Do the normal ending when pressure is OK
+  // Continue with normal ending when pressure is OK
+  // ====================================================================================
 
   // Drop platform, which had been raised before nullpressure checks
   relayOn(relay4Pin, false);  
@@ -929,6 +931,7 @@ void loop()
 
   // Main Loop idle pressure measurement and LCD print
   // ======================================================================
+  
   pressureOutput();
   printLcd(3, outputPSI_rb); 
   
@@ -951,7 +954,7 @@ void loop()
   boolean buzzOnce = false;
   
   // If pressure drops, go into this loop and wait for user to fix
-  while (P2 < pressureRegStartUp - 75) // Hardcoded number to determine what consitutes a pressure drop.
+  while (P2 -pressureOffset2 < pressureRegStartUp - 75) // Hardcoded number to determine what consitutes a pressure drop.
   {
     inEmergencyLockLoop = true;
 
@@ -1028,6 +1031,7 @@ void loop()
   // while B1 is pressed, platform is not UP, and door is open, raise bottle platform.
   // =====================================================================================  
 
+  //readButtons();
   platformUpLoop();
 
   // END PLATFORM RAISING LOOP
