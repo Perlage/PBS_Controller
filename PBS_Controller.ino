@@ -623,15 +623,7 @@ void setup()
   printLcd (1, "System, " + versionSoftwareTag);
   lcd.setCursor (0, 3); 
   lcd.print (F("Initializing..."));
-<<<<<<< HEAD
   
-  // NO DELAYS!! may have pressurized bottle    
-  //delay(1000); //Just to give a little time before platform goes up 
-  //printLcd (2, outputInt); // Print lifetime fills
-  
-=======
-    
->>>>>>> feature/Manual_Mode_rework
   //=================================================================================
   // MENU ROUTINE
   //=================================================================================
@@ -724,36 +716,22 @@ void setup()
 
   // END MENU ROUTINE
   //=================================================================================  
-
+ 
  
   //=================================================================================
-<<<<<<< HEAD
- 
-  //=================================================================================
-=======
->>>>>>> feature/Manual_Mode_rework
   // RESUME NORMAL STARTUP
   //=================================================================================
 
   // Get fresh pressure and door state measurements
   switchDoorState = digitalRead(switchDoorPin); 
-<<<<<<< HEAD
-  P1 = analogRead(sensor1Pin);
-  P2 = analogRead(sensor2Pin);
-=======
   P1 = analogRead(sensorP1Pin);
   P2 = analogRead(sensorP2Pin);
->>>>>>> feature/Manual_Mode_rework
-  
+
   relayOn(relay5Pin, false); // Close if not already
 
   // PLATFROM LOCK OR SUPPORT ROUTINE. DO THESE FIRST FOR SAFETY
   // IMMEDIATELY lock platform if P2 is low and P1 is high, or apply platform support if P1 and P2 high
-<<<<<<< HEAD
-  if (P1 - pressureOffset > pressureDeltaDown)
-=======
   if (P1 - pressureOffset1 > pressureDeltaDown)
->>>>>>> feature/Manual_Mode_rework
   {
     if (P2 - pressureOffset2 < pressureNull)
     {
@@ -764,11 +742,7 @@ void setup()
     }
     else
     {  
-<<<<<<< HEAD
-      relayOn(relay4Pin, true);    // Turn on platform support immediately. Raises platform if no bottle; keeps stuck bottle in place
-=======
       relayOn(relay4Pin, true);    // Turn on platform support immediately if P2 high--keeps stuck bottle in place
->>>>>>> feature/Manual_Mode_rework
     }
   }  
   // But if P1 is not high, then there is no bottle, or bottle pressure is low. So raise platform--but take time to make user close door, so no pinching
@@ -777,12 +751,7 @@ void setup()
     while (switchDoorState == HIGH) // Make sure door is closed
     {
       switchDoorState = digitalRead(switchDoorPin); 
-<<<<<<< HEAD
-      lcd.setCursor (0, 2);
-      lcd.print (F("PLEASE CLOSE DOOR..."));
-=======
       lcd.setCursor (0, 2); lcd.print (F("PLEASE CLOSE DOOR..."));
->>>>>>> feature/Manual_Mode_rework
 
       digitalWrite(buzzerPin, HIGH); 
       delay(100);
@@ -806,21 +775,9 @@ void setup()
       strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
       printLcd (n % 4, bufferP);} 
   }
-<<<<<<< HEAD
-
-  //NOW print lifetime fills
-  numberCycles = EEPROM.read (2);
-  String (convInt) = floatToString(buffer, numberCycles, 0);
-  String (outputInt) = "Total fills: " + convInt;
-  printLcd (2, outputInt);
-
-  // Blinks lights and give time to de-pressurize stuck bottle
-  for (int n = 0; n < 1; n++)
-=======
 
   // Blinks lights and give time to de-pressurize stuck bottle
   for (int n = 0; n < 0; n++)
->>>>>>> feature/Manual_Mode_rework
   {
     digitalWrite(light1Pin, HIGH);
     delay(500);
@@ -915,11 +872,7 @@ void setup()
     //Open door
     delay(2000); // Delay gives time for getting accurate pressure reading
     doorOpen(); 
-<<<<<<< HEAD
-    pressureRegStartUp = analogRead (sensor2Pin); // Get GOOD start pressure for emergency lock loop
-=======
     pressureRegStartUp = analogRead (sensorP2Pin); // Get GOOD start pressure for emergency lock loop
->>>>>>> feature/Manual_Mode_rework
     inPressurizedBottleLoop = false;
   } 
 
@@ -927,11 +880,7 @@ void setup()
   {
     delay(2000); // Delay gives time for getting accurate pressure reading
     doorOpen();
-<<<<<<< HEAD
-    pressureRegStartUp = analogRead (sensor2Pin); // Get GOOD start pressure for emergency lock loop
-=======
     pressureRegStartUp = analogRead (sensorP2Pin); // Get GOOD start pressure for emergency lock loop
->>>>>>> feature/Manual_Mode_rework
     inPressureNullLoop = false;
   }
 
@@ -992,25 +941,6 @@ void loop()
   switchModeState  =  digitalRead(switchModePin);
   delay(10);
 
-<<<<<<< HEAD
-  if (switchDoorState == LOW && platformStateUp == false)
-  {
-    lcd.setCursor (0, 0);
-    lcd.print (F("B3 opens door;      ")); 
-    lcd.setCursor (0, 1);
-    lcd.print (F("then insert bottle. "));
-  }
-  if (switchDoorState == HIGH && platformStateUp == false)
-  {
-   
-    lcd.setCursor (0, 0);
-    lcd.print (F("Insert bottle;      "));
-    lcd.setCursor (0, 1);
-    lcd.print (F("B1 raises platform. "));  
-  }  
-
-=======
->>>>>>> feature/Manual_Mode_rework
   //Check Button2 toggle state
   //======================================================================
   if (button2StateTEMP == LOW && button2ToggleState == false){  //ON push
@@ -1078,11 +1008,7 @@ void loop()
   boolean buzzOnce = false;
   
   // If pressure drops, go into this loop and wait for user to fix
-<<<<<<< HEAD
-  while (pressure2Idle < pressureRegStartUp - 75) // Hardcoded number to determine what consitutes a pressure drop.
-=======
   while (P2 -pressureOffset2 < pressureRegStartUp - 75) // Hardcoded number to determine what consitutes a pressure drop.
->>>>>>> feature/Manual_Mode_rework
   {
     inEmergencyLockLoop = true;
 
@@ -1090,32 +1016,18 @@ void loop()
     P1 = analogRead(sensorP2Pin); 
     
     //If bottle is pressurized (along with pressure sagging), also lock the platform
-<<<<<<< HEAD
-    if (pressureIdle - pressureOffset > pressureDeltaDown)
-=======
     if (P1 - pressureOffset1 > pressureDeltaDown)
->>>>>>> feature/Manual_Mode_rework
     {
       platformEmergencyLock = true;
       relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
       relayOn (relay3Pin, true);    // Vent the bottle to be safe
 
-<<<<<<< HEAD
-      if (buzzOnce == false)
-      {
-        lcd.setCursor (0, 2);
-        lcd.print (F("Platform locked.    "));
-        digitalWrite (buzzerPin, HIGH); 
-        delay (2000);
-        digitalWrite (buzzerPin, LOW);
-=======
       lcd.setCursor (0, 2);
       lcd.print (F("Platform locked.    "));
 
       if (buzzOnce == false)
       {
         buzzer(2000);
->>>>>>> feature/Manual_Mode_rework
         buzzOnce = true;
       }
     }  
