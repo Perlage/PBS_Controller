@@ -626,30 +626,44 @@ void setup()
   
   //=================================================================================
   // MENU ROUTINE
+  /*
+  
+  Menu 1
+  Menu 2
+  Menu More
+  
+  Menu 3
+  Menu 4
+  Menu More  
+  
+  Menu 1
+  Menu 2
+  Menu Exit
+  
+  */
   //=================================================================================
    
   button1State = !digitalRead(button1Pin); 
-  boolean button1StateMENU = !digitalRead(button1Pin); 
-  boolean button2StateMENU = !digitalRead(button2Pin); 
-  boolean button3StateMENU = !digitalRead(button3Pin); 
-  delay(25);
-
+  boolean button1StateMENU;
+  boolean button2StateMENU;
+  boolean button3StateMENU;
+  
   while (button1State == LOW)
   {
     inMenuLoop = true;
+    button1State = !digitalRead(button1Pin); 
+    delay(25);   
     
-    //printLcd (0, "***MENU*** Press...");
-    //printLcd (1, "B1: Manual Mode");
-    //printLcd (2, "B2: Autosiphon time");
-    //printLcd (3, "B3: Exit Menu");
-
+    //lcd.setCursor (0, 0); lcd.print (F("***MENU*** Press:   "));
+    //lcd.setCursor (0, 1); lcd.print (F("B1: Manual Mode     "));
+    //lcd.setCursor (0, 2); lcd.print (F("B2: Autosiphon time "));
+    //lcd.setCursor (0, 3); lcd.print (F("B3: Exit Menu       "));
+    //lcd.clear();  
+    
     // Write Main Menu options    
     for (int n = 4; n <= 7; n++){
       strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
       printLcd (n % 4, bufferP);}
-
-    button1State = !digitalRead(button1Pin); 
-    delay (10);
   }  
     
   while (inMenuLoop == true)
@@ -658,6 +672,7 @@ void setup()
     button2StateMENU = !digitalRead(button2Pin); 
     button3StateMENU = !digitalRead(button3Pin); 
     switchDoorState = digitalRead(switchDoorPin);
+    delay(25);
     
     // MENU1============================
     if (button1StateMENU == LOW)
@@ -690,15 +705,47 @@ void setup()
     } 
 
     // MENU2============================
-    if (button2StateMENU == LOW)
-    {
-      autoSiphonDuration = 7500;
 
-      lcd.setCursor (0, 0); lcd.print (F("Autosiphon duration "));
-      lcd.setCursor (0, 1); lcd.print (F("Increased to 7500ms "));
-      lcd.setCursor (0, 2); lcd.print (F("                    "));
-      delay(2000);
+    boolean autoSiphonDurationLoop = false;
+
+    while (button2StateMENU == LOW)
+    {
+      //inMenuLoop = false;
+      autoSiphonDurationLoop = true;
+      button2StateMENU = !digitalRead(button2Pin); 
+
+      lcd.setCursor (0, 0); lcd.print (F("B1 inc. by 1 sec    "));
+      lcd.setCursor (0, 1); lcd.print (F("B3 dec. by 1 sec    "));
+      lcd.setCursor (0, 2); lcd.print (F("B2 sets value; exits"));
     }  
+
+    while (autoSiphonDurationLoop == true)
+    {
+      button1State = !digitalRead(button1Pin); 
+      button2State = !digitalRead(button2Pin); 
+      button3State = !digitalRead(button3Pin); 
+      delay(25);
+      
+      //autoSiphonDuration = 7500;
+    
+      String (convTime) = floatToString(buffer, autoSiphonDuration / 1000, 1);
+      printLcd (3, "Current value: " + convTime + " s");
+      delay(100);
+      
+      if (button1State == LOW){
+        autoSiphonDuration = autoSiphonDuration + 1000;
+      }  
+      if (button3State == LOW){
+        autoSiphonDuration = autoSiphonDuration - 1000;
+      }  
+      if (button2State == LOW){
+        autoSiphonDurationLoop = false;
+        printLcd (3, "New value: " + convTime + " s");
+        delay(3000);
+        autoSiphonDurationLoop = false;
+        button3StateMENU = LOW;
+      } 
+    }
 
     // MENU3============================
     if (button3StateMENU == LOW)
@@ -706,11 +753,9 @@ void setup()
       //Continue with startup routine
       inMenuLoop = false;
       //delay(500);  
-      lcd.setCursor (0, 0);
-      lcd.print (F("Perlini Bottling    "));
+      lcd.setCursor (0, 0); lcd.print (F("Perlini Bottling    "));
       printLcd (1, "System, " + versionSoftwareTag);
-      lcd.setCursor (0, 2);
-      lcd.print (F("Exiting menu...     "));
+      lcd.setCursor (0, 2); lcd.print (F("Exiting menu...     "));
     }  
   }
 
@@ -1175,28 +1220,29 @@ void loop()
     {
       pressurizeDuration = millis() - pressurizeStartTime;  //Get the duration
       if (pressurizeDuration < 50){
-        PTest1 = analogRead(sensorP1Pin);                    //Take a reading at 50ms after pressurization begins
+        PTest1 = analogRead(sensorP1Pin);                   //Take a reading at 50ms after pressurization begins. 50 ms gives time for pressure to settle down after S2 opens
       }
       if (pressurizeDuration < 150){
-        PTest2 = analogRead(sensorP1Pin);                    //Take a reading at 100ms after pressurization begins
+        PTest2 = analogRead(sensorP1Pin);                   //Take a reading at 100ms after pressurization begins
       }  
       if (pressurizeDuration > 150){                        //After 100ms, test
         if (PTest2 - PTest1 < 15){                          //If there is less than a 15 unit difference, must be no bottle in place
           button2State = HIGH; 
+          relayOn(relay2Pin, false);                        //close S2 immediately
           button2ToggleState = true;                        //Need this to keep toggle routine below from changing button2state back to LOW 
           PTestFail = true;                                 //If true, no bottle. EXIT 
         }  
         platformLockedNew = false;
       }
-      /*
+      
       Serial.print ("T= "); 
       Serial.print (pressurizeDuration);
       Serial.print (" P1= ");  
       Serial.print (PTest1);
       Serial.print (" P2= "); 
       Serial.print (PTest2);
-      Serial.println ();
-      */
+      Serial.println (); 
+      
     }
     
     //Read sensors
