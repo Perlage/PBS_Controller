@@ -127,7 +127,8 @@ int timePlatformLock                 = 1250;    // Time in ms before platform lo
 int autoPlatformDropDuration         = 1500;    // Duration of platform autodrop in ms
 
 //Key performance parameters
-int autoSiphonDuration               = 3000;    // Duration of autosiphon function in ms //SACC: CHANGED FROM 2500 TO 5500 WITH LONGER TUBE FOR 750 ml
+int autoSiphonDuration;                         // Duration of autosiphon function in ms
+byte autoSiphonDurationSec;                     // Duration of autosiphon function in sec
 int antiDripDuration                 =  500;    // Duration of anti-drip autosiphon
 int foamDetectionDelay               = 2000;    // Amount of time to pause after foam detection
 int pausePlatformDrop                = 1000;    // Pause before platform drops after door automatically opens
@@ -602,9 +603,13 @@ void setup()
   
   relayOn(relay3Pin, true); // Open at earliest possibility to vent  
   
-  // Read the offset values into offsetP1 and offsetP2
-  offsetP1 = EEPROM.read(0);
-  offsetP2 = EEPROM.read(1);
+  // Read EEPROM
+  offsetP1               = EEPROM.read(0);
+  offsetP2               = EEPROM.read(1);
+  numberCycles           = EEPROM.read(2);
+  autoSiphonDurationSec  = EEPROM.read(3);           // Need to stort this as byte in EEPROM--int won't work
+  
+  autoSiphonDuration = autoSiphonDurationSec * 1000; // convert to ms
   
   // Read States. Get initial pressure readings from sensor. 
   switchDoorState = digitalRead(switchDoorPin);  
@@ -636,10 +641,10 @@ void setup()
   Menu 4
   Menu More  
   
-  Menu 1
-  Menu 2
+  Menu 5
+  Menu 6
   Menu Exit
-  
+
   */
   //=================================================================================
    
@@ -672,7 +677,7 @@ void setup()
     button2StateMENU = !digitalRead(button2Pin); 
     button3StateMENU = !digitalRead(button3Pin); 
     switchDoorState = digitalRead(switchDoorPin);
-    delay(25);
+    delay(10);
     
     // MENU1============================
     if (button1StateMENU == LOW)
@@ -725,23 +730,26 @@ void setup()
       button2State = !digitalRead(button2Pin); 
       button3State = !digitalRead(button3Pin); 
       delay(25);
-      
-      //autoSiphonDuration = 7500;
-    
-      String (convTime) = floatToString(buffer, autoSiphonDuration / 1000, 1);
+          
+      String (convTime) = floatToString(buffer, autoSiphonDurationSec, 0);
       printLcd (3, "Current value: " + convTime + " s");
+      
       delay(100);
       
       if (button1State == LOW){
-        autoSiphonDuration = autoSiphonDuration + 1000;
+        autoSiphonDurationSec = autoSiphonDurationSec + 1;
       }  
       if (button3State == LOW){
-        autoSiphonDuration = autoSiphonDuration - 1000;
+        autoSiphonDurationSec = autoSiphonDurationSec - 1;
       }  
       if (button2State == LOW){
         autoSiphonDurationLoop = false;
         printLcd (3, "New value: " + convTime + " s");
-        delay(3000);
+        delay(2000);
+        
+        EEPROM.write (3, autoSiphonDurationSec);             //Write to EEPROM
+        autoSiphonDuration = autoSiphonDurationSec * 1000;   //Convert to ms
+        
         autoSiphonDurationLoop = false;
         button3StateMENU = LOW;
       } 
@@ -935,10 +943,13 @@ void setup()
   // Continue with normal ending when pressure is OK
   // ====================================================================================
 
-  //NOW print lifetime fills
-  numberCycles = EEPROM.read (2);
-  String (convInt) = floatToString(buffer, numberCycles, 0);
-  String (outputInt) = "Total fills: " + convInt;
+  //NOW print lifetime fills and autosiphon duration //DO TO: Put in menu item for current settings
+  String (convInt) = floatToString(buffer, autoSiphonDurationSec, 1);
+  String (outputInt) = "Autosiphon: " + convInt;
+  printLcd (2, outputInt); 
+  delay(1000); 
+  convInt = floatToString(buffer, numberCycles, 0);
+  outputInt = "Total fills: " + convInt;
   printLcd (2, outputInt);  
 
   // Drop platform, which had been raised before nullpressure checks
@@ -1234,7 +1245,7 @@ void loop()
         }  
         platformLockedNew = false;
       }
-      
+      /*
       Serial.print ("T= "); 
       Serial.print (pressurizeDuration);
       Serial.print (" P1= ");  
@@ -1242,7 +1253,7 @@ void loop()
       Serial.print (" P2= "); 
       Serial.print (PTest2);
       Serial.println (); 
-      
+      */
     }
     
     //Read sensors
