@@ -141,7 +141,10 @@ boolean button3ToggleState           = false;
 
 //System variables      
 int numberCycles;                                // Number of cycles since factory reset, measured by number of platform PLUS fill loop being executed
+byte numberCycles01;                             // Ones digit for numberCycles in EEPROM in base 255
+byte numberCycles10;                             // Tens digit for numberCycles in EEPROM in base 255
 int numberCyclesSession              = 0;        // Number of session cycles
+
 boolean inFillLoopExecuted           = false;    // True of FillLoop is dirty. Used to compute numberCycles
 char buffer[25];                                 // Used in float to string conv // 1-26 Changed from 25 to 20 //CHANGED BACK TO 25!! SEEMS TO BE IMPORTANT!
 char bufferP[30];                                // make sure this is large enough for the largest string it must hold; used for PROGMEM write to LCD
@@ -574,11 +577,11 @@ void setup()
     //Get new offset values
     offsetP1  = analogRead(sensorP1Pin); 
     offsetP2  = analogRead(sensorP2Pin); 
-    //numberCycles = 0; //Number of lifetime cycles
+    numberCycles = 0; //Number of lifetime cycles
     
     EEPROM.write (0, offsetP1);  //Zero offset for sensor1 (bottle)
     EEPROM.write (1, offsetP2); //Zero offset for sensor2 (regulator)
-    //EEPROM.write (2, numberCycles);    //Set number of cycles to zero
+    EEPROM.write (2, numberCycles);    //Set number of cycles to zero
 
     convOffset1 = floatToString(buffer, offsetP1, 1);
     convOffset2 = floatToString(buffer, offsetP2, 1);
@@ -606,10 +609,21 @@ void setup()
   // Read EEPROM
   offsetP1               = EEPROM.read(0);
   offsetP2               = EEPROM.read(1);
-  numberCycles           = EEPROM.read(2);
   autoSiphonDurationSec  = EEPROM.read(3);           // Need to stort this as byte in EEPROM--int won't work
+  numberCycles01         = EEPROM.read(4);
+  numberCycles10         = EEPROM.read(5);
   
+  //Read routine for autoSiphon  
   autoSiphonDuration = autoSiphonDurationSec * 1000; // convert to ms
+
+  //Read routine for numberCycles  
+  numberCycles = numberCycles10 * 255 + numberCycles01;
+  
+  //Write routine for numberCycles
+  //numberCycles01 = numberCycles % 255;
+  //numberCycles10 = (numberCycles - numberCycles01)/255;
+  //EEPROM.write(4, numberCycles01);
+  //EEPROM.write(5, numberCycles10);  
   
   // Read States. Get initial pressure readings from sensor. 
   switchDoorState = digitalRead(switchDoorPin);  
@@ -1368,7 +1382,7 @@ void loop()
     
     //Read and output pressure
     pressureOutput();
-    printLcd (3, outputPSI_d); 
+    printLcd (3, outputPSI_rb); 
     
     // CLEANING MODE: If clean switch closed, set FillState HIGH
     if (switchModeState == LOW)
@@ -1497,7 +1511,7 @@ void loop()
     
     // Pressure output    
     pressureOutput();
-    printLcd(3, outputPSI_b); 
+    printLcd(3, outputPSI_rb); 
     
     //Allow momentary "burst" foam tamping
     button2State = !digitalRead(button2Pin);
@@ -1676,15 +1690,18 @@ void loop()
     // Calculate lifetime and session fills    
     if (inFillLoopExecuted)
     {
-      numberCycles = EEPROM.read (2);                    //Read number of total cycles
       numberCycles = numberCycles + 1;                   //Increment lifetime cycles
       numberCyclesSession = numberCyclesSession + 1;     //Increment session cycles
       
-      EEPROM.write (2, numberCycles);  //write back to EEPROM
-      delay(10);
+      // Write lifetime cycles back to EEPROM
+      numberCycles01 = numberCycles % 255;
+      numberCycles10 = (numberCycles - numberCycles01)/255;
+      EEPROM.write(4, numberCycles01);
+      EEPROM.write(5, numberCycles10);
+      
       inFillLoopExecuted = false;
     }      
-    numberCycles = EEPROM.read (2);  //Read number of cycles
+
     String (convNumberCycles) = floatToString(buffer, numberCycles, 0);
     String (convNumberCyclesSession) = floatToString(buffer, numberCyclesSession, 0);
 
@@ -1692,6 +1709,11 @@ void loop()
     outputInt = "Session fills: " + convNumberCyclesSession;
     printLcd(2, outputInt); 
     delay(1000);
+    
+    outputInt = "Total fills: " + convNumberCycles;
+    printLcd(2, outputInt); 
+    delay(1000);
+    
 
     //Add the following to the platform UP routine, to get a more current value of the startPressure
     P1 = analogRead(sensorP1Pin); //If we've lowered the platform, assume we've gone through a cycle and store the startPressure again
