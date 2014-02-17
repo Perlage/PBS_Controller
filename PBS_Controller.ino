@@ -1444,8 +1444,8 @@ void loop()
       delay (25);
       sensorFillState = digitalRead(sensorFillPin); 
       delay (25); 
-            
-      button3State = LOW; // This make AUTO-depressurize after overfill
+             
+      button3State = LOW; // This make AUTO-depressurize after overfill // TO DO: shouldn't this be AutoMode_1?
     }
     else 
     {
