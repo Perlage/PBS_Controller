@@ -1285,11 +1285,9 @@ void loop()
       button2State = HIGH;                                         //exit WHILE loop
     }  
       
-    lcd.setCursor (0, 0);
-    lcd.print (F("B2 toggles filling;  "));
-    lcd.setCursor (0, 1);
-    lcd.print (F("B3 toggles exhaust. "));
-    printLcd(2,"Pressurizing..."); 
+    lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
+    lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
+    lcd.setCursor (0, 2); lcd.print (F("Pressurizing...     "));
 
     // Pressure output
     pressureOutput();
@@ -1431,7 +1429,7 @@ void loop()
       delay (50);
     }
     
-    // CASE 2: FillSwitch tripped--Overfill condition
+    // CASE 2: FillSensor tripped--Overfill condition
     else if (inFillLoop && sensorFillState == LOW) 
     {
       relayOn(relay1Pin, true);
@@ -1443,9 +1441,10 @@ void loop()
       relayOn(relay1Pin, false);
       relayOn(relay2Pin, false);
       
+      delay (25);
       sensorFillState = digitalRead(sensorFillPin); 
-      delay (50); 
-      
+      delay (25); 
+            
       button3State = LOW; // This make AUTO-depressurize after overfill
     }
     else 
