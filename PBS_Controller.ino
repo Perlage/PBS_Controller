@@ -1523,10 +1523,6 @@ void loop()
         relayOn(relay2Pin, false);
         digitalWrite(light2Pin, LOW);
       }
-
-    // Read sensors
-    P1 = analogRead(sensorP1Pin);
-    //P2 = analogRead(sensorP2Pin);
     
     // CLEANING MODE 
     if (switchModeState == LOW)
@@ -1590,10 +1586,10 @@ void loop()
     //CASE 3: Bottle was properly depressurized. If we reach here, the pressure must have reached threshold. Go to Platform lower loop
     if (P1 - offsetP1 <= pressureDeltaDown)
     {
-      digitalWrite(buzzerPin, HIGH); 
-      delay(100);
-      digitalWrite(buzzerPin, LOW);     
+      buzzer(100);
       autoMode_1 = true;  //Going to platform loop automatically, so set this var to partially drop platform 
+      printLcd(2, "Pausing...");
+      delay(2000); //Try waiting a bit to make sure foam doesn't gush
     }
     
     digitalWrite(light3Pin, LOW);
