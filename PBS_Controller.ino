@@ -238,7 +238,7 @@ void platformDrop()
   {
     relayOn(relay4Pin, false);   
     relayOn(relay5Pin, true); 
-    delay (3000);  
+    delay (autoPlatformDropDuration);  
     relayOn(relay5Pin, false); 
     platformStateUp = false;
   }
@@ -1247,11 +1247,11 @@ void loop()
       if (pressurizeDuration < 50){
         PTest1 = analogRead(sensorP1Pin);                   //Take a reading at 50ms after pressurization begins. 50 ms gives time for pressure to settle down after S2 opens
       }
-      if (pressurizeDuration < 150){
+      if (pressurizeDuration < 200){
         PTest2 = analogRead(sensorP1Pin);                   //Take a reading at 100ms after pressurization begins
       }  
-      if (pressurizeDuration > 150){                        //After 100ms, test
-        if (PTest2 - PTest1 < 15){                          //If there is less than a 15 unit difference, must be no bottle in place
+      if (pressurizeDuration > 200){                        //After 100ms, test
+        if (PTest2 - PTest1 < 20){                          //If there is less than a 15 unit difference, must be no bottle in place
           button2State = HIGH; 
           relayOn(relay2Pin, false);                        //close S2 immediately
           button2ToggleState = true;                        //Need this to keep toggle routine below from changing button2state back to LOW 
@@ -1309,24 +1309,13 @@ void loop()
     {
       printLcd (2, "No bottle, or leak");
       printLcd (3, "Wait...");
-
+      lcd.setCursor (0, 2); lcd.print (F("No bottle, or leak  "));
+      lcd.setCursor (0, 3); lcd.print (F("Wait...             "));
       digitalWrite(light1Pin, LOW); 
-      delay (2000);
 
-      //Open door
-      while (switchDoorState == LOW)
-      {
-        switchDoorState = digitalRead (switchDoorPin);
-        digitalWrite (relay6Pin, LOW);
-      }
-      digitalWrite (relay6Pin, HIGH);
-      switchDoorState = HIGH;
-      
-      //Make platform drop
-      digitalWrite(relay4Pin, HIGH); 
-      digitalWrite(relay5Pin, LOW); 
-      delay (3000);
-      digitalWrite(relay5Pin, HIGH); 
+      pressureDump();   // Dump any pressure that built up
+      doorOpen();       // Open door
+      platformDrop();   // Drop plaform
       
       //Reset variables
       PTestFail = false;      
@@ -1432,19 +1421,21 @@ void loop()
     // CASE 2: FillSensor tripped--Overfill condition
     else if (inFillLoop && sensorFillState == LOW) 
     {
-      relayOn(relay1Pin, true);
-      relayOn(relay2Pin, true);
-      
-      printLcd (2, "Adjusting level..."); 
-      delay(autoSiphonDuration); // This setting determines duration of autosiphon 
-      printLcd(2,"");       
-      relayOn(relay1Pin, false);
-      relayOn(relay2Pin, false);
-      
-      delay (25);
-      sensorFillState = digitalRead(sensorFillPin); 
-      delay (25); 
-             
+      while (inFillLoop && sensorFillState == LOW) 
+      {
+        relayOn(relay1Pin, true);
+        relayOn(relay2Pin, true);
+        
+        printLcd (2, "Adjusting level..."); 
+        delay(autoSiphonDuration); // This setting determines duration of autosiphon 
+        printLcd(2,"");       
+        relayOn(relay1Pin, false);
+        relayOn(relay2Pin, false);
+        
+        delay (25);
+        sensorFillState = digitalRead(sensorFillPin); 
+        delay (25); 
+      }       
       button3State = LOW; // This make AUTO-depressurize after overfill // TO DO: shouldn't this be AutoMode_1?
     }
     else 
@@ -1588,7 +1579,7 @@ void loop()
       buzzer(100);
       autoMode_1 = true;  //Going to platform loop automatically, so set this var to partially drop platform 
       printLcd(2, "Pausing...");
-      delay(2000); //Try waiting a bit to make sure foam doesn't gush
+      //delay(2000); //Try waiting a bit to make sure foam doesn't gush
     }
     
     digitalWrite(light3Pin, LOW);
