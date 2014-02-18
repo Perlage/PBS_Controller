@@ -630,11 +630,9 @@ void setup()
   // pressureDeltaMax  = 250/508 * (pressureRegStartUp - offsetP2);
 
   //Initial user message
-  lcd.setCursor (0, 0); 
-  lcd.print (F("Perlini Bottling"));
+  lcd.setCursor (0, 0);  lcd.print (F("Perlini Bottling"));
   printLcd (1, "System, " + versionSoftwareTag);
-  lcd.setCursor (0, 3); 
-  lcd.print (F("Initializing..."));
+  lcd.setCursor (0, 3);  lcd.print (F("Initializing..."));
   
   //=================================================================================
   // MENU ROUTINE
@@ -767,7 +765,6 @@ void setup()
     {
       //Continue with startup routine
       inMenuLoop = false;
-      //delay(500);  
       lcd.setCursor (0, 0); lcd.print (F("Perlini Bottling    "));
       printLcd (1, "System, " + versionSoftwareTag);
       lcd.setCursor (0, 2); lcd.print (F("Exiting menu...     "));
@@ -812,11 +809,10 @@ void setup()
       switchDoorState = digitalRead(switchDoorPin); 
       lcd.setCursor (0, 2); lcd.print (F("PLEASE CLOSE DOOR..."));
 
-      digitalWrite(buzzerPin, HIGH); 
-      delay(100);
-      digitalWrite(buzzerPin, LOW);
+      buzzer(100);
       delay(100);
     }
+    
     delay(500);                // A little delay after closing door before raising platform
     relayOn(relay4Pin, true);  // Now Raise platform     
 
@@ -944,7 +940,7 @@ void setup()
 
   //NOW print lifetime fills and autosiphon duration //DO TO: Put in menu item for current settings
   String (convInt) = floatToString(buffer, autoSiphonDurationSec, 1);
-  String (outputInt) = "Autosiphon: " + convInt;
+  String (outputInt) = "Autosiphon: " + convInt + " sec";
   printLcd (2, outputInt); 
   delay(1000); 
   convInt = floatToString(buffer, numberCycles, 0);
@@ -970,12 +966,9 @@ void setup()
     strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
     printLcd (n % 4, bufferP);}  
 
-  delay(500);
-  digitalWrite(light3Pin, LOW);
-  delay(100);
-  digitalWrite(light2Pin, LOW);
-  delay(100);
-  digitalWrite(light1Pin, LOW);
+  delay(500); digitalWrite(light3Pin, LOW);
+  delay(100); digitalWrite(light2Pin, LOW);
+  delay(100); digitalWrite(light1Pin, LOW);
 }
 
 //====================================================================================================================================
@@ -1154,7 +1147,7 @@ void loop()
     { 
       inPurgeLoop = true;
 
-      printLcd(2,"Purging..."); 
+      lcd.setCursor (0, 2); lcd.print (F("Purging...          "));
       digitalWrite(light1Pin, HIGH); 
 
       relayOn(relay2Pin, true); //open S2 to purge
@@ -1292,8 +1285,6 @@ void loop()
     //PRESSURE TEST EXIT ROUTINE
     if (PTestFail == true)
     {
-      printLcd (2, "No bottle, or leak");
-      printLcd (3, "Wait...");
       lcd.setCursor (0, 2); lcd.print (F("No bottle, or leak  "));
       lcd.setCursor (0, 3); lcd.print (F("Wait...             "));
       digitalWrite(light1Pin, LOW); 
@@ -1334,8 +1325,6 @@ void loop()
     inFillLoop = true;
     inFillLoopExecuted = true; //This is an "is dirty" variable for counting lifetime bottles. Reset in platformUpLoop.
 
-    pinMode(sensorFillPin, INPUT_PULLUP); // TO DO: See above comment above...is this still needed?
-    
     //while the button is  pressed, fill the bottle: open S1 and S3
     relayOn(relay1Pin, true);
     relayOn(relay3Pin, true);
@@ -1360,14 +1349,14 @@ void loop()
     if (switchModeState == LOW)
     {
       sensorFillState = HIGH;
-      printLcd (2, "Filling...CLEAN MODE");
+      lcd.setCursor (0, 2); lcd.print (F("Fill sensor disabled"));
     }
     else
     {
       //Read sensors
       sensorFillState = digitalRead(sensorFillPin); //Check fill sensor
       switchDoorState = digitalRead(switchDoorPin); //Check door switch 
-      printLcd (2, "Filling..."); 
+      lcd.setCursor (0, 2); lcd.print (F("Filling...          "));
     }   
     
     switchModeState = digitalRead(switchModePin); //Check cleaning switch 
@@ -1518,8 +1507,6 @@ void loop()
   
   while(button3State == LOW && sensorFillState == HIGH && (P1 - offsetP1 >= pressureDeltaDown)) 
   {  
-    pinMode(sensorFillPin, INPUT_PULLUP); // TO DO: Zach added this to Fill loop--let's try it here too
-
     inDepressurizeLoop = true;
     digitalWrite(light3Pin, HIGH);
 
@@ -1544,7 +1531,7 @@ void loop()
     if (switchModeState == LOW)
     {
       sensorFillState = HIGH;
-      lcd.setCursor (0, 2); lcd.print (F("Venting...CLEAN MODE"));
+      lcd.setCursor (0, 2); lcd.print (F("Foam sensor disabled"));
     }
     else
     {
@@ -1652,8 +1639,7 @@ void loop()
   {
     inPlatformLowerLoop = true;
     relayOn(relay4Pin, false); // Finally can close platform up solenoid
-    lcd.setCursor (0, 2);
-    lcd.print (F("Lowering platform..."));
+    lcd.setCursor (0, 2); lcd.print (F("Lowering platform..."));
     
     if(autoMode_1 == true)
     {
