@@ -1478,7 +1478,7 @@ void loop()
     readButtons();
     lcd.setCursor (0, 0); lcd.print (F("Manual Siphon: B1  "));
     lcd.setCursor (0, 1); lcd.print (F("Depressurize: B2   "));
-    lcd.setCursor (0, 1); lcd.print (F("Waiting...         "));
+    lcd.setCursor (0, 2); lcd.print (F("Waiting...         "));
 
     // This is manual autosiphon
     while (button1State == LOW)
@@ -1493,7 +1493,10 @@ void loop()
     delay (25);
     sensorFillState = digitalRead(sensorFillPin); 
     delay (25); 
-  
+    
+    pressureOutput();
+    printLcd (3, outputPSI_rb); 
+   
     // Emergency exit
     if (button2State == LOW)
     {
@@ -1503,6 +1506,7 @@ void loop()
       doorOpen();
       platformDrop();
       relayOn (relay3Pin, false);
+      sensorFillState == HIGH;
     }  
   }
   
