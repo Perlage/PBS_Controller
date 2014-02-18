@@ -314,7 +314,6 @@ void pressureOutput()
   (outputPSI_b)   = "Bottle: " + convPSI1 + " psi"; 
   (outputPSI_r)   = "Regulator: " + convPSI2 + " psi"; 
   (outputPSI_d)   = "Difference: " + convPSIdiff + " psi"; 
-  //return outputPSI;
 }  
 
 // FUNCTION: Platform UP Function Loop
@@ -618,6 +617,7 @@ void setup()
 
   //Read routine for numberCycles  
   numberCycles = numberCycles10 * 255 + numberCycles01;
+  //numberCycles = 1550; // Use to set numberCyles to some value
   
   //Write routine for numberCycles
   //numberCycles01 = numberCycles % 255;
@@ -1408,34 +1408,35 @@ void loop()
       relayOn(relay1Pin, true);
       relayOn(relay2Pin, true);
       
-      printLcd (2, "Anti drip..."); 
+      lcd.setCursor (0, 2); lcd.print (F("Anti drip...        "));
       delay(antiDripDuration); // This setting determines duration of autosiphon 
-      printLcd( 2, "");       
+      lcd.setCursor (0, 2); lcd.print (F("                    "));
+
       relayOn(relay1Pin, false);
       relayOn(relay2Pin, false);
       
+      delay (25);
       sensorFillState = digitalRead(sensorFillPin); 
-      delay (50);
+      delay (25);
     }
     
     // CASE 2: FillSensor tripped--Overfill condition
     else if (inFillLoop && sensorFillState == LOW) 
     {
-      while (inFillLoop && sensorFillState == LOW) 
-      {
-        relayOn(relay1Pin, true);
-        relayOn(relay2Pin, true);
-        
-        printLcd (2, "Adjusting level..."); 
-        delay(autoSiphonDuration); // This setting determines duration of autosiphon 
-        printLcd(2,"");       
-        relayOn(relay1Pin, false);
-        relayOn(relay2Pin, false);
-        
-        delay (25);
-        sensorFillState = digitalRead(sensorFillPin); 
-        delay (25); 
-      }       
+      relayOn(relay1Pin, true);
+      relayOn(relay2Pin, true);
+      
+      lcd.setCursor (0, 2); lcd.print (F("Adjusting level...  "));
+      delay(autoSiphonDuration); // This setting determines duration of autosiphon 
+      lcd.setCursor (0, 2); lcd.print (F("                    "));
+
+      relayOn(relay1Pin, false);
+      relayOn(relay2Pin, false);
+      
+      delay (25);
+      sensorFillState = digitalRead(sensorFillPin); 
+      delay (25); 
+             
       button3State = LOW; // This make AUTO-depressurize after overfill // TO DO: shouldn't this be AutoMode_1?
     }
     else 
@@ -1483,7 +1484,42 @@ void loop()
   // END FILL LOOP EXIT ROUTINE
   //========================================================================================
 
+  //========================================================================================
+  // CARBONATOR STUCK BOTTLE CATCH LOOP
+  //========================================================================================
 
+  while (sensorFillState == LOW)
+  {
+    Serial.print ("In carb loop");
+    
+    readButtons();
+    lcd.setCursor (0, 2); lcd.print (F("Siph: B1; Dump: B2"));
+
+    // This is manual autosiphon
+    while (button1State == LOW)
+    {
+      readButtons();
+      relayOn (relay1Pin, true);
+      relayOn (relay2Pin, true);
+    }  
+    relayOn (relay1Pin, false);
+    relayOn (relay2Pin, false);
+
+    delay (25);
+    sensorFillState = digitalRead(sensorFillPin); 
+    delay (25); 
+  
+    // Emergency exit
+    if (button2State == LOW)
+    {
+      pressureDump();
+      relayOn (relay3Pin, true);
+      doorOpen();
+      platformDrop();
+      relayOn (relay3Pin, false);
+    }  
+  }
+  
   //========================================================================================
   // DEPRESSURIZE LOOP
   //========================================================================================
