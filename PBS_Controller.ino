@@ -44,7 +44,7 @@ const int switchDoorPin              = 12;     // pin for door switch
 const int buzzerPin                  = 13;     // pin for buzzer
 
 const int sensorP2Pin                = A0;     // pin for pressure sensor 2 // 1-23 NOW REGULATOR PRESSURE. 
-const int sensorP1Pin                = A1;     // pin for preasure sensor 1 // 1-23 NOW BOTTLE PRESSURE
+const int sensorP1Pin                = A1;     // pin for pressure sensor 1 // 1-23 NOW BOTTLE PRESSURE
 const int switchModePin              = A2;     // New pin for Mode switch (formerly Clean Switch)
 const int light1Pin                  = A3;     // pin for button1 light 
 const int light2Pin                  = A4;     // pin for button2 light
@@ -52,8 +52,6 @@ const int light3Pin                  = A5;     // pin for button3 light
 
 // A0 formerly was sensor1, which is closest to what we now call bottle pressure, and A1 was unused. 
 // So switched sensor1 to A1 to make code changes easier. All reads of sensor1 will now read bottle pressure
-// sensor1 measures bottle. "1" or "" refers to bottle
-// sensor2 measures regulator. "2" refers to regulator
 
 // Declare variables and inititialize states
 // ===========================================================================  
@@ -102,6 +100,7 @@ int pressureDeltaUp                  = 50;      // Pressure at which, during pre
 int pressureDeltaDown                = 38;      // Pressure at which, during depressurizing, pressure considered to be close enough to zero// 38 works out to 3.0 psi 
 int pressureDeltaMax                 = 250;     // This is max pressure difference allowed on filling (i.e., limits fill speed)
 int pressureNull                     = 200;     // This is the threshold for the controller deciding that no gas source is attached. 
+int pressureDropAllowed              = 100;     // Max pressure drop allowed in session before alarm sounds
 int pressureRegStartUp;                         // Starting regulator pressure. Will use to detect pressure sag during session; and to find proportional values for key pressure variables (e.g. pressureDeltaMax)
 
 //Pressure conversion and output variables
@@ -409,7 +408,7 @@ void emergencyDepressurize()
     inEmergencyDepressurizeLoop = true;
     relayOn(relay3Pin, true);  
   
-    lcd.setCursor (0, 2); lcd.print (F("CLOSE DOOR! Venting "));
+    lcd.setCursor (0, 2); lcd.print (F("CLOSE DOOR! Venting."));
     digitalWrite(buzzerPin, HIGH); //Leave buzzer on until closed
       
     pressureOutput();
@@ -423,11 +422,11 @@ void emergencyDepressurize()
   //========================================================================================
   if (inEmergencyDepressurizeLoop)
   {
-    lcd.setCursor (0, 2); lcd.print (F("                    "));
-    button2State = LOW;  //TO DO: SHOULDN'T THIS BE HIGH? This might happen after a post-door open foam up--dont want to continue
-    relayOn(relay3Pin, false);  
     inEmergencyDepressurizeLoop = false;
+    relayOn(relay3Pin, false);  
     digitalWrite(buzzerPin, LOW); // Now turn off
+    lcd.setCursor (0, 2); lcd.print (F("                    "));
+    button2State = HIGH;  // Pass HIGH state to next routine so filling doesn't automatically resume. Make user think about it!
   }  
 }  
 // END EMERGENCY DEPRESSURIZE LOOP FUNCTION
@@ -509,8 +508,8 @@ const char *strLcdTable[] PROGMEM =  // Name of table following * is arbitrary
 void setup()
 {
   //Setup pins
-  pinMode(button1Pin, INPUT);  //Changed buttons 1,2,3 from PULLUP to regular when starting to use touchbuttons, which use a pulldown resistor. Unpushed state is LOW
-  pinMode(button2Pin, INPUT);
+  pinMode(button1Pin, INPUT);  //Changed buttons from INPUT_PULLUP to PULLUP when installed touchbuttons, which use a pulldown resistor. 
+  pinMode(button2Pin, INPUT);  //Unpushed state is LOW with buttons 1,2,3
   pinMode(button3Pin, INPUT);  
   pinMode(relay1Pin, OUTPUT);      
   pinMode(relay2Pin, OUTPUT);
@@ -555,7 +554,7 @@ void setup()
 
   if (button1State == LOW && button2State == LOW && button3State == LOW)
   {
-    printLcd (0, "Setting EEPROM...");
+    lcd.setCursor (0, 0); lcd.print (F("Setting EEPROM...   "));
     delay (2000);
     
     //Show old offset values
@@ -793,7 +792,7 @@ void setup()
     if (P2 - offsetP2 < pressureNull)
     {
       relayOn(relay4Pin, false);   // When input pressure low, close S4 to conserve gas and keep platform up (it should be closed already)
-      lcd.setCursor (0, 2); lcd.print (F("Platform locked..."));
+      lcd.setCursor (0, 2); lcd.print (F("Platform locked...  "));
       delay (500); // Can delete later
     }
     else
@@ -839,7 +838,8 @@ void setup()
     digitalWrite(light3Pin, HIGH); delay(500);
     digitalWrite(light1Pin, LOW);
     digitalWrite(light2Pin, LOW);
-    digitalWrite(light3Pin, LOW); delay(325);
+    digitalWrite(light3Pin, LOW); 
+    delay(325);
   }
 
   // Leave blink loop and light all lights 
@@ -1016,7 +1016,7 @@ void loop()
   if (switchDoorState == LOW && platformStateUp == false)
   {
     lcd.setCursor (0, 0); lcd.print (F("B3 opens door;      ")); 
-    lcd.setCursor (0, 1); lcd.print (F("then insert bottle. "));
+    lcd.setCursor (0, 1); lcd.print (F("Insert bottle...    "));
   }
   if (switchDoorState == HIGH && platformStateUp == false)
   {
@@ -1056,7 +1056,7 @@ void loop()
   boolean buzzOnce = false;
   
   // If pressure drops, go into this loop and wait for user to fix
-  while (P2 -offsetP2 < pressureRegStartUp - 75) // Hardcoded number to determine what consitutes a pressure drop.
+  while (P2 -offsetP2 < pressureRegStartUp - pressureDropAllowed) // Hardcoded number to determine what consitutes a pressure drop.// 2-18 Changed from 75 to 100
   {
     inEmergencyLockLoop = true;
 
@@ -1072,7 +1072,7 @@ void loop()
 
       if (buzzOnce == false)
       {
-        lcd.setCursor (0, 2); lcd.print (F("Platform locked.    "));
+        lcd.setCursor (0, 2); lcd.print (F("Platform locked...  "));
         buzzer(2000);
         buzzOnce = true;
       }
@@ -1285,7 +1285,7 @@ void loop()
     //PRESSURE TEST EXIT ROUTINE
     if (PTestFail == true)
     {
-      lcd.setCursor (0, 2); lcd.print (F("No bottle, or leak  "));
+      lcd.setCursor (0, 2); lcd.print (F("No bottle, or leak. "));
       lcd.setCursor (0, 3); lcd.print (F("Wait...             "));
       digitalWrite(light1Pin, LOW); 
 
@@ -1382,7 +1382,7 @@ void loop()
       relayOn(relay1Pin, true);
       relayOn(relay2Pin, true);
       
-      lcd.setCursor (0, 2); lcd.print (F("Anti drip...        "));
+      lcd.setCursor (0, 2); lcd.print (F("Fixing drip...      "));
       delay(antiDripDuration); // This setting determines duration of autosiphon 
       lcd.setCursor (0, 2); lcd.print (F("                    "));
 
@@ -1447,7 +1447,13 @@ void loop()
       
       // END REPRESSUIZE LOOP   
       //=============================================     
-    }  
+    } 
+   
+    //Door opened while bottle filling...emergency dump of pressure  
+    if (platformStateUp == true && switchDoorState == HIGH)
+    { 
+      emergencyDepressurize();
+    }      
     
     inFillLoop = false;
 
