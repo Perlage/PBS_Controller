@@ -1702,22 +1702,17 @@ void loop()
       numberCycles10 = (numberCycles - numberCycles01)/255;
       EEPROM.write(4, numberCycles01);
       EEPROM.write(5, numberCycles10);
-      
+
+      // Write session/total fills to screen
+      String (convNumberCycles) = floatToString(buffer, numberCycles, 0);
+      String (convNumberCyclesSession) = floatToString(buffer, numberCyclesSession, 0);
+      outputInt = "Cycles: " + convNumberCyclesSession + "/" + convNumberCycles;
+      printLcd(2, outputInt); 
+      delay(1000);
+    
       inFillLoopExecuted = false;
     }      
 
-    String (convNumberCycles) = floatToString(buffer, numberCycles, 0);
-    String (convNumberCyclesSession) = floatToString(buffer, numberCyclesSession, 0);
-
-    String (outputInt);
-    outputInt = "Session fills: " + convNumberCyclesSession;
-    printLcd(2, outputInt); 
-    delay(1000);
-    
-    outputInt = "Total fills: " + convNumberCycles;
-    printLcd(2, outputInt); 
-    delay(1000);
-    
     //Add the following to the platform UP routine, to get a more current value of the startPressure
     P1 = analogRead(sensorP1Pin); 
     P2 = analogRead(sensorP2Pin); 
