@@ -127,7 +127,7 @@ int autoPlatformDropDuration         = 1500;    // Duration of platform autodrop
 
 //Key performance parameters
 int autoSiphonDuration;                         // Duration of autosiphon function in ms
-byte autoSiphonDurationSec;                     // Duration of autosiphon function in sec
+byte autoSiphonDuration10s;                     // Duration of autosiphon function in 10ths of sec
 int antiDripDuration                 =  500;    // Duration of anti-drip autosiphon
 int foamDetectionDelay               = 2000;    // Amount of time to pause after foam detection
 int pausePlatformDrop                = 1000;    // Pause before platform drops after door automatically opens
@@ -606,12 +606,12 @@ void setup()
   // Read EEPROM
   offsetP1               = EEPROM.read(0);
   offsetP2               = EEPROM.read(1);
-  autoSiphonDurationSec  = EEPROM.read(3);           // Need to stort this as byte in EEPROM--int won't work
+  autoSiphonDuration10s  = EEPROM.read(3);           // Need to stort this as byte in EEPROM--int won't work
   numberCycles01         = EEPROM.read(4);
   numberCycles10         = EEPROM.read(5);
   
   //Read routine for autoSiphon  
-  autoSiphonDuration = autoSiphonDurationSec * 1000; // convert to ms
+  autoSiphonDuration = autoSiphonDuration10s * 100; // Convert 10ths of sec to millisec
 
   //Read routine for numberCycles  
   numberCycles = numberCycles10 * 255 + numberCycles01;
@@ -723,36 +723,39 @@ void setup()
       autoSiphonDurationLoop = true;
       button2StateMENU = !digitalRead(button2Pin); 
 
-      lcd.setCursor (0, 0); lcd.print (F("B1 inc. by 1 sec    "));
-      lcd.setCursor (0, 1); lcd.print (F("B3 dec. by 1 sec    "));
+      lcd.setCursor (0, 0); lcd.print (F("B1 inc. by .1 sec   "));
+      lcd.setCursor (0, 1); lcd.print (F("B3 dec. by .1 sec   "));
       lcd.setCursor (0, 2); lcd.print (F("B2 sets value; exits"));
     }  
 
     while (autoSiphonDurationLoop == true)
     {
+      delay(10);
       button1State = !digitalRead(button1Pin); 
       button2State = !digitalRead(button2Pin); 
       button3State = !digitalRead(button3Pin); 
-      delay(25);
           
-      String (convTime) = floatToString(buffer, autoSiphonDurationSec, 0);
-      printLcd (3, "Current value: " + convTime + " s");
-      
-      delay(100);
+      //delay(100);
       
       if (button1State == LOW){
-        autoSiphonDurationSec = autoSiphonDurationSec + 1;
+        autoSiphonDuration10s = autoSiphonDuration10s + 1;
       }  
       if (button3State == LOW){
-        autoSiphonDurationSec = autoSiphonDurationSec - 1;
+        autoSiphonDuration10s = autoSiphonDuration10s - 1;
       }  
+        
+      autoSiphonDuration10s = constrain(autoSiphonDuration10s, 0, 100); //Constrains autoSiphonDuration10s to between 0 and 100 tenths of sec
+      String (convTime) = floatToString(buffer, autoSiphonDuration10s * 100, 1);
+      printLcd (3, "Current value: " + convTime + " s");
+      delay(250);
+
       if (button2State == LOW){
         autoSiphonDurationLoop = false;
         printLcd (3, "New value: " + convTime + " s");
         delay(2000);
         
-        EEPROM.write (3, autoSiphonDurationSec);             //Write to EEPROM
-        autoSiphonDuration = autoSiphonDurationSec * 1000;   //Convert to ms
+        EEPROM.write (3, autoSiphonDuration10s);             //Write to EEPROM
+        autoSiphonDuration = autoSiphonDuration10s * 100;    //Convert to ms from 10ths of sec
         
         autoSiphonDurationLoop = false;
         button3StateMENU = LOW;
@@ -939,7 +942,7 @@ void setup()
   // ====================================================================================
 
   //NOW print lifetime fills and autosiphon duration //DO TO: Put in menu item for current settings
-  String (convInt) = floatToString(buffer, autoSiphonDurationSec, 1);
+  String (convInt) = floatToString(buffer, autoSiphonDuration10s * 100, 1);
   String (outputInt) = "Autosiphon: " + convInt + " sec";
   printLcd (2, outputInt); 
   delay(1000); 
