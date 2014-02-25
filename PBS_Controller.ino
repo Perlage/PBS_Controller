@@ -1706,7 +1706,7 @@ void loop()
       // Write session/total fills to screen
       String (convNumberCycles) = floatToString(buffer, numberCycles, 0);
       String (convNumberCyclesSession) = floatToString(buffer, numberCyclesSession, 0);
-      outputInt = "Cycles: " + convNumberCyclesSession + "/" + convNumberCycles;
+      String outputInt = "Cycles: " + convNumberCyclesSession + "/" + convNumberCycles;
       printLcd(2, outputInt); 
       delay(1000);
     
