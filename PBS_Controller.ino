@@ -575,11 +575,15 @@ void setup()
     //Get new offset values
     offsetP1  = analogRead(sensorP1Pin); 
     offsetP2  = analogRead(sensorP2Pin); 
-    numberCycles = 0; //Number of lifetime cycles
     
-    EEPROM.write (0, offsetP1);  //Zero offset for sensor1 (bottle)
-    EEPROM.write (1, offsetP2); //Zero offset for sensor2 (regulator)
-    EEPROM.write (2, numberCycles);    //Set number of cycles to zero
+    numberCycles = 0;                          //Set number of lifetime cycles to initial val of 0
+    autoSiphonDuration10s = 25;                //Set initial duration to 25 tenths of seconds (2.5 sec)
+    
+    EEPROM.write (0, offsetP1);                //Write zero offset for sensor1 (bottle)
+    EEPROM.write (1, offsetP2);                //Write zero offset for sensor2 (regulator)
+    EEPROM.write (3, autoSiphonDuration10s);   //Write autoSiphonDuration default to 2.5 sec
+    EEPROM.write (4, 0);                       //Write "ones" digit to zero in numberCycles01
+    EEPROM.write (5, 0);                       //Write "tens" digit to zero in numberCycles10
 
     convOffset1 = floatToString(buffer, offsetP1, 1);
     convOffset2 = floatToString(buffer, offsetP2, 1);
@@ -607,9 +611,9 @@ void setup()
   // Read EEPROM
   offsetP1               = EEPROM.read(0);
   offsetP2               = EEPROM.read(1);
-  autoSiphonDuration10s  = EEPROM.read(3);           // Need to stort this as byte in EEPROM--int won't work
-  numberCycles01         = EEPROM.read(4);
-  numberCycles10         = EEPROM.read(5);
+  autoSiphonDuration10s  = EEPROM.read(3);    
+  numberCycles01         = EEPROM.read(4);  //Write "ones" digit base 255    
+  numberCycles10         = EEPROM.read(5);  //Write "tens" digit base 255
   
   //Read routine for autoSiphon  
   autoSiphonDuration = autoSiphonDuration10s * 100; // Convert 10ths of sec to millisec
