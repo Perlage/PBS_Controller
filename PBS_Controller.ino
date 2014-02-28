@@ -859,7 +859,7 @@ void setup()
         autoSiphonDuration10s = autoSiphonDuration10s - 1;
       }  
         
-      //autoSiphonDuration10s = constrain(autoSiphonDuration10s, 0, 100); //Constrains autoSiphonDuration10s to between 0 and 100 tenths of sec
+      autoSiphonDuration10s = constrain(autoSiphonDuration10s, 5, 100); //Constrains autoSiphonDuration10s to between 0 and 100 tenths of sec
       autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;
       
       String (convTime) = floatToString(buffer, autoSiphonDurationSec, 1);
