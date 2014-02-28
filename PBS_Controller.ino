@@ -128,6 +128,7 @@ int autoPlatformDropDuration         = 1500;    // Duration of platform autodrop
 //Key performance parameters
 int autoSiphonDuration;                         // Duration of autosiphon function in ms
 byte autoSiphonDuration10s;                     // Duration of autosiphon function in 10ths of sec
+float autoSiphonDurationSec;                    // Duration of autosiphon function in sec
 int antiDripDuration                 =  500;    // Duration of anti-drip autosiphon
 int foamDetectionDelay               = 2000;    // Amount of time to pause after foam detection
 int pausePlatformDrop                = 1000;    // Pause before platform drops after door automatically opens
@@ -744,10 +745,12 @@ void setup()
         autoSiphonDuration10s = autoSiphonDuration10s - 1;
       }  
         
-      autoSiphonDuration10s = constrain(autoSiphonDuration10s, 0, 100); //Constrains autoSiphonDuration10s to between 0 and 100 tenths of sec
-      String (convTime) = floatToString(buffer, autoSiphonDuration10s * 100, 1);
-      printLcd (3, "Current value: " + convTime + " s");
-      delay(250);
+      //autoSiphonDuration10s = constrain(autoSiphonDuration10s, 0, 100); //Constrains autoSiphonDuration10s to between 0 and 100 tenths of sec
+      autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;
+      
+      String (convTime) = floatToString(buffer, autoSiphonDurationSec, 1);
+      printLcd (3, "Current value: " + convTime + "s");
+      delay(200);
 
       if (button2State == LOW){
         autoSiphonDurationLoop = false;
@@ -942,7 +945,8 @@ void setup()
   // ====================================================================================
 
   //NOW print lifetime fills and autosiphon duration //DO TO: Put in menu item for current settings
-  String (convInt) = floatToString(buffer, autoSiphonDuration10s * 100, 1);
+  autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;
+  String (convInt) = floatToString(buffer, autoSiphonDurationSec, 1);
   String (outputInt) = "Autosiphon: " + convInt + " sec";
   printLcd (2, outputInt); 
   delay(1000); 
