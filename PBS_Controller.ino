@@ -151,6 +151,7 @@ char bufferP[30];                                // make sure this is large enou
 byte strIndex;                                   // Used to refer to index of the string in *srtLcdTable (e.g., strLcd_0 has strLcdIndex = 0
 
 
+// ======================================================================================
 // Declare functions
 // ======================================================================================
 
@@ -229,7 +230,7 @@ void buzzer (int buzzDuration)
   digitalWrite (buzzerPin, LOW);
 } 
 
-// FUNCTION: platformDrop()
+// FUNCTION: platformDrop() //TO DO: pass the duration as a parameter
 // ======================================================================================
 void platformDrop()
 {
@@ -340,9 +341,6 @@ void platformUpLoop()
     delay(10); //added this to make sure time gets above threshold before loop exits--not sure why works
     timePlatformRising = timePlatformCurrent - timePlatformInit;
     
-    //String platformStatus = ("Raising... " + String(timePlatformRising));
-    //printLcd(2, platformStatus);  
-
     // Writes a lengthening line of dots
     lcd.setCursor (0, 2); lcd.print (F("Raising             "));
     lcd.setCursor (((n + 12) % 12) + 7, 2); lcd.print (F(".")); 
@@ -432,9 +430,6 @@ void emergencyDepressurize()
 }  
 // END EMERGENCY DEPRESSURIZE LOOP FUNCTION
 //========================================================================================
-
-
-//=====================================================================================
 
 
 //=====================================================================================
@@ -530,8 +525,8 @@ void setup()
     printLcd(3, outputOffset2);
     delay(4000);
 
-    printLcd(2, "");
-    printLcd(3, "");
+    lcd.setCursor (0, 2); lcd.print (F("                    "));
+    //lcd.setCursor (0, 3); lcd.print (F("                    ")); // Not necessary
   }    
 
   // END EEPROM SET
@@ -555,18 +550,13 @@ void setup()
 
   //Read routine for numberCycles  
   numberCycles = numberCycles10 * 255 + numberCycles01;
-  //numberCycles = 1550; // Use to set numberCyles to some value
+  //numberCycles = nnnn; // Use to set numberCyles to some value for debug
   
   // Read States. Get initial pressure readings from sensor. 
   switchDoorState = digitalRead(switchDoorPin);  
   P1 = analogRead(sensorP1Pin); // Read the initial bottle pressure and assign to P1
   P2 = analogRead(sensorP2Pin); // Read the initial regulator pressure and assign to P2
   pressureRegStartUp = P2;      // Read and store initial regulator pressure to test for pressure drop during session
-
-  // These lines were for possible proportional setting of values. Postpone this.
-  // 40 psi = 543 units (with ~35 unit offset). So comparisons should be done on 508 units
-  // pressureNull = 200/508 * (pressureRegStartUp - offsetP2);
-  // pressureDeltaMax  = 250/508 * (pressureRegStartUp - offsetP2);
 
   //Initial user message
   lcd.setCursor (0, 0);  lcd.print (F("Perlini Bottling"));
@@ -776,7 +766,7 @@ void setup()
         autoSiphonDuration10s = autoSiphonDuration10s - 1; //Subtract .1s
       }  
         
-      autoSiphonDuration10s = constrain(autoSiphonDuration10s, 5, 100); //Constrains autoSiphonDuration10s to between 0 and 100 tenths of sec
+      autoSiphonDuration10s = constrain(autoSiphonDuration10s, 5, 99); //Constrains autoSiphonDuration10s to between 5 and 99 tenths of sec
       autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;
       
       String (convTime) = floatToString(buffer, autoSiphonDurationSec, 1);
@@ -853,7 +843,7 @@ void setup()
     relayOn(relay4Pin, true);  // Now Raise platform     
 
     lcd.setCursor (0, 0); lcd.print (F("Perlini Bottling    "));
-    lcd.setCursor (0, 1); lcd.print (F("System              "));
+    printLcd (1, "System, " + versionSoftwareTag);
     lcd.setCursor (0, 3); lcd.print (F("Initializing...     "));
   }
 
@@ -956,12 +946,13 @@ void setup()
   // Continue with normal ending when pressure is OK
   // ====================================================================================
 
-  //NOW print lifetime fills and autosiphon duration //DO TO: Put in menu item for current settings
+  //NOW print lifetime fills and autosiphon duration 
   autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;
   String (convInt) = floatToString(buffer, autoSiphonDurationSec, 1);
   String (outputInt) = "Autosiphon: " + convInt + " sec";
   printLcd (2, outputInt); 
-  delay(1000); 
+  delay(1500); 
+
   convInt = floatToString(buffer, numberCycles, 0);
   outputInt = "Total fills: " + convInt;
   printLcd (2, outputInt);  
@@ -1071,7 +1062,7 @@ void loop()
   boolean buzzOnce = false;
   
   // If pressure drops, go into this loop and wait for user to fix
-  while (P2 -offsetP2 < pressureRegStartUp - pressureDropAllowed) // Hardcoded number to determine what consitutes a pressure drop.// 2-18 Changed from 75 to 100
+  while (P2 -offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what consitutes a pressure drop.// 2-18 Changed from 75 to 100
   {
     inEmergencyLockLoop = true;
 
@@ -1179,7 +1170,7 @@ void loop()
       digitalWrite(light1Pin, LOW); 
   
       inPurgeLoop = false;
-      printLcd(2,""); 
+      lcd.setCursor (0, 2); lcd.print (F("                    ")); 
     }
     
     button1State = !digitalRead(button1Pin); 
@@ -1348,7 +1339,7 @@ void loop()
     //Check toggle state of B2    
     button2StateTEMP = !digitalRead(button2Pin);
     delay(25);
-    if (button2StateTEMP == HIGH && button2ToggleState == false){  // ON release
+    if (button2StateTEMP == HIGH && button2ToggleState == false){  //ON release
       button2ToggleState = true;                                   //Leaves buttonState LOW
       button2State = LOW;                                          //Or makes it low
     }
@@ -1397,9 +1388,9 @@ void loop()
       relayOn(relay1Pin, true);
       relayOn(relay2Pin, true);
       
-      lcd.setCursor (0, 2); lcd.print (F("Fixing drip...      "));
+      lcd.setCursor (0, 2); lcd.print (F("Preventing drip... "));
       delay(antiDripDuration); // This setting determines duration of autosiphon 
-      lcd.setCursor (0, 2); lcd.print (F("                    "));
+      lcd.setCursor (0, 2); lcd.print (F("                   "));
 
       relayOn(relay1Pin, false);
       relayOn(relay2Pin, false);
@@ -1480,14 +1471,14 @@ void loop()
   //========================================================================================
 
   //========================================================================================
-  // CARBONATOR STUCK BOTTLE CATCH LOOP
+  // CARBONATOR STUCK BOTTLE CATCH LOOP //TO DO: Do we still need this?
   //========================================================================================
 
   while (sensorFillState == LOW)
   {    
     readButtons();
-    lcd.setCursor (0, 0); lcd.print (F("Manual Siphon: B1  "));
-    lcd.setCursor (0, 1); lcd.print (F("Depressurize: B2   "));
+    lcd.setCursor (0, 0); lcd.print (F("B1: Manual Siphon  "));
+    lcd.setCursor (0, 1); lcd.print (F("B2: Depressurize   "));
     lcd.setCursor (0, 2); lcd.print (F("Waiting...         "));
 
     // This is manual autosiphon
@@ -1690,7 +1681,7 @@ void loop()
   if(inPlatformLowerLoop)
   {
     //close platform release 
-    printLcd(2,"");
+    lcd.setCursor (0, 2); lcd.print (F("                    "));
     relayOn(relay3Pin, false); 
     relayOn(relay5Pin, false);
     relayOn(relay6Pin, false); //Release door solenoid
@@ -1724,10 +1715,6 @@ void loop()
     
       inFillLoopExecuted = false;
     }      
-
-    //Add the following to the platform UP routine, to get a more current value of the startPressure
-    P1 = analogRead(sensorP1Pin); 
-    P2 = analogRead(sensorP2Pin); 
   } 
   
   // END PLAFORM LOWER LOOP
@@ -1891,31 +1878,9 @@ void loop()
 // FLASH MEMORY STRING HANDLING
 //=====================================================================================
 
+//This goes before setup()
 //Write text to char strings. Previously used const_char at start of line; this didn't work
 
-
-char strLcd_32[] PROGMEM = "Insert bottle;      ";
-char strLcd_33[] PROGMEM = "B1 raises platform  ";
-char strLcd_34[] PROGMEM = "Ready...            ";
-char strLcd_35[] PROGMEM = "                    ";
-
-//Write to string table. PROGMEM moved from front of line to end; this made it work
-const char *strLcdTable[] PROGMEM =  // Name of table following * is arbitrary
-{   
-  //strLcd_20, strLcd_21, strLcd_22, strLcd_23,       // Pressurized bottle
-  //strLcd_24, strLcd_25, strLcd_26, strLcd_27,       // Null pressure warning
-  strLcd_32, strLcd_33, strLcd_34, strLcd_35,       // Insert bottle
-};
-      //printLcd (0, "MANUAL MODE");
-      //printLcd (1, "Insert bottle.");
-      //printLcd (2, "Switch: platform up");
-      //printLcd (3, "B3: Opens door");
-      
-      // Write Manual Mode intro menu text    
-      //for (int n = 8; n <= 11; n++){
-      //  strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-      //  printLcd (n % 4, bufferP);}
-      
 //char strLcd_0 [] PROGMEM = "Perlini Bottling    ";
 //char strLcd_1 [] PROGMEM = "System, v1.0        ";
 //char strLcd_2 [] PROGMEM = "                    ";
@@ -1925,9 +1890,26 @@ char strLcd_4 [] PROGMEM = "***MENU*** Press... ";
 char strLcd_5 [] PROGMEM = "B1: Manual Mode     ";
 char strLcd_6 [] PROGMEM = "B2: Autosiphon time ";
 char strLcd_7 [] PROGMEM = "B3: Exit Menu       ";
-  
 
+char strLcd_32[] PROGMEM = "Insert bottle;      ";
+char strLcd_33[] PROGMEM = "B1 raises platform  ";
+char strLcd_34[] PROGMEM = "Ready...            ";
+char strLcd_35[] PROGMEM = "                    ";
 
+//Write to string table. PROGMEM moved from front of line to end; this made it work
+const char *strLcdTable[] PROGMEM =  // Name of table following * is arbitrary
+{   
+  strLcd_20, strLcd_21, strLcd_22, strLcd_23,       // Pressurized bottle
+  strLcd_24, strLcd_25, strLcd_26, strLcd_27,       // Null pressure warning
+  strLcd_32, strLcd_33, strLcd_34, strLcd_35,       // Insert bottle
+};
+
+      
+// Write Manual Mode intro menu text    
+for (int n = 8; n <= 11; n++){
+  strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
+  printLcd (n % 4, bufferP);}
+      
 
 */
 
