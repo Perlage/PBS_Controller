@@ -435,71 +435,6 @@ void emergencyDepressurize()
 
 
 //=====================================================================================
-// FLASH MEMORY STRING HANDLING
-//=====================================================================================
-
-//Write text to char strings. Previously used const_char at start of line; this didn't work
-
-char strLcd_0 [] PROGMEM = "Perlini Bottling    ";
-char strLcd_1 [] PROGMEM = "System, v1.0        ";
-char strLcd_2 [] PROGMEM = "                    ";
-char strLcd_3 [] PROGMEM = "Initializing...     ";
-
-char strLcd_4 [] PROGMEM = "***MENU*** Press... ";
-char strLcd_5 [] PROGMEM = "B1: Manual Mode     ";
-char strLcd_6 [] PROGMEM = "B2: Autosiphon time ";
-char strLcd_7 [] PROGMEM = "B3: Exit Menu       ";
-
-char strLcd_8 [] PROGMEM = " ***MANUAL MODE***  ";
-char strLcd_9 [] PROGMEM = "Insert bottle...    ";
-char strLcd_10[] PROGMEM = "Mode switch: Up/Down";
-char strLcd_11[] PROGMEM = "B3: Opens door.     ";
-
-char strLcd_12[] PROGMEM = "B1: Gas IN          ";
-char strLcd_13[] PROGMEM = "B2: Liquid IN       ";
-char strLcd_14[] PROGMEM = "B3: Gas OUT         ";
-char strLcd_15[] PROGMEM = "Switch: UP/DOWN     ";
-
-char strLcd_16[] PROGMEM = "Ending Manual Mode. ";
-char strLcd_17[] PROGMEM = "                    ";
-char strLcd_18[] PROGMEM = "Continuing....      ";
-char strLcd_19[] PROGMEM = "                    ";
-
-char strLcd_20[] PROGMEM = "Pressurized bottle  ";
-char strLcd_21[] PROGMEM = "detected. Open valve";
-char strLcd_22[] PROGMEM = "Depressurizing....  ";
-char strLcd_23[] PROGMEM = "                    ";   // Don't write to this?--this line is for pressure reading
-
-char strLcd_24[] PROGMEM = "Gas off or empty;   ";
-char strLcd_25[] PROGMEM = "check tank & hoses. ";
-char strLcd_26[] PROGMEM = "B3 opens door.      ";
-char strLcd_27[] PROGMEM = "Waiting...          ";
-
-char strLcd_28[] PROGMEM = "Press B3 to lower   ";
-char strLcd_29[] PROGMEM = "platform.           ";
-char strLcd_30[] PROGMEM = "Depressurized.      ";
-char strLcd_31[] PROGMEM = "                    ";
-
-char strLcd_32[] PROGMEM = "Insert bottle;      ";
-char strLcd_33[] PROGMEM = "B1 raises platform  ";
-char strLcd_34[] PROGMEM = "Ready...            ";
-char strLcd_35[] PROGMEM = "                    ";
-
-//Write to string table. PROGMEM moved from front of line to end; this made it work
-const char *strLcdTable[] PROGMEM =  // Name of table following * is arbitrary
-{   
-  strLcd_0, strLcd_1, strLcd_2, strLcd_3,           // Startup text
-  strLcd_4, strLcd_5, strLcd_6, strLcd_7,           // Menu text     
-  strLcd_8, strLcd_9, strLcd_10, strLcd_11,         // Manual Mode intro
-  strLcd_12, strLcd_13, strLcd_14, strLcd_15,       // Manual Mode detail
-  strLcd_16, strLcd_17, strLcd_18, strLcd_19,       // Manual Mode exit
-  strLcd_20, strLcd_21, strLcd_22, strLcd_23,       // Pressurized bottle
-  strLcd_24, strLcd_25, strLcd_26, strLcd_27,       // Null pressure warning
-  strLcd_28, strLcd_29, strLcd_30, strLcd_31,       // Depressurize loop exit
-  strLcd_32, strLcd_33, strLcd_34, strLcd_35,       // Insert bottle
-};
-
-//=====================================================================================
 
 
 //=====================================================================================
@@ -778,16 +713,10 @@ void setup()
     button1State = !digitalRead(button1Pin); 
     delay(25);   
     
-    //lcd.setCursor (0, 0); lcd.print (F("***MENU*** Press:   "));
-    //lcd.setCursor (0, 1); lcd.print (F("B1: Manual Mode     "));
-    //lcd.setCursor (0, 2); lcd.print (F("B2: Autosiphon time "));
-    //lcd.setCursor (0, 3); lcd.print (F("B3: Exit Menu       "));
-    //lcd.clear();  
-    
-    // Write Main Menu options    
-    for (int n = 4; n <= 7; n++){
-      strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-      printLcd (n % 4, bufferP);}
+    lcd.setCursor (0, 0); lcd.print (F("***MENU*** Press:   "));
+    lcd.setCursor (0, 1); lcd.print (F("B1: Manual Mode     "));
+    lcd.setCursor (0, 2); lcd.print (F("B2: Autosiphon time "));
+    lcd.setCursor (0, 3); lcd.print (F("B3: Exit Menu       "));
   }  
     
   while (inMenuLoop == true)
@@ -814,18 +743,6 @@ void setup()
       {
         switchModeState = digitalRead(switchModePin);
       }  
-
-      //printLcd (0, "MANUAL MODE");
-      //printLcd (1, "Insert bottle.");
-      //printLcd (2, "Switch: platform up");
-      //printLcd (3, "B3: Opens door");
-      
-      // Write Manual Mode intro menu text    
-      //for (int n = 8; n <= 11; n++){
-      //  strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-      //  printLcd (n % 4, bufferP);}
-      
-      //doorOpen(); //Opens door if closed
     } 
 
     // MENU2============================
@@ -935,19 +852,9 @@ void setup()
     delay(500);                // A little delay after closing door before raising platform
     relayOn(relay4Pin, true);  // Now Raise platform     
 
-    /*
-    lcd.setCursor (0, 0);
-    lcd.print (F("Perlini Bottling    "));
-    lcd.setCursor (0, 1);
-    lcd.print (F("System              "));
-    lcd.setCursor (0, 3);
-    lcd.print (F("Initializing...     "));
-    */
-    
-    //Re-write intro text // NOT SURE IF NEED TO REWRITE ANYTHING BUT LINE 2
-    for (int n = 0; n <= 3; n++){
-      strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-      printLcd (n % 4, bufferP);} 
+    lcd.setCursor (0, 0); lcd.print (F("Perlini Bottling    "));
+    lcd.setCursor (0, 1); lcd.print (F("System              "));
+    lcd.setCursor (0, 3); lcd.print (F("Initializing...     "));
   }
 
   // Blinks lights and give time to de-pressurize stuck bottle
@@ -980,16 +887,11 @@ void setup()
   {
     inPressurizedBottleLoop = true;
     
-    //printLcd(0, "Pressurized bottle");
-    //printLcd(1, "detected. Open valve");
-    //printLcd(2, "Depressurizing...");
-    //printLcd(3, "");
-
-    // Write Pressurized bottle warning   
-    for (int n = 20; n <= 23; n++){
-      strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-      printLcd (n % 4, bufferP);}
-   
+    lcd.setCursor (0, 0); lcd.print (F("Pressurized bottle  "));
+    lcd.setCursor (0, 1); lcd.print (F("detected. Open valve"));
+    lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
+    lcd.setCursor (0, 3); lcd.print (F("                    "));
+    
     buzzer(1000);
 
     while (P1 - offsetP1 > pressureDeltaDown)
@@ -1004,16 +906,12 @@ void setup()
   {
     inPressureNullLoop = true;
 
-    //printLcd(0, "Gas off or empty;");
-    //printLcd(1, "check tank & hoses.");
-    //printLcd(2, "B3 opens door.");
-    //printLcd(3, "Waiting...");
-
     // Write Null Pressure warning 
-    for (int n = 24; n <= 27; n++){
-      strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-      printLcd (n % 4, bufferP);}
-        
+    lcd.setCursor (0, 0); lcd.print (F("Gas off or empty;   "));
+    lcd.setCursor (0, 1); lcd.print (F("check tank & hoses. "));
+    lcd.setCursor (0, 2); lcd.print (F("B3 opens door.      "));
+    lcd.setCursor (0, 3); lcd.print (F("Waiting...          "));
+
     buzzer(250);
         
     while (P2 - offsetP2 < pressureNull)
@@ -1078,14 +976,10 @@ void setup()
   // Open door if closed
   doorOpen();
  
-  //printLcd(0, "Insert bottle;");
-  //printLcd(1, "B1 raises platform");
-  //printLcd(2, "Ready...");
-
   // Write initial instructions for normal startup
-  for (int n = 32; n <= 35; n++){
-    strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-    printLcd (n % 4, bufferP);}  
+  lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
+  lcd.setCursor (0, 1); lcd.print (F("B1 raises platform  "));
+  lcd.setCursor (0, 2); lcd.print (F("Ready...            "));
 
   delay(500); digitalWrite(light3Pin, LOW);
   delay(100); digitalWrite(light2Pin, LOW);
@@ -1991,7 +1885,49 @@ void loop()
 // =============================================================================================
 // CODE FRAGMENTS 
 // =============================================================================================
+
+
+//=====================================================================================
+// FLASH MEMORY STRING HANDLING
+//=====================================================================================
+
+//Write text to char strings. Previously used const_char at start of line; this didn't work
+
+
+char strLcd_32[] PROGMEM = "Insert bottle;      ";
+char strLcd_33[] PROGMEM = "B1 raises platform  ";
+char strLcd_34[] PROGMEM = "Ready...            ";
+char strLcd_35[] PROGMEM = "                    ";
+
+//Write to string table. PROGMEM moved from front of line to end; this made it work
+const char *strLcdTable[] PROGMEM =  // Name of table following * is arbitrary
+{   
+  //strLcd_20, strLcd_21, strLcd_22, strLcd_23,       // Pressurized bottle
+  //strLcd_24, strLcd_25, strLcd_26, strLcd_27,       // Null pressure warning
+  strLcd_32, strLcd_33, strLcd_34, strLcd_35,       // Insert bottle
+};
+      //printLcd (0, "MANUAL MODE");
+      //printLcd (1, "Insert bottle.");
+      //printLcd (2, "Switch: platform up");
+      //printLcd (3, "B3: Opens door");
+      
+      // Write Manual Mode intro menu text    
+      //for (int n = 8; n <= 11; n++){
+      //  strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
+      //  printLcd (n % 4, bufferP);}
+      
+//char strLcd_0 [] PROGMEM = "Perlini Bottling    ";
+//char strLcd_1 [] PROGMEM = "System, v1.0        ";
+//char strLcd_2 [] PROGMEM = "                    ";
+//char strLcd_3 [] PROGMEM = "Initializing...     ";
+
+char strLcd_4 [] PROGMEM = "***MENU*** Press... ";
+char strLcd_5 [] PROGMEM = "B1: Manual Mode     ";
+char strLcd_6 [] PROGMEM = "B2: Autosiphon time ";
+char strLcd_7 [] PROGMEM = "B3: Exit Menu       ";
   
+
+
 
 */
 
