@@ -853,10 +853,10 @@ void setup()
       //delay(100);
       
       if (button1State == LOW){
-        autoSiphonDuration10s = autoSiphonDuration10s + 1;
+        autoSiphonDuration10s = autoSiphonDuration10s + 1; //Add .1s
       }  
       if (button3State == LOW){
-        autoSiphonDuration10s = autoSiphonDuration10s - 1;
+        autoSiphonDuration10s = autoSiphonDuration10s - 1; //Subtract .1s
       }  
         
       autoSiphonDuration10s = constrain(autoSiphonDuration10s, 5, 100); //Constrains autoSiphonDuration10s to between 0 and 100 tenths of sec
