@@ -87,6 +87,7 @@ boolean inDoorOpenLoop               = false;
 boolean inPressureSaggedLoop         = false;
 boolean inMenuLoop                   = false;
 boolean inManualModeLoop             = false;
+boolean inCleaningMode               = false;
 
 //Key logical states
 boolean autoMode_1                   = false;   // Variable to help differentiate between states reached automatically vs manually 
@@ -210,7 +211,8 @@ void setup()
   #include "EEPROMset.h"    // EEPROM factory set-reset routine
   
   relayOn(relay3Pin, true); // Open at earliest possibility to vent  
-  
+  relayOn(relay5Pin, false); // Close if not already to help hold platform up
+
   // Read EEPROM
   offsetP1               = EEPROM.read(0);
   offsetP2               = EEPROM.read(1);
@@ -235,133 +237,22 @@ void setup()
   lcd.setCursor (0, 0);  lcd.print (F("Perlini Bottling"));
   printLcd (1, "System, " + versionSoftwareTag);
   lcd.setCursor (0, 3);  lcd.print (F("Initializing..."));
-  
-  //=================================================================================
-  // MENU ROUTINE
-  //=================================================================================
-   
-  button1State = !digitalRead(button1Pin); 
-  boolean button1StateMENU;
-  boolean button2StateMENU;
-  boolean button3StateMENU;
-  
-  while (button1State == LOW)
-  {
-    inMenuLoop = true;
-    button1State = !digitalRead(button1Pin); 
-    delay(25);   
-    
-    lcd.setCursor (0, 0); lcd.print (F("***MENU*** Press:   "));
-    lcd.setCursor (0, 1); lcd.print (F("B1: Manual Mode     "));
-    lcd.setCursor (0, 2); lcd.print (F("B2: Autosiphon time "));
-    lcd.setCursor (0, 3); lcd.print (F("B3: Exit Menu       "));
-  }  
-    
-  while (inMenuLoop == true)
-  {
-    button1StateMENU = !digitalRead(button1Pin); 
-    button2StateMENU = !digitalRead(button2Pin); 
-    button3StateMENU = !digitalRead(button3Pin); 
-    switchDoorState = digitalRead(switchDoorPin);
-    delay(10);
-    
-    // MENU1============================
-    if (button1StateMENU == LOW)
-    {
-      inMenuLoop = false;
-      inManualModeLoop = true;
-      
-      lcd.setCursor (0, 0); lcd.print (F("Flip switch to enter"));
-      lcd.setCursor (0, 1); lcd.print (F("Cleaning/Manual mode"));
-      lcd.setCursor (0, 2); lcd.print (F("now.                "));
-      
-      // Don't let user proceed until switch flipped
-      switchModeState = digitalRead(switchModePin);
-      while (switchModeState == HIGH)
-      {
-        switchModeState = digitalRead(switchModePin);
-      }  
-    } 
-
-    // MENU2============================
-
-    boolean autoSiphonDurationLoop = false;
-
-    while (button2StateMENU == LOW)
-    {
-      //inMenuLoop = false;
-      autoSiphonDurationLoop = true;
-      button2StateMENU = !digitalRead(button2Pin); 
-
-      lcd.setCursor (0, 0); lcd.print (F("B1 inc. by .1 sec   "));
-      lcd.setCursor (0, 1); lcd.print (F("B3 dec. by .1 sec   "));
-      lcd.setCursor (0, 2); lcd.print (F("B2 sets value; exits"));
-    }  
-
-    while (autoSiphonDurationLoop == true)
-    {
-      delay(10);
-      button1State = !digitalRead(button1Pin); 
-      button2State = !digitalRead(button2Pin); 
-      button3State = !digitalRead(button3Pin); 
-          
-      //delay(100);
-      
-      if (button1State == LOW){
-        autoSiphonDuration10s = autoSiphonDuration10s + 1; //Add .1s
-      }  
-      if (button3State == LOW){
-        autoSiphonDuration10s = autoSiphonDuration10s - 1; //Subtract .1s
-      }  
-        
-      autoSiphonDuration10s = constrain(autoSiphonDuration10s, 5, 99); //Constrains autoSiphonDuration10s to between 5 and 99 tenths of sec
-      autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;
-      
-      String (convTime) = floatToString(buffer, autoSiphonDurationSec, 1);
-      printLcd (3, "Current value: " + convTime + "s");
-      delay(200);
-
-      if (button2State == LOW){
-        autoSiphonDurationLoop = false;
-        printLcd (3, "New value: " + convTime + " s");
-        delay(2000);
-        
-        EEPROM.write (3, autoSiphonDuration10s);             //Write to EEPROM
-        autoSiphonDuration = autoSiphonDuration10s * 100;    //Convert to ms from 10ths of sec
-        
-        autoSiphonDurationLoop = false;
-        button3StateMENU = LOW;
-      } 
-    }
-
-    // MENU3============================
-    if (button3StateMENU == LOW)
-    {
-      //Continue with startup routine
-      inMenuLoop = false;
-      lcd.setCursor (0, 0); lcd.print (F("Perlini Bottling    "));
-      printLcd (1, "System, " + versionSoftwareTag);
-      lcd.setCursor (0, 2); lcd.print (F("Exiting menu...     "));
-    }  
-  }
-
-  // END MENU ROUTINE
-  //=================================================================================  
- 
- 
-  //=================================================================================
-  // RESUME NORMAL STARTUP
-  //=================================================================================
 
   // Get fresh pressure and door state measurements
   switchDoorState = digitalRead(switchDoorPin); 
   P1 = analogRead(sensorP1Pin);
   P2 = analogRead(sensorP2Pin);
 
-  relayOn(relay5Pin, false); // Close if not already
+/*
+  // Comment this comment delimeter out for normal operation
+  // ##############################################################################################################################################################
 
+  //=================================================================================
   // PLATFROM LOCK OR SUPPORT ROUTINE. DO THESE FIRST FOR SAFETY
   // IMMEDIATELY lock platform if P2 is low and P1 is high, or apply platform support if P1 and P2 high
+  //=================================================================================
+
+
   if (P1 - offsetP1 > pressureDeltaDown)
   {
     if (P2 - offsetP2 < pressureNull)
@@ -514,6 +405,10 @@ void setup()
   
   // Open door if closed
   doorOpen();
+  
+  // Comment this comment delimeter out for normal operation
+  // ##############################################################################################################################################################
+*/ 
  
   // Write initial instructions for normal startup
   lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
@@ -689,7 +584,7 @@ void loop()
   // While B2 and then B1 is pressed, and door is open, and platform is down, purge the bottle
   //=========================================================================
   
-  // PURGE INTERLOCK LOOP
+  // Purge interlock loop
   // Door must be OPEN, platform DOWN, and pressure near zero (i.e. no bottle)
   //=========================================================================
 
@@ -902,11 +797,11 @@ void loop()
     pressureOutput();
     printLcd (3, outputPSI_rb); 
     
-    // CLEANING MODE: If clean switch closed, set FillState HIGH
-    if (switchModeState == LOW)
+    // CLEANING MODE: If in Cleaning Mode, set FillState HIGH to disable sensor
+    if (inCleaningMode == true)
     {
-      sensorFillState = HIGH;
-      lcd.setCursor (0, 2); lcd.print (F("Fill sensor disabled"));
+      sensorFillState = HIGH;      
+      lcd.setCursor (0, 2); lcd.print (F("CLEANING MODE ON! "));
     }
     else
     {
@@ -1090,11 +985,11 @@ void loop()
         digitalWrite(light2Pin, LOW);
       }
     
-    // CLEANING MODE 
-    if (switchModeState == LOW)
+    // CLEANING MODE: If in cleaning mode, set FillState HIGH
+    if (inCleaningMode == true)
     {
-      sensorFillState = HIGH;
-      lcd.setCursor (0, 2); lcd.print (F("Foam sensor disabled"));
+      sensorFillState = HIGH;      
+      lcd.setCursor (0, 2); lcd.print (F("CLEANING MODE ON! "));
     }
     else
     {
