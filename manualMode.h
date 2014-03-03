@@ -6,12 +6,10 @@ void manualModeLoop()
 {
   // Manual Mode Entrance Routines
   // ==================================================
-
-  boolean inManualModeLoop1 = false;
   
   if (inManualModeLoop == true)
-  inManualModeLoop1 = true;
   {
+    inManualModeLoop1 = true;
     sensorFillState = HIGH; // Set it high and don't read it anymore
   
     lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));

@@ -85,8 +85,8 @@ boolean inDepressurizeLoop           = false;
 boolean inPlatformLowerLoop          = false;
 boolean inDoorOpenLoop               = false;
 boolean inPressureSaggedLoop         = false;
-boolean inMenuLoop                   = false;
 boolean inManualModeLoop             = false;
+boolean inManualModeLoop1            = false;
 boolean inCleaningMode               = false;
 
 //Key logical states
@@ -148,12 +148,12 @@ int numberCyclesSession              = 0;        // Number of session cycles
 boolean buzzedOnce                   = false;
 boolean inFillLoopExecuted           = false;    // True of FillLoop is dirty. Used to compute numberCycles
 char buffer[25];                                 // Used in float to string conv // 1-26 Changed from 25 to 20 //CHANGED BACK TO 25!! SEEMS TO BE IMPORTANT!
-char bufferP[30];                                // make sure this is large enough for the largest string it must hold; used for PROGMEM write to LCD
-byte strIndex;                                   // Used to refer to index of the string in *srtLcdTable (e.g., strLcd_0 has strLcdIndex = 0
+//char bufferP[30];                                // make sure this is large enough for the largest string it must hold; used for PROGMEM write to LCD
+//byte strIndex;                                   // Used to refer to index of the string in *srtLcdTable (e.g., strLcd_0 has strLcdIndex = 0
 
-// ======================================================================================
+//======================================================================================
 // PROCESS LOCAL INCLUDES
-// ======================================================================================
+//======================================================================================
 
 // Order is important!!!! Must include an include before it is referenced by other includes
 #include "functions.h"   //Functions
@@ -246,6 +246,7 @@ void setup()
   P1 = analogRead(sensorP1Pin);
   P2 = analogRead(sensorP2Pin);
   
+  //Allow user to invoke Manual Mode from bootup in case there are problems preventing menu access
   readButtons();
   while (button1State == LOW)
   {
@@ -254,12 +255,13 @@ void setup()
     inManualModeLoop = true;
     buzzer(100);
   }  
-  if (inManualModeLoop == true);
+
+  if (inManualModeLoop == true)
   {
     manualModeLoop();
   }
 
-/*
+///*
   // Comment this comment delimeter out for normal operation
   // ##############################################################################################################################################################
 
@@ -328,7 +330,7 @@ void setup()
   boolean inPressureNullLoop = false;
 
   // CASE 1: PRESSURIZED BOTTLE (Bottle is already depressurizing because S3 opened above)
-  if ((P1 - offsetP1 > pressureDeltaDown) && !(switchModeState == LOW && inManualModeLoop == true)) //Skip pressure check if in manual mode chosen in menu
+  if (P1 - offsetP1 > pressureDeltaDown)
   {
     inPressurizedBottleLoop = true;
     
@@ -347,7 +349,7 @@ void setup()
   }
       
   // CASE 2: GASS OFF OR LOW       
-  if ((P2 - offsetP2 < pressureNull) && !(switchModeState == LOW && inManualModeLoop == true)) //Skip pressure check if in manual mode chosen in menu
+  if (P2 - offsetP2 < pressureNull) 
   {
     inPressureNullLoop = true;
 
@@ -424,7 +426,7 @@ void setup()
   
   // Comment this comment delimeter out for normal operation
   // ##############################################################################################################################################################
-*/ 
+//*/ 
  
   // Write initial instructions for normal startup
   lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
@@ -488,6 +490,8 @@ void loop()
     lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
     lcd.setCursor (0, 1); lcd.print (F("B1 raises platform. "));  
   }  
+  
+  lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));  
 
   // Main Loop idle pressure measurement and LCD print
   // ======================================================================
