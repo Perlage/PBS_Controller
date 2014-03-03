@@ -65,9 +65,9 @@ void menuShell()
       inMenuLoop1 = false;
       button3State = !digitalRead(button3Pin); 
      
-      lcd.setCursor (0, 0); lcd.print (F("***MENU2*** Press:  "));
-      lcd.setCursor (0, 1); lcd.print (F("B1: Menu 21         "));
-      lcd.setCursor (0, 2); lcd.print (F("B2: Menu 22         "));
+      lcd.setCursor (0, 0); lcd.print (F("***MENU 2*** Press: "));
+      lcd.setCursor (0, 1); lcd.print (F("B1: Carbonation Mode"));
+      lcd.setCursor (0, 2); lcd.print (F("B2: Manual Mode     "));
       lcd.setCursor (0, 3); lcd.print (F("B3: Exit...         "));
     }      
   }
@@ -81,10 +81,10 @@ void menuShell()
       inMenuLoop2 = false;   
       button1State = !digitalRead(button1Pin); 
       
-      lcd.setCursor (0, 0); lcd.print (F("***Menu Item 21*** "));
-      lcd.setCursor (0, 1); lcd.print (F("Item 21 text       "));
-      lcd.setCursor (0, 2); lcd.print (F("Item 21 text       "));
-      lcd.setCursor (0, 3); lcd.print (F("Item 21 text       "));   
+      lcd.setCursor (0, 0); lcd.print (F("CARBONATION MODE:   "));
+      lcd.setCursor (0, 1); lcd.print (F("Under construction  "));
+      lcd.setCursor (0, 2); lcd.print (F("                    "));
+      lcd.setCursor (0, 3); lcd.print (F("                    "));   
     }  
 
     while (button2State == LOW)
@@ -93,10 +93,10 @@ void menuShell()
       inMenuLoop2 = false;   
       button2State = !digitalRead(button2Pin); 
 
-      lcd.setCursor (0, 0); lcd.print (F("***Menu Item 22*** "));
-      lcd.setCursor (0, 1); lcd.print (F("Item 22 text       "));
-      lcd.setCursor (0, 2); lcd.print (F("Item 22 text       "));
-      lcd.setCursor (0, 3); lcd.print (F("Item 22 text       "));      
+      lcd.setCursor (0, 0); lcd.print (F("MANUAL MODE:        "));
+      lcd.setCursor (0, 1); lcd.print (F("B1: Enter           "));
+      lcd.setCursor (0, 2); lcd.print (F("                    "));
+      lcd.setCursor (0, 3); lcd.print (F("                    ")); 
     }  
 
     while (button3State == LOW)
@@ -173,26 +173,37 @@ void menuShell()
     }
   }  
 
-  // Menu Option 21: Cleaning Mode set
+  // Menu Option 21: Carbonation Mode Set
   // ===============================================================================
 
   if (menuOption21 == true)
   {
-    //Do menuOption11 stufg
-    lcd.setCursor (0, 0); lcd.print (F("menuOption21 stuff"));
+    //Do menuOption11 stuff
+    lcd.setCursor (0, 0); lcd.print (F("Carbonation Mode "));
     delay (500);
     menuOption21 = false;
   }  
 
-  // Menu Option 22: Cleaning Mode set
+  // Menu Option 22: Manual Mode Set
   // ===============================================================================
 
-  if (menuOption22 == true)
+  while (menuOption22 == true)
   {
-    //Do menuOption11 stufg
-    lcd.setCursor (0, 0); lcd.print (F("menuOption22 stuff"));
-    delay (500);    
-    menuOption22 = false;
-  }
+    readButtons();
+    while (button1State == LOW)
+    {
+      button1State = !digitalRead(button1Pin); 
+      menuOption22 = false;
+      inManualModeLoop = true;
 
+      lcd.setCursor (0, 3); lcd.print (F("Manual Mode *ON*  "));
+      buzzer (1000);
+    }  
+
+    if (menuOption22 == false)
+    {
+      menuExit();
+      manualModeLoop();
+    }
+  }
 }  

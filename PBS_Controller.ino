@@ -155,10 +155,11 @@ byte strIndex;                                   // Used to refer to index of th
 // PROCESS LOCAL INCLUDES
 // ======================================================================================
 
-// Order is important. Must call functions before menuShell.
+// Order is important!!!! Must include an include before it is referenced by other includes
 #include "functions.h"   //Functions
-#include "menuShell.h"   //Menu shell
 #include "loops.h"       //Major resused loops
+#include "manualMode.h"  //Manual Mode function
+#include "menuShell.h"   //Menu shell
 
 //=====================================================================================
 // SETUP LOOP
@@ -208,7 +209,9 @@ void setup()
   // STARTUP ROUTINE
   //===================================================================================
 
-  #include "EEPROMset.h"    // EEPROM factory set-reset routine
+  // EEPROM factory set-reset routine 
+  // For some reason, have to include it here and not above with others
+  #include "EEPROMset.h"   
   
   relayOn(relay3Pin, true); // Open at earliest possibility to vent  
   relayOn(relay5Pin, false); // Close if not already to help hold platform up
@@ -242,6 +245,19 @@ void setup()
   switchDoorState = digitalRead(switchDoorPin); 
   P1 = analogRead(sensorP1Pin);
   P2 = analogRead(sensorP2Pin);
+  
+  readButtons();
+  while (button1State == LOW)
+  {
+    button1State = !digitalRead(button1Pin);
+    delay(10);
+    inManualModeLoop = true;
+    buzzer(100);
+  }  
+  if (inManualModeLoop == true);
+  {
+    manualModeLoop();
+  }
 
 /*
   // Comment this comment delimeter out for normal operation
@@ -1153,11 +1169,11 @@ void loop()
       EEPROM.write(5, numberCycles10);
 
       // Write session/total fills to screen
-      String (convNumberCycles) = floatToString(buffer, numberCycles, 0);
+      //String (convNumberCycles) = floatToString(buffer, numberCycles, 0);
       String (convNumberCyclesSession) = floatToString(buffer, numberCyclesSession, 0);
-      String outputInt = "Cycles: " + convNumberCyclesSession + "/" + convNumberCycles;
+      String outputInt = "Cycles: " + convNumberCyclesSession;
       printLcd(2, outputInt); 
-      delay(1000);
+      delay(2000);
     
       inFillLoopExecuted = false;
     }      
@@ -1165,147 +1181,6 @@ void loop()
   
   // END PLAFORM LOWER LOOP
   //============================================================================================
-
-
-  // ===========================================================================================
-  // MANUAL MODE ENTRANCE ROUTINES
-  // =========================================================================================== 
-  
-  // Could get here from menu or switch being on (LOW)  
-  if (switchModeState == LOW || inManualModeLoop == true)
-  {
-    inManualModeLoop = true;
-    sensorFillState = HIGH;
-
-    lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
-    lcd.setCursor (0, 1); lcd.print (F("Use for cleaning and"));
-    lcd.setCursor (0, 2); lcd.print (F("troubleshooting.    "));
-    buzzer (2000);
-    
-    // FUNCTION Dump pressure
-    pressureDump();
-    
-    // FUNCTION doorOpen
-    doorOpen();
-
-    // FUNCTION Drop platform if up
-    platformDrop();
-
-  }
-  else
-  {
-    // In standard Auto mode
-    lcd.setCursor (0, 2); lcd.print (F("Ready...            "));
-  }
-
-  // END MANUAL MODE ENTRANCE ROUTINES
-  // =====================================================================================  
-
-
-  //======================================================================================
-  // MANUAL MODE
-  //======================================================================================
-      
-  while (switchModeState == LOW && inManualModeLoop == true)
-  {
-    // FUNCTION: PlatformUpLoop
-    platformUpLoop();     
- 
-    // FUNCTION: Read all states of buttons, sensors
-    readButtons();
-    readStates();
-    
-    // FUNCTION: Read and output pressure
-    pressureOutput();
-    printLcd(3, outputPSI_rbd);    
-
-    if (platformStateUp == false && switchDoorState == HIGH)
-    {
-      lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
-      lcd.setCursor (0, 1); lcd.print (F("Insert bottle;      "));
-      lcd.setCursor (0, 2); lcd.print (F("B1 raises platform. "));
-    }
-    if (platformStateUp == false && switchDoorState == LOW)
-    {
-      lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
-      lcd.setCursor (0, 1); lcd.print (F("B3 opens door;      "));
-      lcd.setCursor (0, 2); lcd.print (F("then insert bottle  "));
-    }
-    if (platformStateUp == true && switchDoorState == HIGH)
-    {
-      lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
-      lcd.setCursor (0, 1); lcd.print (F("Close door to start;"));
-      lcd.setCursor (0, 2); lcd.print (F("B3 to lower platform"));
-    }
-    if (platformStateUp == true && switchDoorState == LOW)
-    {
-      lcd.setCursor (0, 0); lcd.print (F("B1: Gas IN          "));
-      lcd.setCursor (0, 1); lcd.print (F("B2: Liquid IN       "));
-      lcd.setCursor (0, 2); lcd.print (F("B3: Gas OUT/Open dr."));
-    }
-      
-    // B1: GAS IN ================================================================
-    if (button1State == LOW && platformStateUp == true && switchDoorState == LOW){
-      relayOn (relay2Pin, true);}  
-    else{
-      relayOn (relay2Pin, false);}
-      
-    // B2 LIQUID IN ==============================================================
-    if (button2State == LOW && platformStateUp == true && switchDoorState == LOW){
-      // TO DO: ADD WARNING
-      relayOn (relay1Pin, true);}  
-    else{
-      relayOn (relay1Pin, false);}
-      
-    // B3 GAS OUT ================================================================
-    if (button3State == LOW && platformStateUp == true && switchDoorState == LOW){
-      relayOn (relay3Pin, true);}  
-    else{
-      relayOn (relay3Pin, false);}
-      
-/*
-    // B3: Open Door or drops platform ===========================================
-    if (button3State == LOW && switchDoorState == LOW && (P1 - offsetP1 < pressureDeltaDown))
-    {
-      doorOpen();
-    }  
-    if (button3State == LOW && platformStateUp == true && (P1 - offsetP1 < pressureDeltaDown))
-    {
-      platformDrop();
-    }  
-*/
-  }
-    
-  //END MANUAL MODE LOOP 
-  //=================================================   
- 
-  //MANUAL MODE LOOP EXIT ROUTINES 
-  //==================================================
-  if (inManualModeLoop)
-  {
-    inManualModeLoop = false;
-    
-    lcd.setCursor (0, 0); lcd.print (F("EXITING MANUAL MODE "));
-    lcd.setCursor (0, 1); lcd.print (F("                    "));
-    lcd.setCursor (0, 2); lcd.print (F("Continuing...       "));
-    
-    while (P1 - offsetP1 > pressureDeltaDown)
-    {
-      relayOn (relay3Pin, true);
-      
-      pressureOutput();
-      printLcd(3, outputPSI_rbd); 
-     
-      lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
-    }
-    
-    doorOpen();
-    platformDrop();
-    relayOn (relay3Pin, false);
-  }  
-
-  // END MANUAL MODE
-  //===========================================================================================
 
 }
 
@@ -1320,7 +1195,6 @@ void loop()
 // =============================================================================================
 
 
-//=====================================================================================
 // FLASH MEMORY STRING HANDLING
 //=====================================================================================
 
@@ -1345,9 +1219,9 @@ char strLcd_35[] PROGMEM = "                    ";
 //Write to string table. PROGMEM moved from front of line to end; this made it work
 const char *strLcdTable[] PROGMEM =  // Name of table following * is arbitrary
 {   
-  strLcd_20, strLcd_21, strLcd_22, strLcd_23,       // Pressurized bottle
-  strLcd_24, strLcd_25, strLcd_26, strLcd_27,       // Null pressure warning
-  strLcd_32, strLcd_33, strLcd_34, strLcd_35,       // Insert bottle
+  strLcd_0, strLcd_1, strLcd_2, strLcd_3,       
+  strLcd_4, strLcd_5, strLcd_6, strLcd_7,     
+  strLcd_32, strLcd_33, strLcd_34, strLcd_35,   
 };
 
       

@@ -80,6 +80,7 @@ void buzzer (int buzzDuration)
 // FUNCTION: buzzOnce()
 // =======================================================================================
 
+// Remember to set buzzedOnce back to false after this
 void buzzOnce (int buzzDuration, byte lightPin)
 {
   if (buzzedOnce == false)
