@@ -1,5 +1,6 @@
 
-
+void menuShell()
+{
   boolean inMenuLoop1 = false;
   boolean inMenuLoop2 = false;
   boolean menuOption11 = false; //Carbonation
@@ -121,4 +122,6 @@
     //Do menuOption11 stufg
     lcd.setCursor (0, 0); lcd.print (F("menuOption22 stuff"));
     menuOption22 = false;
-  }  
+  }
+
+}  

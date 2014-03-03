@@ -155,6 +155,10 @@ byte strIndex;                                   // Used to refer to index of th
 // Declare functions
 // ======================================================================================
 
+//Include menuShell
+#include "menuShell.h"
+
+
 // FUNCTION printLcd: 
 // To simplify string output. Prevents rewriting unless string has changed; 
 // if string has changed, blanks out line first and reprints
@@ -475,6 +479,7 @@ void setup()
   lcd.init();
   lcd.backlight();
   
+
   // =====================================================================================
   // EEPROM CALIBRATION 
   // Write null pressure to EEPROM. 
@@ -907,6 +912,8 @@ void loop()
 
   // Main Loop idle pressure measurement and LCD print
   // ======================================================================
+ 
+  menuShell();
   
   pressureOutput();
   if (P1 - offsetP1 > pressureDeltaDown)
