@@ -828,7 +828,7 @@ void loop()
     
     // Check which condition caused filling to stop
     // CASE 1: Button2 pressed when filling (B2 low and toggle state true). Run Anti-Drip
-    if (button2State == HIGH)
+    if (button2State == HIGH && !inCleaningMode == true)
     {
       // Anti-drip rountine
       relayOn(relay1Pin, true);
@@ -847,7 +847,7 @@ void loop()
     }
     
     // CASE 2: FillSensor tripped--Overfill condition
-    else if (inFillLoop && sensorFillState == LOW) 
+    else if (inFillLoop && sensorFillState == LOW || inCleaningMode == true) 
     {
       relayOn(relay1Pin, true);
       relayOn(relay2Pin, true);
