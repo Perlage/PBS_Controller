@@ -1,4 +1,8 @@
 
+// ====================================================================================
+// MENU SHELL
+// ====================================================================================
+
 void menuShell()
 {
   boolean inMenuLoop1 = false;
@@ -10,6 +14,8 @@ void menuShell()
 
   while (button2State == LOW) //or whatever button combo
   {
+    buzzOnce(100, light2Pin);
+
     inMenuLoop1 = true;
     button2State = !digitalRead(button2Pin); 
 
@@ -18,9 +24,11 @@ void menuShell()
     lcd.setCursor (0, 2); lcd.print (F("B2: Menu 12         "));
     lcd.setCursor (0, 3); lcd.print (F("B3: More...         "));
   }
+  buzzedOnce = false;
   
   while (inMenuLoop1 == true)
   {
+    readButtons();
     while (button1State == LOW)
     {
       menuOption11 = true;
@@ -60,6 +68,7 @@ void menuShell()
   
   while (inMenuLoop2 == true)
   {
+    readButtons();
     while (button1State == LOW)
     {
       menuOption21 = true;
@@ -89,18 +98,25 @@ void menuShell()
       inMenuLoop2 = false;
       button3State = !digitalRead(button3Pin); 
      
-      lcd.clear();
       lcd.setCursor (0, 3); lcd.print (F("Exiting menu...     "));
       delay(1000);      
+      lcd.setCursor (0, 3); lcd.print (F("               "));
     }      
   }
   
   //Now we execute the actual functionality of the menu options
-  if (menuOption11 == true)
+  while (menuOption11 == true)
   {
-    //Do menuOption11 stufg
     lcd.setCursor (0, 0); lcd.print (F("menuOption11 stuff"));
-    menuOption11 = false;
+
+    //Do menuOption11 stuff
+
+    button3State = !digitalRead(button3Pin); 
+    while (button3State == LOW)
+    {
+      menuOption11 = false;
+      button3State = !digitalRead(button3Pin); 
+    }  
   }  
 
   if (menuOption12 == true)

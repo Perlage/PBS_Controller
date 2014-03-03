@@ -145,19 +145,22 @@ byte numberCycles01;                             // Ones digit for numberCycles 
 byte numberCycles10;                             // Tens digit for numberCycles in EEPROM in base 255
 int numberCyclesSession              = 0;        // Number of session cycles
 
+boolean buzzedOnce                   = false;
 boolean inFillLoopExecuted           = false;    // True of FillLoop is dirty. Used to compute numberCycles
 char buffer[25];                                 // Used in float to string conv // 1-26 Changed from 25 to 20 //CHANGED BACK TO 25!! SEEMS TO BE IMPORTANT!
 char bufferP[30];                                // make sure this is large enough for the largest string it must hold; used for PROGMEM write to LCD
 byte strIndex;                                   // Used to refer to index of the string in *srtLcdTable (e.g., strLcd_0 has strLcdIndex = 0
 
-
 // ======================================================================================
-// Declare functions
+// PROCESS LOCAL INCLUDES
 // ======================================================================================
 
 //Include menuShell
 #include "menuShell.h"
 
+// ======================================================================================
+// DECLARE FUNCTIONS
+// ======================================================================================
 
 // FUNCTION printLcd: 
 // To simplify string output. Prevents rewriting unless string has changed; 
@@ -232,6 +235,20 @@ void buzzer (int buzzDuration)
   digitalWrite (buzzerPin, HIGH); 
   delay (buzzDuration);
   digitalWrite (buzzerPin, LOW);
+} 
+
+// FUNCTION: buzzOnce()
+// =======================================================================================
+
+void buzzOnce (int buzzDuration, byte lightPin)
+{
+  if (buzzedOnce == false)
+  {
+    digitalWrite(lightPin, HIGH);
+    buzzer(100);
+    digitalWrite(lightPin, LOW);
+    buzzedOnce = true;
+  }    
 } 
 
 // FUNCTION: platformDrop() //TO DO: pass the duration as a parameter
@@ -914,7 +931,7 @@ void loop()
   // ======================================================================
  
   menuShell();
-  
+
   pressureOutput();
   if (P1 - offsetP1 > pressureDeltaDown)
   {
@@ -941,7 +958,6 @@ void loop()
   
   boolean inEmergencyLockLoop = false;
   boolean platformEmergencyLock = false;
-  boolean buzzOnce = false;
   
   // If pressure drops, go into this loop and wait for user to fix
   while (P2 -offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what consitutes a pressure drop.// 2-18 Changed from 75 to 100
@@ -958,11 +974,11 @@ void loop()
       relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
       relayOn (relay3Pin, true);    // Vent the bottle to be safe
 
-      if (buzzOnce == false)
+      if (buzzedOnce == false)
       {
         lcd.setCursor (0, 2); lcd.print (F("Platform locked...  "));
         buzzer(2000);
-        buzzOnce = true;
+        buzzedOnce = true;
       }
     }  
     
@@ -975,16 +991,18 @@ void loop()
     printLcd (3, outputPSI_rb);
 
     //Only sound buzzer once
-    if (buzzOnce == false)
+    if (buzzedOnce == false)
     {
       buzzer(2000);
-      buzzOnce = true;
+      buzzedOnce = true;
     }
   } 
   
   if (inEmergencyLockLoop)
   {
     inEmergencyLockLoop = false;
+    buzzedOnce = false;
+    
     // Run this condition if had pressurized bottle
     if (platformEmergencyLock == true)
     {
