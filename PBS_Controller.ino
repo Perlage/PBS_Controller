@@ -15,15 +15,15 @@ Copyright 2013, 2014  All rights reserved
 
 //Version control variables
 String (versionSoftwareTag) = "v1.0"     ;     // 2nd pressure sensor rev'd to 0.6
-String (versionHardwareTag) = "v0.6.0.0" ;     // 2nd sensor rev'd to v0.6
+//String (versionHardwareTag) = "v0.6.0.0" ;     // 2nd sensor rev'd to v0.6
 
 //Library includes
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 #include "floatToString.h"               
 #include <EEPROM.h>
-#include <avr/pgmspace.h>                      // 1-26 Added for PROGMEM function // UNUSED now
-#include <math.h>                              // Unused
+//#include <avr/pgmspace.h>                      // 1-26 Added for PROGMEM function // UNUSED now
+//#include <math.h>                              // Unused
 
 LiquidCrystal_I2C lcd(0x3F,20,4);  
 
@@ -1052,7 +1052,7 @@ void loop()
       // Write session/total fills to screen
       //String (convNumberCycles) = floatToString(buffer, numberCycles, 0);
       String (convNumberCyclesSession) = floatToString(buffer, numberCyclesSession, 0);
-      String outputInt = "Cycles: " + convNumberCyclesSession;
+      String outputInt = "Session fills: " + convNumberCyclesSession;
       printLcd(2, outputInt); 
       delay(2000);
     
