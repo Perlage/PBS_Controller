@@ -81,8 +81,8 @@ void menuShell()
       inMenuLoop2 = false;   
       button1State = !digitalRead(button1Pin); 
       
-      lcd.setCursor (0, 0); lcd.print (F("CARBONATION MODE:   "));
-      lcd.setCursor (0, 1); lcd.print (F("Under construction  "));
+      lcd.setCursor (0, 0); lcd.print (F("**CARBONATION MODE**"));
+      lcd.setCursor (0, 1); lcd.print (F("Press B1 to begin.  "));
       lcd.setCursor (0, 2); lcd.print (F("                    "));
       lcd.setCursor (0, 3); lcd.print (F("                    "));   
     }  
@@ -177,12 +177,78 @@ void menuShell()
   // Menu Option 21: Carbonation Mode Set
   // ===============================================================================
 
-  if (menuOption21 == true)
+  while (menuOption21 == true)
   {
-    //Do menuOption11 stuff
-    //lcd.setCursor (0, 0); lcd.print (F("Carbonation Mode "));
-    delay (1500);
-    menuOption21 = false;
+    int timerStart = millis();
+    int timerTime = 0;
+    int timerTimeMin = 0;
+    int timerTimeSec = 0;
+    
+    float PSIpressureRegStartUp = 0;
+    boolean inTimingLoop = false;
+    String state;
+    
+    button1State = !digitalRead(button1Pin); delay(10);
+    while (button1State == LOW)
+    {
+      inTimingLoop = true;
+      button1State = !digitalRead(button1Pin); delay(10);
+    }
+    buzzedOnce = false;
+    
+    while (inTimingLoop == true)
+    {
+      timerTime = (millis() - timerStart) / 1000;
+      timerTimeSec = timerTime % 60;
+      timerTimeMin = int(timerTime/60);
+
+      String (convTimeMin) = floatToString(buffer, timerTimeMin, 0);
+      String (convTimeSec) = floatToString(buffer, timerTimeSec, 0);
+      
+      if (timerTimeSec >=  0 && timerTimeSec < 15){
+        state = "REST...";}
+      if (timerTimeSec >= 15 && timerTimeSec < 30){
+        state = "SHAKE...";}
+      if (timerTimeSec >= 30 && timerTimeSec < 45){
+        state = "REST...";}
+      if (timerTimeSec >= 45 && timerTimeSec < 60){
+        state = "SHAKE...";}
+        
+      if (timerTimeSec % 15 == 0){
+        buzzer(1000);}  
+
+      if (timerTimeSec <= 9){
+        printLcd(2, "Timer: " + convTimeMin + ":" + "0" + convTimeSec + " " + state);}
+      else{
+        printLcd(2, "Timer: " + convTimeMin + ":" + convTimeSec + " " + state);}          
+      
+      P2 = analogRead(sensorP2Pin);
+      
+      PSI2 = pressureConv2(P2); 
+      PSIpressureRegStartUp = pressureConv2(pressureRegStartUp);
+      PSIdiff  = PSIpressureRegStartUp - PSI2;
+      
+      convPSI2      = floatToString(buffer, PSI2, 1);
+      convPSIdiff   = floatToString(buffer, PSIdiff, 1);
+      String outputPSI_rd  = "Reg:" + convPSI2 + " Drop:" + convPSIdiff;
+      printLcd(3, outputPSI_rd);  
+      
+      //Beep if there is a significant pressure drop of 2 psi (12.71 x 2)
+      if (P2 < pressureRegStartUp - 25.4){
+        buzzer(50);}  
+ 
+      lcd.setCursor (0, 1); lcd.print (F("Press B1 to exit.  "));
+      
+      button1State = !digitalRead(button1Pin); delay(10);
+      while (button1State == LOW)
+      {
+        button1State = !digitalRead(button1Pin); delay(10);
+        inTimingLoop = false;
+        menuOption21 = false;
+        buzzOnce(500, light2Pin);
+      }
+      buzzedOnce = false;
+    }
   }  
 
   // Menu Option 22: Manual Mode Set

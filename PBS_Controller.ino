@@ -157,6 +157,7 @@ char buffer[25];                                 // Used in float to string conv
 
 // Order is important!!!! Must include an include before it is referenced by other includes
 #include "functions.h"   //Functions
+#include "lcdMessages.h" //User messages
 #include "loops.h"       //Major resused loops
 #include "manualMode.h"  //Manual Mode function
 #include "menuShell.h"   //Menu shell
@@ -240,7 +241,7 @@ void setup()
     inManualModeLoop = true;
     button1State = !digitalRead(button1Pin); 
     delay(10);
-    lcd.setCursor (0, 2); lcd.print (F("Enter Manual Mode..."));
+    lcd.setCursor (0, 3); lcd.print (F("Entering Manual Mode"));
     buzzOnce(500, light2Pin);
   }  
   buzzedOnce = false;
@@ -255,12 +256,9 @@ void setup()
   //============================================================================
 
   //Initial user message 
-  lcd.setCursor (0, 0);  lcd.print (F("Perlini Bottling    "));
-  printLcd (1, "System, " + versionSoftwareTag);
-  lcd.setCursor (0, 3);  lcd.print (F("Initializing...     "));
+  messageInitial();
   
-
-  ///* Comment out preceding comment delimeter for normal operation
+  /* Comment out preceding comment delimeter for normal operation
   // ################################################################################
 
   // If P1 is not high, then there is no bottle, or bottle pressure is low. So raise platform--but take time to make user close door, so no pinching
@@ -320,11 +318,12 @@ void setup()
   delay(500); digitalWrite(light3Pin, LOW);
   delay(100); digitalWrite(light2Pin, LOW);
   delay(100); digitalWrite(light1Pin, LOW);
+
+// #####################################################################################
+*/ // Comment out preceding comment delimeter out for normal operation
+
 }
   
-// #####################################################################################
-//*/ // Comment out preceding comment delimeter out for normal operation
-
 //====================================================================================================================================
 // MAIN LOOP =========================================================================================================================
 //====================================================================================================================================
@@ -743,7 +742,6 @@ void loop()
       
       delay (25);
       sensorFillState = digitalRead(sensorFillPin); 
-      delay (25);
     }
     
     // CASE 2: FillSensor tripped--Overfill condition
@@ -761,7 +759,6 @@ void loop()
       
       delay (25);
       sensorFillState = digitalRead(sensorFillPin); 
-      delay (25); 
              
       button3State = LOW; // This make AUTO-depressurize after overfill // TO DO: shouldn't this be AutoMode_1?
     }

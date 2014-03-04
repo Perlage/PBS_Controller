@@ -12,8 +12,6 @@ void manualModeLoop()
     inManualModeLoop1 = true;
     sensorFillState = HIGH; // Set it high and don't read it anymore
   
-    //lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  ")); // Delete?
-    //lcd.setCursor (0, 3); lcd.print (F("Press B2 to exit.   "));
     buzzer (1000);
     
     // FUNCTION Dump pressure
@@ -71,7 +69,6 @@ void manualModeLoop()
     else
     {
       lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
-      lcd.setCursor (0, 3); lcd.print (F("B2: Exit Manual Mode"));
     }
       
     // B1: GAS IN ================================================================
