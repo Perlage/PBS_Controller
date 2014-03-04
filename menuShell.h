@@ -93,10 +93,11 @@ void menuShell()
       inMenuLoop2 = false;   
       button2State = !digitalRead(button2Pin); 
 
-      lcd.setCursor (0, 0); lcd.print (F("MANUAL MODE:        "));
-      lcd.setCursor (0, 1); lcd.print (F("B1: Enter           "));
-      lcd.setCursor (0, 2); lcd.print (F("                    "));
-      lcd.setCursor (0, 3); lcd.print (F("                    ")); 
+      lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
+      lcd.setCursor (0, 1); lcd.print (F("CAUTION: Fill Sensor"));
+      lcd.setCursor (0, 2); lcd.print (F("disabled in Manual. "));
+      lcd.setCursor (0, 3); lcd.print (F("B1: Enter           "));
+      delay(1000); 
     }  
 
     while (button3State == LOW)
@@ -179,8 +180,8 @@ void menuShell()
   if (menuOption21 == true)
   {
     //Do menuOption11 stuff
-    lcd.setCursor (0, 0); lcd.print (F("Carbonation Mode "));
-    delay (500);
+    //lcd.setCursor (0, 0); lcd.print (F("Carbonation Mode "));
+    delay (1500);
     menuOption21 = false;
   }  
 
@@ -197,12 +198,12 @@ void menuShell()
       inManualModeLoop = true;
 
       lcd.setCursor (0, 3); lcd.print (F("Manual Mode *ON*  "));
-      buzzer (1000);
     }  
 
     if (menuOption22 == false)
     {
-      menuExit();
+      //menuExit();
+      delay(1000);
       manualModeLoop();
     }
   }

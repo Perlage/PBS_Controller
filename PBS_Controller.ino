@@ -255,21 +255,18 @@ void setup()
     inManualModeLoop = true;
     buzzer(100);
   }  
-
   if (inManualModeLoop == true)
   {
     manualModeLoop();
   }
 
-///*
-  // Comment this comment delimeter out for normal operation
-  // ##############################################################################################################################################################
+  ///* Comment out preceding comment delimeter for normal operation
+  // ################################################################################
 
   //=================================================================================
   // PLATFROM LOCK OR SUPPORT ROUTINE. DO THESE FIRST FOR SAFETY
   // IMMEDIATELY lock platform if P2 is low and P1 is high, or apply platform support if P1 and P2 high
   //=================================================================================
-
 
   if (P1 - offsetP1 > pressureDeltaDown)
   {
@@ -277,7 +274,7 @@ void setup()
     {
       relayOn(relay4Pin, false);   // When input pressure low, close S4 to conserve gas and keep platform up (it should be closed already)
       lcd.setCursor (0, 2); lcd.print (F("Platform locked...  "));
-      delay (500); // Can delete later
+      buzzer(500); // Can delete later
     }
     else
     {  
@@ -291,17 +288,16 @@ void setup()
     {
       switchDoorState = digitalRead(switchDoorPin); 
       lcd.setCursor (0, 2); lcd.print (F("PLEASE CLOSE DOOR..."));
-
       buzzer(100);
       delay(100);
     }
-    
     delay(500);                // A little delay after closing door before raising platform
     relayOn(relay4Pin, true);  // Now Raise platform     
 
-    lcd.setCursor (0, 0); lcd.print (F("Perlini Bottling    "));
-    printLcd (1, "System, " + versionSoftwareTag);
-    lcd.setCursor (0, 3); lcd.print (F("Initializing...     "));
+    //lcd.setCursor (0, 0); lcd.print (F("Perlini Bottling    ")); // I think this is redundant--that text is still on screen
+    //printLcd (1, "System, " + versionSoftwareTag);
+    //lcd.setCursor (0, 3); lcd.print (F("Initializing...     "));
+    lcd.setCursor (0, 2); lcd.print (F("                    "));
   }
 
   // Blinks lights and give time to de-pressurize stuck bottle
@@ -312,8 +308,7 @@ void setup()
     digitalWrite(light3Pin, HIGH); delay(500);
     digitalWrite(light1Pin, LOW);
     digitalWrite(light2Pin, LOW);
-    digitalWrite(light3Pin, LOW); 
-    delay(325);
+    digitalWrite(light3Pin, LOW); delay(325);
   }
 
   // Leave blink loop and light all lights 
@@ -326,79 +321,7 @@ void setup()
   // Check for stuck pressurized bottle or implausibly low gas pressure at start 
   //============================================================================
 
-  boolean inPressurizedBottleLoop = false;
-  boolean inPressureNullLoop = false;
-
-  // CASE 1: PRESSURIZED BOTTLE (Bottle is already depressurizing because S3 opened above)
-  if (P1 - offsetP1 > pressureDeltaDown)
-  {
-    inPressurizedBottleLoop = true;
-    
-    lcd.setCursor (0, 0); lcd.print (F("Pressurized bottle  "));
-    lcd.setCursor (0, 1); lcd.print (F("detected. Open valve"));
-    lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
-    lcd.setCursor (0, 3); lcd.print (F("                    "));
-    
-    buzzer(1000);
-
-    while (P1 - offsetP1 > pressureDeltaDown)
-    {
-      pressureOutput();
-      printLcd(3, outputPSI_b);  
-    } 
-  }
-      
-  // CASE 2: GASS OFF OR LOW       
-  if (P2 - offsetP2 < pressureNull) 
-  {
-    inPressureNullLoop = true;
-
-    // Write Null Pressure warning 
-    lcd.setCursor (0, 0); lcd.print (F("Gas off or empty;   "));
-    lcd.setCursor (0, 1); lcd.print (F("check tank & hoses. "));
-    lcd.setCursor (0, 2); lcd.print (F("B3 opens door.      "));
-    lcd.setCursor (0, 3); lcd.print (F("Waiting...          "));
-
-    buzzer(250);
-        
-    while (P2 - offsetP2 < pressureNull)
-    {
-      //Read sensors
-      P2 = analogRead(sensorP2Pin); 
-      button3State = !digitalRead(button3Pin);
-      switchDoorState = digitalRead(switchDoorPin); 
-      delay(25); 
-            
-      if (button3State == LOW)
-      {
-        doorOpen();
-      }  
-    }  
-  }
-  
-  // NULL PRESSURE EXIT ROUTINES
-  // No longer closing S3 at end of this to prevent popping in some edge cases of a very foamy bottle
-  // ==================================================================================
-  
-  if (inPressurizedBottleLoop)
-  {
-    //Open door
-    delay(2000); // Delay gives time for getting accurate pressure reading
-    doorOpen(); 
-    pressureRegStartUp = analogRead (sensorP2Pin); // Get GOOD start pressure for emergency lock loop
-    inPressurizedBottleLoop = false;
-  } 
-
-  if (inPressureNullLoop)
-  {
-    delay(2000); // Delay gives time for getting accurate pressure reading
-    doorOpen();
-    pressureRegStartUp = analogRead (sensorP2Pin); // Get GOOD start pressure for emergency lock loop
-    inPressureNullLoop = false;
-  }
-
-  // END NULL PRESSURE ROUTINE
-  // ====================================================================================
+  #include "nullPressureCheck.h"
 
   // Continue with normal ending when pressure is OK
   // ====================================================================================
@@ -424,14 +347,14 @@ void setup()
   // Open door if closed
   doorOpen();
   
-  // Comment this comment delimeter out for normal operation
-  // ##############################################################################################################################################################
-//*/ 
+  // #####################################################################################
+  //*/ // Comment out preceding comment delimeter out for normal operation
+
  
   // Write initial instructions for normal startup
-  lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
-  lcd.setCursor (0, 1); lcd.print (F("B1 raises platform  "));
-  lcd.setCursor (0, 2); lcd.print (F("Ready...            "));
+  //lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
+  //lcd.setCursor (0, 1); lcd.print (F("B1 raises platform  "));
+  //lcd.setCursor (0, 2); lcd.print (F("Ready...            "));
 
   delay(500); digitalWrite(light3Pin, LOW);
   delay(100); digitalWrite(light2Pin, LOW);
@@ -496,6 +419,7 @@ void loop()
   // Main Loop idle pressure measurement and LCD print
   // ======================================================================
  
+  // Run menu if B2 pressed
   menuShell();
 
   pressureOutput();
@@ -1191,50 +1115,4 @@ void loop()
 //=======================================================================================================
 // END MAIN LOOP ========================================================================================
 //=======================================================================================================
-
-
-/*
-// =============================================================================================
-// CODE FRAGMENTS 
-// =============================================================================================
-
-
-// FLASH MEMORY STRING HANDLING
-//=====================================================================================
-
-//This goes before setup()
-//Write text to char strings. Previously used const_char at start of line; this didn't work
-
-//char strLcd_0 [] PROGMEM = "Perlini Bottling    ";
-//char strLcd_1 [] PROGMEM = "System, v1.0        ";
-//char strLcd_2 [] PROGMEM = "                    ";
-//char strLcd_3 [] PROGMEM = "Initializing...     ";
-
-char strLcd_4 [] PROGMEM = "***MENU*** Press... ";
-char strLcd_5 [] PROGMEM = "B1: Manual Mode     ";
-char strLcd_6 [] PROGMEM = "B2: Autosiphon time ";
-char strLcd_7 [] PROGMEM = "B3: Exit Menu       ";
-
-char strLcd_32[] PROGMEM = "Insert bottle;      ";
-char strLcd_33[] PROGMEM = "B1 raises platform  ";
-char strLcd_34[] PROGMEM = "Ready...            ";
-char strLcd_35[] PROGMEM = "                    ";
-
-//Write to string table. PROGMEM moved from front of line to end; this made it work
-const char *strLcdTable[] PROGMEM =  // Name of table following * is arbitrary
-{   
-  strLcd_0, strLcd_1, strLcd_2, strLcd_3,       
-  strLcd_4, strLcd_5, strLcd_6, strLcd_7,     
-  strLcd_32, strLcd_33, strLcd_34, strLcd_35,   
-};
-
-      
-// Write Manual Mode intro menu text    
-for (int n = 8; n <= 11; n++){
-  strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-  printLcd (n % 4, bufferP);}
-      
-
-*/
-
      

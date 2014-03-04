@@ -12,10 +12,8 @@ void manualModeLoop()
     inManualModeLoop1 = true;
     sensorFillState = HIGH; // Set it high and don't read it anymore
   
-    lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
-    lcd.setCursor (0, 1); lcd.print (F("Use for diagnostics "));
-    lcd.setCursor (0, 2); lcd.print (F("and troubleshooting."));
-    lcd.setCursor (0, 2); lcd.print (F("Press B2 to exit.   "));
+    //lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  ")); // Delete?
+    //lcd.setCursor (0, 3); lcd.print (F("Press B2 to exit.   "));
     buzzer (1000);
     
     // FUNCTION Dump pressure
@@ -51,27 +49,29 @@ void manualModeLoop()
   
     if (platformStateUp == false && switchDoorState == HIGH)
     {
-      lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
       lcd.setCursor (0, 1); lcd.print (F("B1 raises platform; "));
-      lcd.setCursor (0, 2); lcd.print (F("B2 exits manual mode"));
+      lcd.setCursor (0, 2); lcd.print (F("B3 lowers platform  "));
     }
     if (platformStateUp == false && switchDoorState == LOW)
     {
-      lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
       lcd.setCursor (0, 1); lcd.print (F("B3 opens door;      "));
-      lcd.setCursor (0, 2); lcd.print (F("B2 exits manual mode"));
+      lcd.setCursor (0, 2); lcd.print (F("B2 exits Manual Mode"));
     }
     if (platformStateUp == true && switchDoorState == HIGH)
     {
-      lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
       lcd.setCursor (0, 1); lcd.print (F("Close door to start;"));
-      lcd.setCursor (0, 2); lcd.print (F("B3 to lower platform"));
+      lcd.setCursor (0, 2); lcd.print (F("B3 lowers platform  "));
     }
-    if (platformStateUp == true && switchDoorState == LOW)
+    if (platformStateUp == true && switchDoorState == LOW) //Add a pressure check to this
     {
       lcd.setCursor (0, 0); lcd.print (F("B1: Gas IN          "));
       lcd.setCursor (0, 1); lcd.print (F("B2: Liquid IN       "));
-      lcd.setCursor (0, 2); lcd.print (F("B3: Gas OUT/Open dr."));
+      lcd.setCursor (0, 2); lcd.print (F("B3: Gas OUT/Plat Dwn"));
+    }
+    else
+    {
+      lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
+      lcd.setCursor (0, 3); lcd.print (F("B2: Exit Manual Mode"));
     }
       
     // B1: GAS IN ================================================================
