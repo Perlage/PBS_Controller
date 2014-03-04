@@ -213,9 +213,6 @@ void setup()
   // For some reason, have to include it here and not above with others
   #include "EEPROMset.h"   
   
-  relayOn(relay3Pin, true); // Open at earliest possibility to vent  
-  relayOn(relay5Pin, false); // Close if not already to help hold platform up
-
   // Read EEPROM
   offsetP1               = EEPROM.read(0);
   offsetP2               = EEPROM.read(1);
@@ -229,76 +226,55 @@ void setup()
   //Read routine for numberCycles  
   numberCycles = numberCycles10 * 255 + numberCycles01;
   //numberCycles = nnnn; // Use to set numberCyles to some value for debug
-  
+
   // Read States. Get initial pressure readings from sensor. 
   switchDoorState = digitalRead(switchDoorPin);  
   P1 = analogRead(sensorP1Pin); // Read the initial bottle pressure and assign to P1
   P2 = analogRead(sensorP2Pin); // Read the initial regulator pressure and assign to P2
   pressureRegStartUp = P2;      // Read and store initial regulator pressure to test for pressure drop during session
-
-  //Initial user message
-  lcd.setCursor (0, 0);  lcd.print (F("Perlini Bottling"));
-  printLcd (1, "System, " + versionSoftwareTag);
-  lcd.setCursor (0, 3);  lcd.print (F("Initializing..."));
-
-  // Get fresh pressure and door state measurements
-  switchDoorState = digitalRead(switchDoorPin); 
-  P1 = analogRead(sensorP1Pin);
-  P2 = analogRead(sensorP2Pin);
   
-  //Allow user to invoke Manual Mode from bootup in case there are problems preventing menu access
-  readButtons();
+  //Allow user to invoke Manual Mode from bootup before anything else happens
+  button1State = !digitalRead(button1Pin);
   while (button1State == LOW)
   {
-    button1State = !digitalRead(button1Pin);
-    delay(10);
     inManualModeLoop = true;
-    buzzer(100);
+    button1State = !digitalRead(button1Pin); 
+    delay(10);
+    lcd.setCursor (0, 2); lcd.print (F("Enter Manual Mode..."));
+    buzzOnce(500, light2Pin);
   }  
-  if (inManualModeLoop == true)
-  {
+  buzzedOnce = false;
+
+  if (inManualModeLoop == true){
     manualModeLoop();
   }
+
+  //============================================================================
+  //NULL PRESSURE: Check for stuck pressurized bottle or implausibly low gas pressure at start 
+  #include "nullPressureCheck.h"
+  //============================================================================
+
+  //Initial user message 
+  lcd.setCursor (0, 0);  lcd.print (F("Perlini Bottling    "));
+  printLcd (1, "System, " + versionSoftwareTag);
+  lcd.setCursor (0, 3);  lcd.print (F("Initializing...     "));
+  
 
   ///* Comment out preceding comment delimeter for normal operation
   // ################################################################################
 
-  //=================================================================================
-  // PLATFROM LOCK OR SUPPORT ROUTINE. DO THESE FIRST FOR SAFETY
-  // IMMEDIATELY lock platform if P2 is low and P1 is high, or apply platform support if P1 and P2 high
-  //=================================================================================
-
-  if (P1 - offsetP1 > pressureDeltaDown)
+  // If P1 is not high, then there is no bottle, or bottle pressure is low. So raise platform--but take time to make user close door, so no pinching
+  while (switchDoorState == HIGH) // Make sure door is closed
   {
-    if (P2 - offsetP2 < pressureNull)
-    {
-      relayOn(relay4Pin, false);   // When input pressure low, close S4 to conserve gas and keep platform up (it should be closed already)
-      lcd.setCursor (0, 2); lcd.print (F("Platform locked...  "));
-      buzzer(500); // Can delete later
-    }
-    else
-    {  
-      relayOn(relay4Pin, true);    // Turn on platform support immediately if P2 high--keeps stuck bottle in place
-    }
-  }  
-  // But if P1 is not high, then there is no bottle, or bottle pressure is low. So raise platform--but take time to make user close door, so no pinching
-  else
-  {
-    while (switchDoorState == HIGH) // Make sure door is closed
-    {
-      switchDoorState = digitalRead(switchDoorPin); 
-      lcd.setCursor (0, 2); lcd.print (F("PLEASE CLOSE DOOR..."));
-      buzzer(100);
-      delay(100);
-    }
-    delay(500);                // A little delay after closing door before raising platform
-    relayOn(relay4Pin, true);  // Now Raise platform     
-
-    //lcd.setCursor (0, 0); lcd.print (F("Perlini Bottling    ")); // I think this is redundant--that text is still on screen
-    //printLcd (1, "System, " + versionSoftwareTag);
-    //lcd.setCursor (0, 3); lcd.print (F("Initializing...     "));
-    lcd.setCursor (0, 2); lcd.print (F("                    "));
+    switchDoorState = digitalRead(switchDoorPin); 
+    lcd.setCursor (0, 2); lcd.print (F("PLEASE CLOSE DOOR..."));
+    buzzer(100);
+    delay(100);
   }
+  lcd.setCursor (0, 2); lcd.print (F("                    "));
+  delay(500);  // A little delay after closing door before raising platform
+
+  relayOn(relay4Pin, true);  // Now Raise platform     
 
   // Blinks lights and give time to de-pressurize stuck bottle
   for (int n = 0; n < 0; n++)
@@ -316,12 +292,6 @@ void setup()
   digitalWrite(light2Pin, HIGH); delay(500);
   digitalWrite(light3Pin, HIGH); delay(500);
   
-  //============================================================================
-  // NULL PRESSURE ROUTINES
-  // Check for stuck pressurized bottle or implausibly low gas pressure at start 
-  //============================================================================
-
-  #include "nullPressureCheck.h"
 
   // Continue with normal ending when pressure is OK
   // ====================================================================================
@@ -346,20 +316,14 @@ void setup()
   
   // Open door if closed
   doorOpen();
-  
-  // #####################################################################################
-  //*/ // Comment out preceding comment delimeter out for normal operation
-
- 
-  // Write initial instructions for normal startup
-  //lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
-  //lcd.setCursor (0, 1); lcd.print (F("B1 raises platform  "));
-  //lcd.setCursor (0, 2); lcd.print (F("Ready...            "));
 
   delay(500); digitalWrite(light3Pin, LOW);
   delay(100); digitalWrite(light2Pin, LOW);
   delay(100); digitalWrite(light1Pin, LOW);
 }
+  
+// #####################################################################################
+//*/ // Comment out preceding comment delimeter out for normal operation
 
 //====================================================================================================================================
 // MAIN LOOP =========================================================================================================================
@@ -403,6 +367,7 @@ void loop()
   }
    
   // Monitor door state in null loop
+  //======================================================================
   if (switchDoorState == LOW && platformStateUp == false)
   {
     lcd.setCursor (0, 0); lcd.print (F("B3 opens door;      ")); 
@@ -413,22 +378,20 @@ void loop()
     lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
     lcd.setCursor (0, 1); lcd.print (F("B1 raises platform. "));  
   }  
-  
   lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));  
-
-  // Main Loop idle pressure measurement and LCD print
-  // ======================================================================
  
   // Run menu if B2 pressed
+  //======================================================================
   menuShell();
+  
+  // Main Loop idle pressure measurement and LCD print
+  //======================================================================
 
   pressureOutput();
-  if (P1 - offsetP1 > pressureDeltaDown)
-  {
+  if (P1 - offsetP1 > pressureDeltaDown){
     printLcd(3, outputPSI_rb); // Print reg and bottle if bottle pressurized
   }
-  else
-  {
+  else{
     printLcd(3, outputPSI_r);  // Print only reg if bottle not pressent or at zero pressure
   }  
     
@@ -458,18 +421,14 @@ void loop()
     P2 = analogRead(sensorP2Pin); 
     
     //If bottle is pressurized (along with pressure sagging), also lock the platform
-    if (P1 - offsetP1 > pressureDeltaDown)
+    if (P1 - offsetP1 > P2 - offsetP2)
     {
       platformEmergencyLock = true;
       relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
       relayOn (relay3Pin, true);    // Vent the bottle to be safe
 
-      if (buzzedOnce == false)
-      {
-        lcd.setCursor (0, 2); lcd.print (F("Platform locked...  "));
-        buzzer(2000);
-        buzzedOnce = true;
-      }
+      lcd.setCursor (0, 2); lcd.print (F("Platform locked...  "));
+      buzzOnce(2000, light2Pin);
     }  
     
     lcd.setCursor (0, 0); lcd.print (F("Input pressure low--"));
@@ -481,12 +440,9 @@ void loop()
     printLcd (3, outputPSI_rb);
 
     //Only sound buzzer once
-    if (buzzedOnce == false)
-    {
-      buzzer(2000);
-      buzzedOnce = true;
-    }
+    buzzOnce(2000, light2Pin);
   } 
+  buzzedOnce = false;
   
   if (inEmergencyLockLoop)
   {
@@ -791,7 +747,7 @@ void loop()
     }
     
     // CASE 2: FillSensor tripped--Overfill condition
-    else if (inFillLoop && sensorFillState == LOW || inCleaningMode == true) 
+    else if (inFillLoop && sensorFillState == LOW) 
     {
       relayOn(relay1Pin, true);
       relayOn(relay2Pin, true);

@@ -1,78 +1,85 @@
-  //============================================================================
-  // NULL PRESSURE ROUTINES
-  // Check for stuck pressurized bottle or implausibly low gas pressure at start 
-  //============================================================================
+//============================================================================
+// NULL PRESSURE ROUTINES
+// Check for stuck pressurized bottle or implausibly low gas pressure at start 
+//============================================================================
 
-  boolean inPressurizedBottleLoop = false;
-  boolean inPressureNullLoop = false;
+boolean inPressurizedBottleLoop = false;
+boolean inPressureNullLoop = false;
 
-  // CASE 1: PRESSURIZED BOTTLE (Bottle is already depressurizing because S3 opened above)
-  if (P1 - offsetP1 > pressureDeltaDown)
+// CASE 1: PRESSURIZED BOTTLE (Bottle is already depressurizing because S3 opened above)
+while (P1 - offsetP1 > pressureDeltaDown)
+{
+  relayOn (relay3Pin, true);   // Vent bottle immediately
+  inPressurizedBottleLoop = true;
+  
+  lcd.setCursor (0, 0); lcd.print (F("Pressurized bottle  "));
+  lcd.setCursor (0, 1); lcd.print (F("Found. Open valve   "));
+  lcd.setCursor (0, 2); lcd.print (F("to contol venting.  "));
+  pressureOutput(); printLcd(3, outputPSI_rb); 
+
+  buzzOnce(1000, light2Pin);
+ 
+  //PLATFORM SUPPORT:
+  //If regulator pressure is higher than bottle pressure, immediately give platform support;
+  //Else, close cylinder solenoids to conserve gas
+  if (P2 - offsetP2 > P1 - offsetP1) 
   {
-    inPressurizedBottleLoop = true;
-    
-    lcd.setCursor (0, 0); lcd.print (F("Pressurized bottle  "));
-    lcd.setCursor (0, 1); lcd.print (F("detected. Open valve"));
-    lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
-    lcd.setCursor (0, 3); lcd.print (F("                    "));
-    
-    buzzer(1000);
-
-    while (P1 - offsetP1 > pressureDeltaDown)
-    {
-      pressureOutput();
-      printLcd(3, outputPSI_b);  
-    } 
+    relayOn (relay4Pin, true);    // Support platform by opening S4
+    relayOn (relay5Pin, false);  
   }
-      
-  // CASE 2: GASS OFF OR LOW       
-  if (P2 - offsetP2 < pressureNull) 
+  else
   {
-    inPressureNullLoop = true;
+    relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
+    relayOn (relay5Pin, false);  
+  }  
+}
+buzzedOnce = false;
 
-    // Write Null Pressure warning 
-    lcd.setCursor (0, 0); lcd.print (F("Gas off or empty;   "));
-    lcd.setCursor (0, 1); lcd.print (F("check tank & hoses. "));
-    lcd.setCursor (0, 2); lcd.print (F("B3 opens door.      "));
-    lcd.setCursor (0, 3); lcd.print (F("Waiting...          "));
+// CASE 2: GASS OFF OR LOW       
+while (P2 - offsetP2 < pressureNull) 
+{
+  inPressureNullLoop = true;
+  buzzOnce(1000, light2Pin);
 
-    buzzer(250);
+  // Write Null Pressure warning 
+  lcd.setCursor (0, 0); lcd.print (F("Gas off or empty;   "));
+  lcd.setCursor (0, 1); lcd.print (F("check tank & hoses. "));
+  lcd.setCursor (0, 2); lcd.print (F("B3 opens door.      "));
+  pressureOutput(); printLcd(3, outputPSI_r);  
+
+  button3State = !digitalRead(button3Pin);
+  delay(10); 
         
-    while (P2 - offsetP2 < pressureNull)
-    {
-      //Read sensors
-      P2 = analogRead(sensorP2Pin); 
-      button3State = !digitalRead(button3Pin);
-      switchDoorState = digitalRead(switchDoorPin); 
-      delay(25); 
-            
-      if (button3State == LOW)
-      {
-        doorOpen();
-      }  
-    }  
-  }
-  
-  // NULL PRESSURE EXIT ROUTINES
-  // No longer closing S3 at end of this to prevent popping in some edge cases of a very foamy bottle
-  // ==================================================================================
-  
-  if (inPressurizedBottleLoop)
-  {
-    //Open door
-    delay(2000); // Delay gives time for getting accurate pressure reading
-    doorOpen(); 
-    pressureRegStartUp = analogRead (sensorP2Pin); // Get GOOD start pressure for emergency lock loop
-    inPressurizedBottleLoop = false;
-  } 
-
-  if (inPressureNullLoop)
-  {
-    delay(2000); // Delay gives time for getting accurate pressure reading
+  if (button3State == LOW){
     doorOpen();
-    pressureRegStartUp = analogRead (sensorP2Pin); // Get GOOD start pressure for emergency lock loop
-    inPressureNullLoop = false;
-  }
+  }  
+}
+buzzedOnce = false;
 
-  // END NULL PRESSURE ROUTINE
-  // ====================================================================================
+// NULL PRESSURE EXIT ROUTINES
+// No longer closing S3 at end of this to prevent popping in some edge cases of a very foamy bottle
+// ==================================================================================
+
+if (inPressurizedBottleLoop || inPressureNullLoop)
+{
+  delay(2000); // Delay gives time for getting accurate pressure reading
+  pressureRegStartUp = analogRead (sensorP2Pin); // Get GOOD start pressure for emergency lock loop
+  lcd.clear();
+  doorOpen(); 
+  platformStateUp = true;
+  platformDrop();
+  
+  inPressurizedBottleLoop = false;
+  inPressureNullLoop = false;
+
+  button1State = !digitalRead(button1Pin);
+  while (button1State == HIGH)
+  {
+    button1State = !digitalRead(button1Pin);    
+    lcd.setCursor (0, 3); lcd.print (F("Press B1 to continue"));
+  }
+  button1State == HIGH;    
+} 
+
+// END NULL PRESSURE ROUTINE
+// ===================================================================================

@@ -80,13 +80,13 @@ void buzzer (int buzzDuration)
 // FUNCTION: buzzOnce()
 // =======================================================================================
 
-// Remember to set buzzedOnce back to false after this
-void buzzOnce (int buzzDuration, byte lightPin)
+// Remember to set buzzedOnce back to false immediately after this function runs
+void buzzOnce (int buzzOnceDuration, byte lightPin)
 {
   if (buzzedOnce == false)
   {
     digitalWrite(lightPin, HIGH);
-    buzzer(100);
+    buzzer(buzzOnceDuration);
     digitalWrite(lightPin, LOW);
     buzzedOnce = true;
   }    
