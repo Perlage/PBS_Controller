@@ -20,10 +20,10 @@ String (versionHardwareTag) = "v0.6.0.0" ;     // 2nd sensor rev'd to v0.6
 //Library includes
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
-#include <math.h> 
 #include "floatToString.h"               
 #include <EEPROM.h>
-#include <avr/pgmspace.h>                      // 1-26 Added for PROGMEM function
+#include <avr/pgmspace.h>                      // 1-26 Added for PROGMEM function // UNUSED now
+#include <math.h>                              // Unused
 
 LiquidCrystal_I2C lcd(0x3F,20,4);  
 
@@ -85,8 +85,9 @@ boolean inDepressurizeLoop           = false;
 boolean inPlatformLowerLoop          = false;
 boolean inDoorOpenLoop               = false;
 boolean inPressureSaggedLoop         = false;
-boolean inMenuLoop                   = false;
 boolean inManualModeLoop             = false;
+boolean inManualModeLoop1            = false;
+boolean inCleaningMode               = false;
 
 //Key logical states
 boolean autoMode_1                   = false;   // Variable to help differentiate between states reached automatically vs manually 
@@ -144,363 +145,21 @@ int numberCycles;                                // Number of cycles since facto
 byte numberCycles01;                             // Ones digit for numberCycles in EEPROM in base 255
 byte numberCycles10;                             // Tens digit for numberCycles in EEPROM in base 255
 int numberCyclesSession              = 0;        // Number of session cycles
-
+boolean buzzedOnce                   = false;
 boolean inFillLoopExecuted           = false;    // True of FillLoop is dirty. Used to compute numberCycles
 char buffer[25];                                 // Used in float to string conv // 1-26 Changed from 25 to 20 //CHANGED BACK TO 25!! SEEMS TO BE IMPORTANT!
-char bufferP[30];                                // make sure this is large enough for the largest string it must hold; used for PROGMEM write to LCD
-byte strIndex;                                   // Used to refer to index of the string in *srtLcdTable (e.g., strLcd_0 has strLcdIndex = 0
+//char bufferP[30];                                // make sure this is large enough for the largest string it must hold; used for PROGMEM write to LCD
+//byte strIndex;                                   // Used to refer to index of the string in *srtLcdTable (e.g., strLcd_0 has strLcdIndex = 0
 
+//======================================================================================
+// PROCESS LOCAL INCLUDES
+//======================================================================================
 
-// Declare functions
-// ======================================================================================
-
-// FUNCTION printLcd: 
-// To simplify string output. Prevents rewriting unless string has changed; 
-// if string has changed, blanks out line first and reprints
-// =======================================================================================
-String currentLcdString[3];
-void printLcd (int line, String newString)
-{
-  if(!currentLcdString[line].equals(newString))
-  {
-    currentLcdString[line] = newString;
-    lcd.setCursor(0,line);
-    lcd.print("                    ");
-    lcd.setCursor(0,line);
-    lcd.print(newString);
-  }
-}
-
-// FUNCTION relayOn
-// Allows relay states to be easily be changed from HI=on to LOW=on
-// =======================================================================================
-void relayOn(int pinNum, boolean on){
-  if(on){
-    digitalWrite(pinNum, LOW);} //turn relay on
-  else{
-    digitalWrite(pinNum, HIGH); //turn relay off
-  }
-}
-
-// FUNCTION pressureConv: 
-// Routine to convert pressure from parts in 1024 to psi
-// pressurePSI = (((P1 - offsetP1) * 0.0048828)/0.009) * 0.145037738
-// 1 PSI = 12.7084 units; 1 unit = 0.078688 PSI; 40 psi = 543 units
-// =======================================================================================
-
-// Function for P1
-float pressureConv1(int P1) 
-{
-  float pressurePSI1;
-  pressurePSI1 = (P1 - offsetP1) * 0.078688; 
-  return pressurePSI1;
-}
-
-// Function for P2 (potentially different offset)
-float pressureConv2(int P2) 
-{
-  float pressurePSI2;
-  pressurePSI2 = (P2 - offsetP2) * 0.078688; 
-  return pressurePSI2;
-}
-
-// FUNCTION: Door Open Routine
-// =======================================================================================
-void doorOpen()
-{
-  switchDoorState = digitalRead(switchDoorPin); 
-  while (switchDoorState == LOW && (P1 - offsetP1) <= pressureDeltaDown)
-  {
-    relayOn (relay6Pin, true);  // Open door
-    lcd.setCursor (0, 2); lcd.print (F("Opening door...     "));
-    switchDoorState = digitalRead(switchDoorPin); 
-    P1 = analogRead(sensorP1Pin);
-  }
-  relayOn (relay6Pin, false);
-  lcd.setCursor (0, 2); lcd.print (F("                    "));
-}
-
-// FUNCTION: buzzer()
-// =======================================================================================
-void buzzer (int buzzDuration)
-{
-  digitalWrite (buzzerPin, HIGH); 
-  delay (buzzDuration);
-  digitalWrite (buzzerPin, LOW);
-} 
-
-// FUNCTION: platformDrop()
-// ======================================================================================
-void platformDrop()
-{
-  // Drop platform if up
-  if (platformStateUp == true)
-  {
-    relayOn(relay4Pin, false);   
-    relayOn(relay5Pin, true); 
-    delay (autoPlatformDropDuration);  
-    relayOn(relay5Pin, false); 
-    platformStateUp = false;
-  }
-}  
-
-// FUNCTION: pressureDump()
-// Dumps pressure if pressure high
-// =====================================================================================
-void pressureDump()
-{
-  while (P1 - offsetP1 > pressureDeltaDown)
-  {
-    relayOn(relay3Pin, true); 
-    P1 = analogRead (sensorP1Pin);
-    pressureOutput();
-    printLcd (3, outputPSI_b);
-  }  
-  relayOn(relay3Pin, false);  
-}
-
-// FUNCTION: Read Buttons
-// ======================================================================================
-void readButtons()
-{
-  button1State = !digitalRead(button1Pin); 
-  button2State = !digitalRead(button2Pin); 
-  button3State = !digitalRead(button3Pin); 
-  delay (10); //debounce
-}
-
-// FUNCTION: Read Sensors
-// =======================================================================================
-void readStates()
-{
-  switchDoorState = digitalRead(switchDoorPin);
-  switchModeState = digitalRead(switchModePin);
-  sensorFillState = digitalRead(sensorFillPin);
-  delay (25); //debounce
-}
-
-// FUNCTION: Read Sensors
-// =======================================================================================
-void readInputs()
-{
-  button1State = !digitalRead(button1Pin); 
-  button2State = !digitalRead(button2Pin); 
-  button3State = !digitalRead(button3Pin); 
-  sensorFillState = digitalRead(sensorFillPin);
-  switchDoorState = digitalRead(switchDoorPin);
-  switchModeState = digitalRead(switchModePin);
-  P1 = analogRead(sensorP1Pin);
-  P2 = analogRead(sensorP2Pin); 
-  delay (25); //debounce
-}
-
-// FUNCTION: Pressure reading/conversion/output
-// ====================================================================================
-void pressureOutput()
-{
-  P1 = analogRead(sensorP1Pin); 
-  P2 = analogRead(sensorP2Pin);
-        
-  PSI1     = pressureConv1(P1); 
-  PSI2     = pressureConv2(P2); 
-  PSIdiff  = PSI2 - PSI1;
-  
-  (convPSI1)      = floatToString(buffer, PSI1, 1);
-  (convPSI2)      = floatToString(buffer, PSI2, 1);
-  (convPSIdiff)   = floatToString(buffer, PSIdiff, 1);
-
-  (outputPSI_rbd) = "R:" + convPSI2 + " B:" + convPSI1 + " d:" + convPSIdiff; 
-  (outputPSI_rb)  = "Reg:" + convPSI2 + " Bottle:" + convPSI1;
-  (outputPSI_b)   = "Bottle: " + convPSI1 + " psi"; 
-  (outputPSI_r)   = "Regulator: " + convPSI2 + " psi"; 
-  (outputPSI_d)   = "Difference: " + convPSIdiff + " psi"; 
-}  
-
-// FUNCTION: Platform UP Function Loop
-// =======================================================================================
-void platformUpLoop()
-{
-  // =====================================================================================  
-  // PLATFORM RAISING LOOP
-  // while B1 is pressed, platform is not UP, and door is open, raise bottle platform.
-  // =====================================================================================  
-  
-  timePlatformInit = millis(); // Inititalize time for platform lockin routine
-  int n = 0;
-  
-  while (button1State == LOW && platformStateUp == false && switchDoorState == HIGH && (timePlatformRising < timePlatformLock)) 
-  { 
-    inPlatformUpLoop = true; 
-    digitalWrite(light1Pin, HIGH);
-    
-    relayOn(relay5Pin, false);    //closes vent
-    relayOn(relay4Pin, true);     //raises plaform
-    
-    timePlatformCurrent = millis();
-    delay(10); //added this to make sure time gets above threshold before loop exits--not sure why works
-    timePlatformRising = timePlatformCurrent - timePlatformInit;
-    
-    //String platformStatus = ("Raising... " + String(timePlatformRising));
-    //printLcd(2, platformStatus);  
-
-    // Writes a lengthening line of dots
-    lcd.setCursor (0, 2); lcd.print (F("Raising             "));
-    lcd.setCursor (((n + 12) % 12) + 7, 2); lcd.print (F(".")); 
-    n = n++;
-    delay(100);  
-    
-    button1State = !digitalRead(button1Pin); 
-    switchDoorState = digitalRead(switchDoorPin);    
-  }  
-
-  // PLATFORM RAISING LOOP EXIT ROUTINES
-  // =======================================================================================
-
-  if (inPlatformUpLoop)
-  {
-    if (timePlatformRising >= timePlatformLock)
-    {
-      // PlatformLoop lockin reached
-      platformStateUp = true;
-      platformLockedNew = true; //Pass this to PressureLoop for autopressurize on door close--better than trying to pass button2State = LOW, which causes problems
-
-      lcd.setCursor (0, 0); lcd.print (F("To fill, close door "));
-      lcd.setCursor (0, 1); lcd.print (F("B2 toggles filling  "));
-      lcd.setCursor (0, 2); lcd.print (F("Ready...            "));
-
-      buzzer(250);
-      
-      relayOn(relay4Pin, true);  // Slight leak causes platform to fall over time--so leave open 
-      relayOn(relay5Pin, false); 
-      digitalWrite(light1Pin, LOW); //Decided to turn this off. Lights should be lit only if pressing button or releasing it can change a state. 
-    }  
-    else    
-    {
-      // Drop Platform
-      relayOn(relay4Pin, false);
-      relayOn(relay5Pin, true);
-      digitalWrite(light1Pin, LOW);
-      delay(2000); 
-
-      relayOn(relay5Pin, false);  // Prevents leaving S5 on if this was the last thing user did
-      lcd.setCursor (0, 2); lcd.print (F("                    ")); // Blanks status line
-      platformStateUp = false;
-    }
-
-    timePlatformRising = 0;
-    inPlatformUpLoop = false;
-  }
-}
-// END PLATFORM RAISING LOOP
-//=============================================================================================
-
-
-//========================================================================================
-// EMERGENCY DEPRESSURIZE LOOP FUNCTION
-// Depressurize anytime door opens when pressurized above low threshold
-//========================================================================================
-
-void emergencyDepressurize()
-{
-  boolean inEmergencyDepressurizeLoop = false;
-
-  while (switchDoorState == HIGH && platformStateUp == true && (P1 - offsetP1 > pressureDeltaDown))
-  {
-    inEmergencyDepressurizeLoop = true;
-    relayOn(relay3Pin, true);  
-  
-    lcd.setCursor (0, 2); lcd.print (F("CLOSE DOOR! Venting."));
-    digitalWrite(buzzerPin, HIGH); //Leave buzzer on until closed
-      
-    pressureOutput();
-    printLcd(3, outputPSI_b);     
-    
-    switchDoorState = digitalRead(switchDoorPin); //Check door switch    
-    P1 = analogRead(sensorP1Pin);
-  }  
-  
-  // EMERGENCY DEPRESSURIZE LOOP EXIT ROUTINES
-  //========================================================================================
-  if (inEmergencyDepressurizeLoop)
-  {
-    inEmergencyDepressurizeLoop = false;
-    relayOn(relay3Pin, false);  
-    digitalWrite(buzzerPin, LOW); // Now turn off
-    lcd.setCursor (0, 2); lcd.print (F("                    "));
-    button2State = HIGH;  // Pass HIGH state to next routine so filling doesn't automatically resume. Make user think about it!
-  }  
-}  
-// END EMERGENCY DEPRESSURIZE LOOP FUNCTION
-//========================================================================================
-
-
-//=====================================================================================
-// FLASH MEMORY STRING HANDLING
-//=====================================================================================
-
-//Write text to char strings. Previously used const_char at start of line; this didn't work
-
-char strLcd_0 [] PROGMEM = "Perlini Bottling    ";
-char strLcd_1 [] PROGMEM = "System, v1.0        ";
-char strLcd_2 [] PROGMEM = "                    ";
-char strLcd_3 [] PROGMEM = "Initializing...     ";
-
-char strLcd_4 [] PROGMEM = "***MENU*** Press... ";
-char strLcd_5 [] PROGMEM = "B1: Manual Mode     ";
-char strLcd_6 [] PROGMEM = "B2: Autosiphon time ";
-char strLcd_7 [] PROGMEM = "B3: Exit Menu       ";
-
-char strLcd_8 [] PROGMEM = " ***MANUAL MODE***  ";
-char strLcd_9 [] PROGMEM = "Insert bottle...    ";
-char strLcd_10[] PROGMEM = "Mode switch: Up/Down";
-char strLcd_11[] PROGMEM = "B3: Opens door.     ";
-
-char strLcd_12[] PROGMEM = "B1: Gas IN          ";
-char strLcd_13[] PROGMEM = "B2: Liquid IN       ";
-char strLcd_14[] PROGMEM = "B3: Gas OUT         ";
-char strLcd_15[] PROGMEM = "Switch: UP/DOWN     ";
-
-char strLcd_16[] PROGMEM = "Ending Manual Mode. ";
-char strLcd_17[] PROGMEM = "                    ";
-char strLcd_18[] PROGMEM = "Continuing....      ";
-char strLcd_19[] PROGMEM = "                    ";
-
-char strLcd_20[] PROGMEM = "Pressurized bottle  ";
-char strLcd_21[] PROGMEM = "detected. Open valve";
-char strLcd_22[] PROGMEM = "Depressurizing....  ";
-char strLcd_23[] PROGMEM = "                    ";   // Don't write to this?--this line is for pressure reading
-
-char strLcd_24[] PROGMEM = "Gas off or empty;   ";
-char strLcd_25[] PROGMEM = "check tank & hoses. ";
-char strLcd_26[] PROGMEM = "B3 opens door.      ";
-char strLcd_27[] PROGMEM = "Waiting...          ";
-
-char strLcd_28[] PROGMEM = "Press B3 to lower   ";
-char strLcd_29[] PROGMEM = "platform.           ";
-char strLcd_30[] PROGMEM = "Depressurized.      ";
-char strLcd_31[] PROGMEM = "                    ";
-
-char strLcd_32[] PROGMEM = "Insert bottle;      ";
-char strLcd_33[] PROGMEM = "B1 raises platform  ";
-char strLcd_34[] PROGMEM = "Ready...            ";
-char strLcd_35[] PROGMEM = "                    ";
-
-//Write to string table. PROGMEM moved from front of line to end; this made it work
-const char *strLcdTable[] PROGMEM =  // Name of table following * is arbitrary
-{   
-  strLcd_0, strLcd_1, strLcd_2, strLcd_3,           // Startup text
-  strLcd_4, strLcd_5, strLcd_6, strLcd_7,           // Menu text     
-  strLcd_8, strLcd_9, strLcd_10, strLcd_11,         // Manual Mode intro
-  strLcd_12, strLcd_13, strLcd_14, strLcd_15,       // Manual Mode detail
-  strLcd_16, strLcd_17, strLcd_18, strLcd_19,       // Manual Mode exit
-  strLcd_20, strLcd_21, strLcd_22, strLcd_23,       // Pressurized bottle
-  strLcd_24, strLcd_25, strLcd_26, strLcd_27,       // Null pressure warning
-  strLcd_28, strLcd_29, strLcd_30, strLcd_31,       // Depressurize loop exit
-  strLcd_32, strLcd_33, strLcd_34, strLcd_35,       // Insert bottle
-};
-
-//=====================================================================================
-
+// Order is important!!!! Must include an include before it is referenced by other includes
+#include "functions.h"   //Functions
+#include "loops.h"       //Major resused loops
+#include "manualMode.h"  //Manual Mode function
+#include "menuShell.h"   //Menu shell
 
 //=====================================================================================
 // SETUP LOOP
@@ -545,69 +204,18 @@ void setup()
   lcd.init();
   lcd.backlight();
   
-  // =====================================================================================
-  // EEPROM CALIBRATION 
-  // Write null pressure to EEPROM. 
-  // WITH GAS OFF AND PRESSURE RELEASED FROM HOSES, Hold down all three buttons on startup 
-  // =====================================================================================
 
-  readButtons(); 
-
-  if (button1State == LOW && button2State == LOW && button3State == LOW)
-  {
-    lcd.setCursor (0, 0); lcd.print (F("Setting EEPROM...   "));
-    delay (2000);
-    
-    //Show old offset values
-    offsetP1 = EEPROM.read(0);
-    offsetP2 = EEPROM.read(1);
-
-    String (convOffset1) = floatToString(buffer, offsetP1, 1);
-    String (convOffset2) = floatToString(buffer, offsetP2, 1);
-
-    String (outputOffset1) = "Old Offset1: " + convOffset1; 
-    String (outputOffset2) = "Old Offset2: " + convOffset2; 
-
-    printLcd(2, outputOffset1);
-    printLcd(3, outputOffset2);
-    delay (4000);
-
-    //Get new offset values
-    offsetP1  = analogRead(sensorP1Pin); 
-    offsetP2  = analogRead(sensorP2Pin); 
-    
-    numberCycles = 0;                          //Set number of lifetime cycles to initial val of 0
-    autoSiphonDuration10s = 25;                //Set initial duration to 25 tenths of seconds (2.5 sec)
-    
-    EEPROM.write (0, offsetP1);                //Write zero offset for sensor1 (bottle)
-    EEPROM.write (1, offsetP2);                //Write zero offset for sensor2 (regulator)
-    EEPROM.write (3, autoSiphonDuration10s);   //Write autoSiphonDuration default to 2.5 sec
-    EEPROM.write (4, 0);                       //Write "ones" digit to zero in numberCycles01
-    EEPROM.write (5, 0);                       //Write "tens" digit to zero in numberCycles10
-
-    convOffset1 = floatToString(buffer, offsetP1, 1);
-    convOffset2 = floatToString(buffer, offsetP2, 1);
-
-    outputOffset1 = "New Offset1: " + convOffset1; 
-    outputOffset2 = "New Offset2: " + convOffset2; 
-
-    printLcd(2, outputOffset1);
-    printLcd(3, outputOffset2);
-    delay(4000);
-
-    printLcd(2, "");
-    printLcd(3, "");
-  }    
-
-  // END EEPROM SET
-  // ==================================================================================
-    
   //===================================================================================
   // STARTUP ROUTINE
   //===================================================================================
+
+  // EEPROM factory set-reset routine 
+  // For some reason, have to include it here and not above with others
+  #include "EEPROMset.h"   
   
   relayOn(relay3Pin, true); // Open at earliest possibility to vent  
-  
+  relayOn(relay5Pin, false); // Close if not already to help hold platform up
+
   // Read EEPROM
   offsetP1               = EEPROM.read(0);
   offsetP2               = EEPROM.read(1);
@@ -620,7 +228,7 @@ void setup()
 
   //Read routine for numberCycles  
   numberCycles = numberCycles10 * 255 + numberCycles01;
-  //numberCycles = 1550; // Use to set numberCyles to some value
+  //numberCycles = nnnn; // Use to set numberCyles to some value for debug
   
   // Read States. Get initial pressure readings from sensor. 
   switchDoorState = digitalRead(switchDoorPin);  
@@ -628,182 +236,45 @@ void setup()
   P2 = analogRead(sensorP2Pin); // Read the initial regulator pressure and assign to P2
   pressureRegStartUp = P2;      // Read and store initial regulator pressure to test for pressure drop during session
 
-  // These lines were for possible proportional setting of values. Postpone this.
-  // 40 psi = 543 units (with ~35 unit offset). So comparisons should be done on 508 units
-  // pressureNull = 200/508 * (pressureRegStartUp - offsetP2);
-  // pressureDeltaMax  = 250/508 * (pressureRegStartUp - offsetP2);
-
   //Initial user message
   lcd.setCursor (0, 0);  lcd.print (F("Perlini Bottling"));
   printLcd (1, "System, " + versionSoftwareTag);
   lcd.setCursor (0, 3);  lcd.print (F("Initializing..."));
-  
-  //=================================================================================
-  // MENU ROUTINE
-  /*
-  
-  Menu 1
-  Menu 2
-  Menu More
-  
-  Menu 3
-  Menu 4
-  Menu More  
-  
-  Menu 5
-  Menu 6
-  Menu Exit
-
-  */
-  //=================================================================================
-   
-  button1State = !digitalRead(button1Pin); 
-  boolean button1StateMENU;
-  boolean button2StateMENU;
-  boolean button3StateMENU;
-  
-  while (button1State == LOW)
-  {
-    inMenuLoop = true;
-    button1State = !digitalRead(button1Pin); 
-    delay(25);   
-    
-    //lcd.setCursor (0, 0); lcd.print (F("***MENU*** Press:   "));
-    //lcd.setCursor (0, 1); lcd.print (F("B1: Manual Mode     "));
-    //lcd.setCursor (0, 2); lcd.print (F("B2: Autosiphon time "));
-    //lcd.setCursor (0, 3); lcd.print (F("B3: Exit Menu       "));
-    //lcd.clear();  
-    
-    // Write Main Menu options    
-    for (int n = 4; n <= 7; n++){
-      strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-      printLcd (n % 4, bufferP);}
-  }  
-    
-  while (inMenuLoop == true)
-  {
-    button1StateMENU = !digitalRead(button1Pin); 
-    button2StateMENU = !digitalRead(button2Pin); 
-    button3StateMENU = !digitalRead(button3Pin); 
-    switchDoorState = digitalRead(switchDoorPin);
-    delay(10);
-    
-    // MENU1============================
-    if (button1StateMENU == LOW)
-    {
-      inMenuLoop = false;
-      inManualModeLoop = true;
-      
-      lcd.setCursor (0, 0); lcd.print (F("Flip switch to enter"));
-      lcd.setCursor (0, 1); lcd.print (F("Cleaning/Manual mode"));
-      lcd.setCursor (0, 2); lcd.print (F("now.                "));
-      
-      // Don't let user proceed until switch flipped
-      switchModeState = digitalRead(switchModePin);
-      while (switchModeState == HIGH)
-      {
-        switchModeState = digitalRead(switchModePin);
-      }  
-
-      //printLcd (0, "MANUAL MODE");
-      //printLcd (1, "Insert bottle.");
-      //printLcd (2, "Switch: platform up");
-      //printLcd (3, "B3: Opens door");
-      
-      // Write Manual Mode intro menu text    
-      //for (int n = 8; n <= 11; n++){
-      //  strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-      //  printLcd (n % 4, bufferP);}
-      
-      //doorOpen(); //Opens door if closed
-    } 
-
-    // MENU2============================
-
-    boolean autoSiphonDurationLoop = false;
-
-    while (button2StateMENU == LOW)
-    {
-      //inMenuLoop = false;
-      autoSiphonDurationLoop = true;
-      button2StateMENU = !digitalRead(button2Pin); 
-
-      lcd.setCursor (0, 0); lcd.print (F("B1 inc. by .1 sec   "));
-      lcd.setCursor (0, 1); lcd.print (F("B3 dec. by .1 sec   "));
-      lcd.setCursor (0, 2); lcd.print (F("B2 sets value; exits"));
-    }  
-
-    while (autoSiphonDurationLoop == true)
-    {
-      delay(10);
-      button1State = !digitalRead(button1Pin); 
-      button2State = !digitalRead(button2Pin); 
-      button3State = !digitalRead(button3Pin); 
-          
-      //delay(100);
-      
-      if (button1State == LOW){
-        autoSiphonDuration10s = autoSiphonDuration10s + 1;
-      }  
-      if (button3State == LOW){
-        autoSiphonDuration10s = autoSiphonDuration10s - 1;
-      }  
-        
-      //autoSiphonDuration10s = constrain(autoSiphonDuration10s, 0, 100); //Constrains autoSiphonDuration10s to between 0 and 100 tenths of sec
-      autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;
-      
-      String (convTime) = floatToString(buffer, autoSiphonDurationSec, 1);
-      printLcd (3, "Current value: " + convTime + "s");
-      delay(200);
-
-      if (button2State == LOW){
-        autoSiphonDurationLoop = false;
-        printLcd (3, "New value: " + convTime + " s");
-        delay(2000);
-        
-        EEPROM.write (3, autoSiphonDuration10s);             //Write to EEPROM
-        autoSiphonDuration = autoSiphonDuration10s * 100;    //Convert to ms from 10ths of sec
-        
-        autoSiphonDurationLoop = false;
-        button3StateMENU = LOW;
-      } 
-    }
-
-    // MENU3============================
-    if (button3StateMENU == LOW)
-    {
-      //Continue with startup routine
-      inMenuLoop = false;
-      lcd.setCursor (0, 0); lcd.print (F("Perlini Bottling    "));
-      printLcd (1, "System, " + versionSoftwareTag);
-      lcd.setCursor (0, 2); lcd.print (F("Exiting menu...     "));
-    }  
-  }
-
-  // END MENU ROUTINE
-  //=================================================================================  
- 
- 
-  //=================================================================================
-  // RESUME NORMAL STARTUP
-  //=================================================================================
 
   // Get fresh pressure and door state measurements
   switchDoorState = digitalRead(switchDoorPin); 
   P1 = analogRead(sensorP1Pin);
   P2 = analogRead(sensorP2Pin);
+  
+  //Allow user to invoke Manual Mode from bootup in case there are problems preventing menu access
+  readButtons();
+  while (button1State == LOW)
+  {
+    button1State = !digitalRead(button1Pin);
+    delay(10);
+    inManualModeLoop = true;
+    buzzer(100);
+  }  
+  if (inManualModeLoop == true)
+  {
+    manualModeLoop();
+  }
 
-  relayOn(relay5Pin, false); // Close if not already
+  ///* Comment out preceding comment delimeter for normal operation
+  // ################################################################################
 
+  //=================================================================================
   // PLATFROM LOCK OR SUPPORT ROUTINE. DO THESE FIRST FOR SAFETY
   // IMMEDIATELY lock platform if P2 is low and P1 is high, or apply platform support if P1 and P2 high
+  //=================================================================================
+
   if (P1 - offsetP1 > pressureDeltaDown)
   {
     if (P2 - offsetP2 < pressureNull)
     {
       relayOn(relay4Pin, false);   // When input pressure low, close S4 to conserve gas and keep platform up (it should be closed already)
       lcd.setCursor (0, 2); lcd.print (F("Platform locked...  "));
-      delay (500); // Can delete later
+      buzzer(500); // Can delete later
     }
     else
     {  
@@ -817,27 +288,16 @@ void setup()
     {
       switchDoorState = digitalRead(switchDoorPin); 
       lcd.setCursor (0, 2); lcd.print (F("PLEASE CLOSE DOOR..."));
-
       buzzer(100);
       delay(100);
     }
-    
     delay(500);                // A little delay after closing door before raising platform
     relayOn(relay4Pin, true);  // Now Raise platform     
 
-    /*
-    lcd.setCursor (0, 0);
-    lcd.print (F("Perlini Bottling    "));
-    lcd.setCursor (0, 1);
-    lcd.print (F("System              "));
-    lcd.setCursor (0, 3);
-    lcd.print (F("Initializing...     "));
-    */
-    
-    //Re-write intro text // NOT SURE IF NEED TO REWRITE ANYTHING BUT LINE 2
-    for (int n = 0; n <= 3; n++){
-      strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-      printLcd (n % 4, bufferP);} 
+    //lcd.setCursor (0, 0); lcd.print (F("Perlini Bottling    ")); // I think this is redundant--that text is still on screen
+    //printLcd (1, "System, " + versionSoftwareTag);
+    //lcd.setCursor (0, 3); lcd.print (F("Initializing...     "));
+    lcd.setCursor (0, 2); lcd.print (F("                    "));
   }
 
   // Blinks lights and give time to de-pressurize stuck bottle
@@ -848,8 +308,7 @@ void setup()
     digitalWrite(light3Pin, HIGH); delay(500);
     digitalWrite(light1Pin, LOW);
     digitalWrite(light2Pin, LOW);
-    digitalWrite(light3Pin, LOW); 
-    delay(325);
+    digitalWrite(light3Pin, LOW); delay(325);
   }
 
   // Leave blink loop and light all lights 
@@ -862,98 +321,18 @@ void setup()
   // Check for stuck pressurized bottle or implausibly low gas pressure at start 
   //============================================================================
 
-  boolean inPressurizedBottleLoop = false;
-  boolean inPressureNullLoop = false;
-
-  // CASE 1: PRESSURIZED BOTTLE (Bottle is already depressurizing because S3 opened above)
-  if ((P1 - offsetP1 > pressureDeltaDown) && !(switchModeState == LOW && inManualModeLoop == true)) //Skip pressure check if in manual mode chosen in menu
-  {
-    inPressurizedBottleLoop = true;
-    
-    //printLcd(0, "Pressurized bottle");
-    //printLcd(1, "detected. Open valve");
-    //printLcd(2, "Depressurizing...");
-    //printLcd(3, "");
-
-    // Write Pressurized bottle warning   
-    for (int n = 20; n <= 23; n++){
-      strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-      printLcd (n % 4, bufferP);}
-   
-    buzzer(1000);
-
-    while (P1 - offsetP1 > pressureDeltaDown)
-    {
-      pressureOutput();
-      printLcd(3, outputPSI_b);  
-    } 
-  }
-      
-  // CASE 2: GASS OFF OR LOW       
-  if ((P2 - offsetP2 < pressureNull) && !(switchModeState == LOW && inManualModeLoop == true)) //Skip pressure check if in manual mode chosen in menu
-  {
-    inPressureNullLoop = true;
-
-    //printLcd(0, "Gas off or empty;");
-    //printLcd(1, "check tank & hoses.");
-    //printLcd(2, "B3 opens door.");
-    //printLcd(3, "Waiting...");
-
-    // Write Null Pressure warning 
-    for (int n = 24; n <= 27; n++){
-      strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-      printLcd (n % 4, bufferP);}
-        
-    buzzer(250);
-        
-    while (P2 - offsetP2 < pressureNull)
-    {
-      //Read sensors
-      P2 = analogRead(sensorP2Pin); 
-      button3State = !digitalRead(button3Pin);
-      switchDoorState = digitalRead(switchDoorPin); 
-      delay(25); 
-            
-      if (button3State == LOW)
-      {
-        doorOpen();
-      }  
-    }  
-  }
-  
-  // NULL PRESSURE EXIT ROUTINES
-  // No longer closing S3 at end of this to prevent popping in some edge cases of a very foamy bottle
-  // ==================================================================================
-  
-  if (inPressurizedBottleLoop)
-  {
-    //Open door
-    delay(2000); // Delay gives time for getting accurate pressure reading
-    doorOpen(); 
-    pressureRegStartUp = analogRead (sensorP2Pin); // Get GOOD start pressure for emergency lock loop
-    inPressurizedBottleLoop = false;
-  } 
-
-  if (inPressureNullLoop)
-  {
-    delay(2000); // Delay gives time for getting accurate pressure reading
-    doorOpen();
-    pressureRegStartUp = analogRead (sensorP2Pin); // Get GOOD start pressure for emergency lock loop
-    inPressureNullLoop = false;
-  }
-
-  // END NULL PRESSURE ROUTINE
-  // ====================================================================================
+  #include "nullPressureCheck.h"
 
   // Continue with normal ending when pressure is OK
   // ====================================================================================
 
-  //NOW print lifetime fills and autosiphon duration //DO TO: Put in menu item for current settings
+  //NOW print lifetime fills and autosiphon duration 
   autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;
   String (convInt) = floatToString(buffer, autoSiphonDurationSec, 1);
   String (outputInt) = "Autosiphon: " + convInt + " sec";
   printLcd (2, outputInt); 
-  delay(1000); 
+  delay(1500); 
+
   convInt = floatToString(buffer, numberCycles, 0);
   outputInt = "Total fills: " + convInt;
   printLcd (2, outputInt);  
@@ -967,15 +346,15 @@ void setup()
   
   // Open door if closed
   doorOpen();
- 
-  //printLcd(0, "Insert bottle;");
-  //printLcd(1, "B1 raises platform");
-  //printLcd(2, "Ready...");
+  
+  // #####################################################################################
+  //*/ // Comment out preceding comment delimeter out for normal operation
 
+ 
   // Write initial instructions for normal startup
-  for (int n = 32; n <= 35; n++){
-    strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
-    printLcd (n % 4, bufferP);}  
+  //lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
+  //lcd.setCursor (0, 1); lcd.print (F("B1 raises platform  "));
+  //lcd.setCursor (0, 2); lcd.print (F("Ready...            "));
 
   delay(500); digitalWrite(light3Pin, LOW);
   delay(100); digitalWrite(light2Pin, LOW);
@@ -1034,10 +413,15 @@ void loop()
     lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
     lcd.setCursor (0, 1); lcd.print (F("B1 raises platform. "));  
   }  
+  
+  lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));  
 
   // Main Loop idle pressure measurement and LCD print
   // ======================================================================
-  
+ 
+  // Run menu if B2 pressed
+  menuShell();
+
   pressureOutput();
   if (P1 - offsetP1 > pressureDeltaDown)
   {
@@ -1064,10 +448,9 @@ void loop()
   
   boolean inEmergencyLockLoop = false;
   boolean platformEmergencyLock = false;
-  boolean buzzOnce = false;
   
   // If pressure drops, go into this loop and wait for user to fix
-  while (P2 -offsetP2 < pressureRegStartUp - pressureDropAllowed) // Hardcoded number to determine what consitutes a pressure drop.// 2-18 Changed from 75 to 100
+  while (P2 -offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what consitutes a pressure drop.// 2-18 Changed from 75 to 100
   {
     inEmergencyLockLoop = true;
 
@@ -1081,11 +464,11 @@ void loop()
       relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
       relayOn (relay3Pin, true);    // Vent the bottle to be safe
 
-      if (buzzOnce == false)
+      if (buzzedOnce == false)
       {
         lcd.setCursor (0, 2); lcd.print (F("Platform locked...  "));
         buzzer(2000);
-        buzzOnce = true;
+        buzzedOnce = true;
       }
     }  
     
@@ -1098,16 +481,18 @@ void loop()
     printLcd (3, outputPSI_rb);
 
     //Only sound buzzer once
-    if (buzzOnce == false)
+    if (buzzedOnce == false)
     {
       buzzer(2000);
-      buzzOnce = true;
+      buzzedOnce = true;
     }
   } 
   
   if (inEmergencyLockLoop)
   {
     inEmergencyLockLoop = false;
+    buzzedOnce = false;
+    
     // Run this condition if had pressurized bottle
     if (platformEmergencyLock == true)
     {
@@ -1143,7 +528,7 @@ void loop()
   // While B2 and then B1 is pressed, and door is open, and platform is down, purge the bottle
   //=========================================================================
   
-  // PURGE INTERLOCK LOOP
+  // Purge interlock loop
   // Door must be OPEN, platform DOWN, and pressure near zero (i.e. no bottle)
   //=========================================================================
 
@@ -1175,7 +560,7 @@ void loop()
       digitalWrite(light1Pin, LOW); 
   
       inPurgeLoop = false;
-      printLcd(2,""); 
+      lcd.setCursor (0, 2); lcd.print (F("                    ")); 
     }
     
     button1State = !digitalRead(button1Pin); 
@@ -1344,7 +729,7 @@ void loop()
     //Check toggle state of B2    
     button2StateTEMP = !digitalRead(button2Pin);
     delay(25);
-    if (button2StateTEMP == HIGH && button2ToggleState == false){  // ON release
+    if (button2StateTEMP == HIGH && button2ToggleState == false){  //ON release
       button2ToggleState = true;                                   //Leaves buttonState LOW
       button2State = LOW;                                          //Or makes it low
     }
@@ -1356,11 +741,11 @@ void loop()
     pressureOutput();
     printLcd (3, outputPSI_rb); 
     
-    // CLEANING MODE: If clean switch closed, set FillState HIGH
-    if (switchModeState == LOW)
+    // CLEANING MODE: If in Cleaning Mode, set FillState HIGH to disable sensor
+    if (inCleaningMode == true)
     {
-      sensorFillState = HIGH;
-      lcd.setCursor (0, 2); lcd.print (F("Fill sensor disabled"));
+      sensorFillState = HIGH;      
+      lcd.setCursor (0, 2); lcd.print (F("CLEANING MODE ON! "));
     }
     else
     {
@@ -1387,15 +772,15 @@ void loop()
     
     // Check which condition caused filling to stop
     // CASE 1: Button2 pressed when filling (B2 low and toggle state true). Run Anti-Drip
-    if (button2State == HIGH)
+    if (button2State == HIGH && !inCleaningMode == true)
     {
       // Anti-drip rountine
       relayOn(relay1Pin, true);
       relayOn(relay2Pin, true);
       
-      lcd.setCursor (0, 2); lcd.print (F("Fixing drip...      "));
+      lcd.setCursor (0, 2); lcd.print (F("Preventing drip... "));
       delay(antiDripDuration); // This setting determines duration of autosiphon 
-      lcd.setCursor (0, 2); lcd.print (F("                    "));
+      lcd.setCursor (0, 2); lcd.print (F("                   "));
 
       relayOn(relay1Pin, false);
       relayOn(relay2Pin, false);
@@ -1406,7 +791,7 @@ void loop()
     }
     
     // CASE 2: FillSensor tripped--Overfill condition
-    else if (inFillLoop && sensorFillState == LOW) 
+    else if (inFillLoop && sensorFillState == LOW || inCleaningMode == true) 
     {
       relayOn(relay1Pin, true);
       relayOn(relay2Pin, true);
@@ -1476,14 +861,14 @@ void loop()
   //========================================================================================
 
   //========================================================================================
-  // CARBONATOR STUCK BOTTLE CATCH LOOP
+  // CARBONATOR STUCK BOTTLE CATCH LOOP //TO DO: Do we still need this?
   //========================================================================================
 
   while (sensorFillState == LOW)
   {    
     readButtons();
-    lcd.setCursor (0, 0); lcd.print (F("Manual Siphon: B1  "));
-    lcd.setCursor (0, 1); lcd.print (F("Depressurize: B2   "));
+    lcd.setCursor (0, 0); lcd.print (F("B1: Manual Siphon  "));
+    lcd.setCursor (0, 1); lcd.print (F("B2: Depressurize   "));
     lcd.setCursor (0, 2); lcd.print (F("Waiting...         "));
 
     // This is manual autosiphon
@@ -1544,11 +929,11 @@ void loop()
         digitalWrite(light2Pin, LOW);
       }
     
-    // CLEANING MODE 
-    if (switchModeState == LOW)
+    // CLEANING MODE: If in cleaning mode, set FillState HIGH
+    if (inCleaningMode == true)
     {
-      sensorFillState = HIGH;
-      lcd.setCursor (0, 2); lcd.print (F("Foam sensor disabled"));
+      sensorFillState = HIGH;      
+      lcd.setCursor (0, 2); lcd.print (F("CLEANING MODE ON! "));
     }
     else
     {
@@ -1686,7 +1071,7 @@ void loop()
   if(inPlatformLowerLoop)
   {
     //close platform release 
-    printLcd(2,"");
+    lcd.setCursor (0, 2); lcd.print (F("                    "));
     relayOn(relay3Pin, false); 
     relayOn(relay5Pin, false);
     relayOn(relay6Pin, false); //Release door solenoid
@@ -1712,177 +1097,22 @@ void loop()
       EEPROM.write(5, numberCycles10);
 
       // Write session/total fills to screen
-      String (convNumberCycles) = floatToString(buffer, numberCycles, 0);
+      //String (convNumberCycles) = floatToString(buffer, numberCycles, 0);
       String (convNumberCyclesSession) = floatToString(buffer, numberCyclesSession, 0);
-      String outputInt = "Cycles: " + convNumberCyclesSession + "/" + convNumberCycles;
+      String outputInt = "Cycles: " + convNumberCyclesSession;
       printLcd(2, outputInt); 
-      delay(1000);
+      delay(2000);
     
       inFillLoopExecuted = false;
     }      
-
-    //Add the following to the platform UP routine, to get a more current value of the startPressure
-    P1 = analogRead(sensorP1Pin); 
-    P2 = analogRead(sensorP2Pin); 
   } 
   
   // END PLAFORM LOWER LOOP
   //============================================================================================
-
-
-  // ===========================================================================================
-  // MANUAL MODE ENTRANCE ROUTINES
-  // =========================================================================================== 
-  
-  // Could get here from menu or switch being on (LOW)  
-  if (switchModeState == LOW || inManualModeLoop == true)
-  {
-    inManualModeLoop = true;
-    sensorFillState = HIGH;
-
-    lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
-    lcd.setCursor (0, 1); lcd.print (F("Use for cleaning and"));
-    lcd.setCursor (0, 2); lcd.print (F("troubleshooting.    "));
-    buzzer (2000);
-    
-    // FUNCTION Dump pressure
-    pressureDump();
-    
-    // FUNCTION doorOpen
-    doorOpen();
-
-    // FUNCTION Drop platform if up
-    platformDrop();
-
-  }
-  else
-  {
-    // In standard Auto mode
-    lcd.setCursor (0, 2); lcd.print (F("Ready...            "));
-  }
-
-  // END MANUAL MODE ENTRANCE ROUTINES
-  // =====================================================================================  
-
-
-  //======================================================================================
-  // MANUAL MODE
-  //======================================================================================
-      
-  while (switchModeState == LOW && inManualModeLoop == true)
-  {
-    // FUNCTION: PlatformUpLoop
-    platformUpLoop();     
- 
-    // FUNCTION: Read all states of buttons, sensors
-    readButtons();
-    readStates();
-    
-    // FUNCTION: Read and output pressure
-    pressureOutput();
-    printLcd(3, outputPSI_rbd);    
-
-    if (platformStateUp == false && switchDoorState == HIGH)
-    {
-      lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
-      lcd.setCursor (0, 1); lcd.print (F("Insert bottle;      "));
-      lcd.setCursor (0, 2); lcd.print (F("B1 raises platform. "));
-    }
-    if (platformStateUp == false && switchDoorState == LOW)
-    {
-      lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
-      lcd.setCursor (0, 1); lcd.print (F("B3 opens door;      "));
-      lcd.setCursor (0, 2); lcd.print (F("then insert bottle  "));
-    }
-    if (platformStateUp == true && switchDoorState == HIGH)
-    {
-      lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
-      lcd.setCursor (0, 1); lcd.print (F("Close door to start;"));
-      lcd.setCursor (0, 2); lcd.print (F("B3 to lower platform"));
-    }
-    if (platformStateUp == true && switchDoorState == LOW)
-    {
-      lcd.setCursor (0, 0); lcd.print (F("B1: Gas IN          "));
-      lcd.setCursor (0, 1); lcd.print (F("B2: Liquid IN       "));
-      lcd.setCursor (0, 2); lcd.print (F("B3: Gas OUT/Open dr."));
-    }
-      
-    // B1: GAS IN ================================================================
-    if (button1State == LOW && platformStateUp == true && switchDoorState == LOW){
-      relayOn (relay2Pin, true);}  
-    else{
-      relayOn (relay2Pin, false);}
-      
-    // B2 LIQUID IN ==============================================================
-    if (button2State == LOW && platformStateUp == true && switchDoorState == LOW){
-      // TO DO: ADD WARNING
-      relayOn (relay1Pin, true);}  
-    else{
-      relayOn (relay1Pin, false);}
-      
-    // B3 GAS OUT ================================================================
-    if (button3State == LOW && platformStateUp == true && switchDoorState == LOW){
-      relayOn (relay3Pin, true);}  
-    else{
-      relayOn (relay3Pin, false);}
-      
-/*
-    // B3: Open Door or drops platform ===========================================
-    if (button3State == LOW && switchDoorState == LOW && (P1 - offsetP1 < pressureDeltaDown))
-    {
-      doorOpen();
-    }  
-    if (button3State == LOW && platformStateUp == true && (P1 - offsetP1 < pressureDeltaDown))
-    {
-      platformDrop();
-    }  
-*/
-  }
-    
-  //END MANUAL MODE LOOP 
-  //=================================================   
- 
-  //MANUAL MODE LOOP EXIT ROUTINES 
-  //==================================================
-  if (inManualModeLoop)
-  {
-    inManualModeLoop = false;
-    
-    lcd.setCursor (0, 0); lcd.print (F("EXITING MANUAL MODE "));
-    lcd.setCursor (0, 1); lcd.print (F("                    "));
-    lcd.setCursor (0, 2); lcd.print (F("Continuing...       "));
-    
-    while (P1 - offsetP1 > pressureDeltaDown)
-    {
-      relayOn (relay3Pin, true);
-      
-      pressureOutput();
-      printLcd(3, outputPSI_rbd); 
-     
-      lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
-    }
-    
-    doorOpen();
-    platformDrop();
-    relayOn (relay3Pin, false);
-  }  
-
-  // END MANUAL MODE
-  //===========================================================================================
 
 }
 
 //=======================================================================================================
 // END MAIN LOOP ========================================================================================
 //=======================================================================================================
-
-
-/*
-// =============================================================================================
-// CODE FRAGMENTS 
-// =============================================================================================
-  
-
-*/
-
      
