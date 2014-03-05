@@ -76,7 +76,6 @@ boolean switchModeState              = HIGH; //LOW is Manual, HIGH (or up) is au
 //State variables 
 boolean inPressureNullLoop           = false;
 boolean inPlatformUpLoop             = false;
-boolean inPurgeLoopInterlock         = false;
 boolean inPurgeLoop                  = false;
 boolean inPressurizeLoop             = false;
 boolean inFillLoop                   = false;
@@ -85,6 +84,7 @@ boolean inDepressurizeLoop           = false;
 boolean inPlatformLowerLoop          = false;
 boolean inDoorOpenLoop               = false;
 boolean inPressureSaggedLoop         = false;
+boolean inMenuLoop                   = false;
 boolean inManualModeLoop             = false;
 boolean inManualModeLoop1            = false;
 boolean inCleaningMode               = false;
@@ -97,11 +97,11 @@ boolean platformStateUp              = false;   // true means platform locked in
 //Pressure constants
 int offsetP1;                                   // Zero offset for pressure sensor1 (bottle). Set through EEPROM in initial factory calibration, and read into pressureOffset during Setup loop
 int offsetP2;                                   // Zero offest for pressure sensor2 (input regulator). Ditto above.
-int pressureDeltaUp                  = 50;      // Pressure at which, during pressurization, full pressure is considered to have been reached // Tried 10; went back to 50 to prevent repressurizing after fill button cycle
-int pressureDeltaDown                = 38;      // Pressure at which, during depressurizing, pressure considered to be close enough to zero// 38 works out to 3.0 psi 
-int pressureDeltaMax                 = 250;     // This is max pressure difference allowed on filling (i.e., limits fill speed)
-int pressureNull                     = 200;     // This is the threshold for the controller deciding that no gas source is attached. 
-int pressureDropAllowed              = 100;     // Max pressure drop allowed in session before alarm sounds
+const int pressureDeltaUp            = 38;      // Pressure at which, during pressurization, full pressure is considered to have been reached // Tried 10; went back to 50 to prevent repressurizing after fill button cycle
+const int pressureDeltaDown          = 38;      // Pressure at which, during depressurizing, pressure considered to be close enough to zero// 38 works out to 3.0 psi 
+const int pressureDeltaMax           = 250;     // This is max pressure difference allowed on filling (i.e., limits fill speed)
+const int pressureNull               = 200;     // This is the threshold for the controller deciding that no gas source is attached. 
+const int pressureDropAllowed        = 100;     // Max pressure drop allowed in session before alarm sounds
 int pressureRegStartUp;                         // Starting regulator pressure. Will use to detect pressure sag during session; and to find proportional values for key pressure variables (e.g. pressureDeltaMax)
 
 //Pressure conversion and output variables
@@ -123,16 +123,16 @@ String (outputPSI_d);                           // Difference
 int timePlatformInit;                           // Time in ms going into loop
 int timePlatformCurrent;                        // Time in ms currently in loop
 int timePlatformRising               = 0;       // Time diffence between Init and Current
-int timePlatformLock                 = 1250;    // Time in ms before platform locks in up position
-int autoPlatformDropDuration         = 1500;    // Duration of platform autodrop in ms
+const int timePlatformLock           = 1250;    // Time in ms before platform locks in up position
+const int autoPlatformDropDuration   = 1500;    // Duration of platform autodrop in ms
 
 //Key performance parameters
 int autoSiphonDuration;                         // Duration of autosiphon function in ms
 byte autoSiphonDuration10s;                     // Duration of autosiphon function in 10ths of sec
 float autoSiphonDurationSec;                    // Duration of autosiphon function in sec
-int antiDripDuration                 =  500;    // Duration of anti-drip autosiphon
-int foamDetectionDelay               = 2000;    // Amount of time to pause after foam detection
-int pausePlatformDrop                = 1000;    // Pause before platform drops after door automatically opens
+const int antiDripDuration           =  500;    // Duration of anti-drip autosiphon
+const int foamDetectionDelay         = 2000;    // Amount of time to pause after foam detection
+const int pausePlatformDrop          = 1000;    // Pause before platform drops after door automatically opens
  
 //Variables for button toggle states 
 boolean button2StateTEMP             = HIGH;
@@ -148,8 +148,6 @@ int numberCyclesSession              = 0;        // Number of session cycles
 boolean buzzedOnce                   = false;
 boolean inFillLoopExecuted           = false;    // True of FillLoop is dirty. Used to compute numberCycles
 char buffer[25];                                 // Used in float to string conv // 1-26 Changed from 25 to 20 //CHANGED BACK TO 25!! SEEMS TO BE IMPORTANT!
-//char bufferP[30];                                // make sure this is large enough for the largest string it must hold; used for PROGMEM write to LCD
-//byte strIndex;                                   // Used to refer to index of the string in *srtLcdTable (e.g., strLcd_0 has strLcdIndex = 0
 
 //======================================================================================
 // PROCESS LOCAL INCLUDES
@@ -199,9 +197,9 @@ void setup()
   digitalWrite(button2Pin, HIGH);
   digitalWrite(button3Pin, HIGH);
   
-  Serial.begin(9600); // TO DO: remove when done
+  //Serial.begin(9600); // TO DO: remove when done
   
-  // Initialize LCD
+  // Initialize LCD - Absolutely necessary
   lcd.init();
   lcd.backlight();
   
@@ -258,7 +256,7 @@ void setup()
   //Initial user message 
   messageInitial();
   
-  /* Comment out preceding comment delimeter for normal operation
+  /* Comment out preceding comment delimeter for normal operation--696 bytes
   // ################################################################################
 
   // If P1 is not high, then there is no bottle, or bottle pressure is low. So raise platform--but take time to make user close door, so no pinching
@@ -377,11 +375,51 @@ void loop()
     lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
     lcd.setCursor (0, 1); lcd.print (F("B1 raises platform. "));  
   }  
-  lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));  
+  lcd.setCursor (0, 2); lcd.print (F("Ready...            "));  
  
-  // Run menu if B2 pressed
+
   //======================================================================
-  menuShell();
+  //Use this routine to respond to multi-button combos
+  //======================================================================
+
+  boolean inMenuLoop = false;
+  boolean inPurgeLoop = false;
+
+  while (!digitalRead(button2Pin) == LOW)
+  {
+    digitalWrite (light2Pin, HIGH);
+    
+    //Run purgeLoop
+    //====================================================================
+    while (!digitalRead(button1Pin) == LOW && switchDoorState == HIGH && platformStateUp == false && (P1 - offsetP1 <= pressureDeltaDown))
+    {
+      inPurgeLoop = true;
+      lcd.setCursor (0, 2); lcd.print (F("Purging...          "));
+      digitalWrite(light1Pin, HIGH); 
+      relayOn(relay2Pin, true); //open S2 to purge
+      delay(10);  
+    }
+    if(inPurgeLoop)
+    {
+      relayOn(relay2Pin, false); //Close relay when B1 and B2 not pushed
+      digitalWrite(light1Pin, LOW); 
+      inPurgeLoop = false;
+      lcd.setCursor (0, 2); lcd.print (F("                    ")); 
+      delay(1000);  //This is to prevent nullPressure loop from kicking in
+    }
+ 
+    //Run menuLoop
+    //====================================================================
+    if (!digitalRead(button3Pin) == LOW && platformStateUp == false)
+    {
+      inMenuLoop = true;
+      digitalWrite (light2Pin, LOW);
+      menuShell(inMenuLoop);
+    }
+  }  
+  digitalWrite (light2Pin, LOW);
+  buzzedOnce = false;
+  
   
   // Main Loop idle pressure measurement and LCD print
   //======================================================================
@@ -474,64 +512,7 @@ void loop()
 
   platformUpLoop();
 
-  // END PLATFORM RAISING LOOP
-  //======================================================================================
-
-
-  //======================================================================================
-  // PURGE LOOP
-  // While B2 and then B1 is pressed, and door is open, and platform is down, purge the bottle
-  //=========================================================================
   
-  // Purge interlock loop
-  // Door must be OPEN, platform DOWN, and pressure near zero (i.e. no bottle)
-  //=========================================================================
-
-  while(button2State == LOW && switchDoorState == HIGH && platformStateUp == false && (P1 - offsetP1 <= pressureDeltaDown)) 
-  {
-    inPurgeLoopInterlock = true;
-    digitalWrite(light2Pin, HIGH);
-    
-    // PURGE LOOP
-    //======================================
-    while (button1State == LOW) // Require two button pushes, B2 then B1, to purge
-    { 
-      inPurgeLoop = true;
-
-      lcd.setCursor (0, 2); lcd.print (F("Purging...          "));
-      digitalWrite(light1Pin, HIGH); 
-
-      relayOn(relay2Pin, true); //open S2 to purge
-      button1State = !digitalRead(button1Pin); 
-      delay(10);  
-    }
-    
-    // PURGE LOOP EXIT ROUTINES
-    //=====================================
-    
-    if(inPurgeLoop)
-    {
-      relayOn(relay2Pin, false); //Close relay when B1 and B2 not pushed
-      digitalWrite(light1Pin, LOW); 
-  
-      inPurgeLoop = false;
-      lcd.setCursor (0, 2); lcd.print (F("                    ")); 
-    }
-    
-    button1State = !digitalRead(button1Pin); 
-    button2State = !digitalRead(button2Pin); 
-    delay(10);
-  }
-  
-  // PURGE LOOP INTERLOCK EXIT ROUTINES
-  //======================================
-  
-  if (inPurgeLoopInterlock)
-  {
-    digitalWrite(light2Pin, LOW); 
-    inPurgeLoopInterlock = false;
-  }  
- 
   // END PURGE LOOP
   //============================================================================================
    
@@ -803,7 +784,6 @@ void loop()
     { 
       emergencyDepressurize();
     }      
-    
     inFillLoop = false;
 
     lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
@@ -813,47 +793,8 @@ void loop()
   // END FILL LOOP EXIT ROUTINE
   //========================================================================================
 
-  //========================================================================================
-  // CARBONATOR STUCK BOTTLE CATCH LOOP //TO DO: Do we still need this?
-  //========================================================================================
+  // #include "autoCarbonator.h"
 
-  while (sensorFillState == LOW)
-  {    
-    readButtons();
-    lcd.setCursor (0, 0); lcd.print (F("B1: Manual Siphon  "));
-    lcd.setCursor (0, 1); lcd.print (F("B2: Depressurize   "));
-    lcd.setCursor (0, 2); lcd.print (F("Waiting...         "));
-
-    // This is manual autosiphon
-    while (button1State == LOW)
-    {
-      readButtons();
-      relayOn (relay1Pin, true);
-      relayOn (relay2Pin, true);
-    }  
-    relayOn (relay1Pin, false);
-    relayOn (relay2Pin, false);
-
-    delay (25);
-    sensorFillState = digitalRead(sensorFillPin); 
-    delay (25); 
-    
-    pressureOutput();
-    printLcd (3, outputPSI_rb); 
-   
-    // Emergency exit
-    if (button2State == LOW)
-    {
-      pressureDump();
-      relayOn (relay3Pin, true);
-      delay(2000);
-      doorOpen();
-      platformDrop();
-      relayOn (relay3Pin, false);
-      sensorFillState == HIGH;
-    }  
-  }
-  
   //========================================================================================
   // DEPRESSURIZE LOOP
   //========================================================================================

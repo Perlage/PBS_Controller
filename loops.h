@@ -2,15 +2,13 @@
 // REUSED MAJOR LOOPS
 // =======================================================================================
 
-// FUNCTION: Platform UP Function Loop
-// =======================================================================================
+// =====================================================================================  
+// PLATFORM RAISING LOOP
+// while B1 is pressed, platform is not UP, and door is open, raise bottle platform.
+// =====================================================================================  
+
 void platformUpLoop()
 {
-  // =====================================================================================  
-  // PLATFORM RAISING LOOP
-  // while B1 is pressed, platform is not UP, and door is open, raise bottle platform.
-  // =====================================================================================  
-  
   timePlatformInit = millis(); // Inititalize time for platform lockin routine
   int n = 0;
   

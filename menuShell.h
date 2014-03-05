@@ -4,12 +4,14 @@
 
 void menuExit()
 {
-  lcd.setCursor (0, 3); lcd.print (F("Exiting menu...     "));
-  delay(1000);      
+  inMenuLoop = false;
   lcd.clear();
+  lcd.setCursor (0, 3); lcd.print (F("Exiting menu...     "));
+  buzzer(250); 
+  delay(750);  
 }
 
-void menuShell()
+void menuShell(boolean inMenuLoop)
 {
   boolean inMenuLoop1 = false;
   boolean inMenuLoop2 = false;
@@ -18,17 +20,15 @@ void menuShell()
   boolean menuOption21 = false; //Carbonation
   boolean menuOption22 = false; //Manual Diagnostic Mode
 
-  while (button2State == LOW && platformStateUp == false) //or whatever button combo
+  if (inMenuLoop == true) 
   {
-    buzzOnce(500, light2Pin);
-
-    inMenuLoop1 = true;
-    button2State = !digitalRead(button2Pin); 
-
-    lcd.setCursor (0, 0); lcd.print (F("    ***MENU 1***    "));
-    lcd.setCursor (0, 1); lcd.print (F("B1: Set AutoSiphon  "));
-    lcd.setCursor (0, 2); lcd.print (F("B2: Cleaning Mode   "));
-    lcd.setCursor (0, 3); lcd.print (F("B3: More...         "));
+      buzzOnce(500, light3Pin);
+      inMenuLoop1 = true;
+  
+      lcd.setCursor (0, 0); lcd.print (F("    ***MENU 1***    "));
+      lcd.setCursor (0, 1); lcd.print (F("B1: Set AutoSiphon  "));
+      lcd.setCursor (0, 2); lcd.print (F("B2: Cleaning Mode   "));
+      lcd.setCursor (0, 3); lcd.print (F("B3: More...         "));
   }
   buzzedOnce = false;
 
@@ -199,7 +199,6 @@ void menuShell()
       button1State = !digitalRead(button1Pin); 
       menuOption22 = false;
       inManualModeLoop = true;
-
       lcd.setCursor (0, 3); lcd.print (F("Manual Mode *ON*  "));
     }  
 

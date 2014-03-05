@@ -6,6 +6,10 @@
 // FLASH MEMORY STRING HANDLING
 //=====================================================================================
 
+
+//char bufferP[30];                                // make sure this is large enough for the largest string it must hold; used for PROGMEM write to LCD
+//byte strIndex;                                   // Used to refer to index of the string in *srtLcdTable (e.g., strLcd_0 has strLcdIndex = 0
+
 //This goes before setup()
 //Write text to char strings. Previously used const_char at start of line; this didn't work
 

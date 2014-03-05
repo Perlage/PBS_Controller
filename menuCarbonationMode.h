@@ -2,8 +2,8 @@
 // CARBONATION MODE
 // =============================================================================================
 
-int timerStart = 0;
 int timerTime = 0;
+int timerStart = 0;
 byte timerTimeMin = 0;
 byte timerTimeSec = 0;
 int P2Start = 0;
@@ -50,12 +50,12 @@ while (inTimingLoop == true)
   //Convert current P reading and start pressure to float
   PSI2 = pressureConv2(P2); 
   float PSIStart = pressureConv2(P2Start);
-  PSIdiff  = PSIStart - PSI2;
+  PSIdiff  = constrain (PSIStart - PSI2, 0, 50);
   
   //Display
-  convPSI2      = floatToString(buffer, PSI2, 1);
-  convPSIdiff   = floatToString(buffer, PSIdiff, 1);
-  String outputPSI_rd  = "Reg:" + convPSI2 + " Drop:" + convPSIdiff;
+  convPSI2             = floatToString(buffer, PSI2, 1);
+  convPSIdiff          = floatToString(buffer, PSIdiff, 1);
+  String outputPSI_rd  = "Reg:" + convPSI2 + " Dip:" + convPSIdiff + "psi";
   printLcd(3, outputPSI_rd);  
   
   //Beep if there is a significant pressure drop of 2 psi (12.71 x 2)
@@ -71,6 +71,10 @@ while (inTimingLoop == true)
     button3State = !digitalRead(button3Pin); delay(10);
     inTimingLoop = false;
     menuOption21 = false;
+    timerTime = 0;
+    timerStart = 0;
+    timerTimeMin = 0;
+    timerTimeSec = 0;
     buzzOnce(500, light3Pin);
   }
   buzzedOnce = false;
