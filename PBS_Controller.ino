@@ -197,7 +197,7 @@ void setup()
   digitalWrite(button2Pin, HIGH);
   digitalWrite(button3Pin, HIGH);
   
-  //Serial.begin(9600); // TO DO: remove when done
+  Serial.begin(9600); // TO DO: remove when done
   
   // Initialize LCD - Absolutely necessary
   lcd.init();
@@ -397,15 +397,14 @@ void loop()
       lcd.setCursor (0, 2); lcd.print (F("Purging...          "));
       digitalWrite(light1Pin, HIGH); 
       relayOn(relay2Pin, true); //open S2 to purge
-      delay(10);  
     }
     if(inPurgeLoop)
     {
       relayOn(relay2Pin, false); //Close relay when B1 and B2 not pushed
-      digitalWrite(light1Pin, LOW); 
       inPurgeLoop = false;
-      lcd.setCursor (0, 2); lcd.print (F("                    ")); 
-      delay(1000);  //This is to prevent nullPressure loop from kicking in
+      lcd.setCursor (0, 2); lcd.print (F("Wait...             ")); 
+      delay(750);  //This is to prevent nullPressure loop from kicking in
+      digitalWrite(light1Pin, LOW); 
     }
  
     //Run menuLoop
@@ -413,7 +412,6 @@ void loop()
     if (!digitalRead(button3Pin) == LOW && platformStateUp == false)
     {
       inMenuLoop = true;
-      digitalWrite (light2Pin, LOW);
       menuShell(inMenuLoop);
     }
   }  

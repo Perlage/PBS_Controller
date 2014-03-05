@@ -23,9 +23,10 @@ void menuShell(boolean inMenuLoop)
   if (inMenuLoop == true) 
   {
       buzzOnce(500, light3Pin);
+      digitalWrite (light2Pin, LOW);
       inMenuLoop1 = true;
   
-      lcd.setCursor (0, 0); lcd.print (F("    ***MENU 1***    "));
+      lcd.setCursor (0, 0); lcd.print (F("   *** MENU 1 ***   "));
       lcd.setCursor (0, 1); lcd.print (F("B1: Set AutoSiphon  "));
       lcd.setCursor (0, 2); lcd.print (F("B2: Cleaning Mode   "));
       lcd.setCursor (0, 3); lcd.print (F("B3: More...         "));
@@ -65,7 +66,7 @@ void menuShell(boolean inMenuLoop)
       inMenuLoop1 = false;
       button3State = !digitalRead(button3Pin); 
      
-      lcd.setCursor (0, 0); lcd.print (F("    ***MENU 2***    "));
+      lcd.setCursor (0, 0); lcd.print (F("   *** MENU 2 ***   "));
       lcd.setCursor (0, 1); lcd.print (F("B1: Carbonation Mode"));
       lcd.setCursor (0, 2); lcd.print (F("B2: Manual Mode     "));
       lcd.setCursor (0, 3); lcd.print (F("B3: Exit...         "));

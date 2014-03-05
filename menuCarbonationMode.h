@@ -2,10 +2,11 @@
 // CARBONATION MODE
 // =============================================================================================
 
-int timerTime = 0;
+float timerTime = 0;
 int timerStart = 0;
-byte timerTimeMin = 0;
-byte timerTimeSec = 0;
+int timerTimeMs = 0;
+int timerTimeMin = 0;
+int timerTimeSec = 0;
 int P2Start = 0;
 boolean inTimingLoop = false;
 String shakeState;
@@ -21,9 +22,24 @@ while (button1State == LOW)
 
 while (inTimingLoop == true)
 {
-  timerTime = (millis() - timerStart) / 1000; //Get total seconds since start
-  timerTimeSec = timerTime % 60;              //Get 0-60 seconds
-  timerTimeMin = int(timerTime/60);           //Get minutes
+  timerTimeMs = millis() - timerStart;
+  timerTime = float(timerTimeMs) / 1000;       //Get total seconds since start
+  timerTimeSec = int(timerTime) % 60;          //Get 0-60 seconds
+  timerTimeMin = int(timerTime/60);            //Get minutes
+  
+  /*
+  Serial.print ("millis(): "); 
+  Serial.print (millis()); 
+  Serial.print (" timerStart: "); 
+  Serial.print (timerStart); 
+  Serial.print (" timerTime: "); 
+  Serial.print (timerTime); 
+  Serial.print (" timerTimeMin: "); 
+  Serial.print (timerTimeMin); 
+  Serial.print (" timerTimeSec: "); 
+  Serial.print (timerTimeSec); 
+  Serial.println ();
+  */
 
   String (convTimeMin) = floatToString(buffer, timerTimeMin, 0);
   String (convTimeSec) = floatToString(buffer, timerTimeSec, 0);
@@ -55,7 +71,7 @@ while (inTimingLoop == true)
   //Display
   convPSI2             = floatToString(buffer, PSI2, 1);
   convPSIdiff          = floatToString(buffer, PSIdiff, 1);
-  String outputPSI_rd  = "Reg:" + convPSI2 + " Dip:" + convPSIdiff + "psi";
+  String outputPSI_rd  = "Reg:" + convPSI2 + " Dip:" + convPSIdiff + " psi";
   printLcd(3, outputPSI_rd);  
   
   //Beep if there is a significant pressure drop of 2 psi (12.71 x 2)
