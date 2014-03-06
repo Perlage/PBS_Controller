@@ -99,7 +99,7 @@ boolean platformStateUp              = false;   // true means platform locked in
 //Pressure constants
 int offsetP1;                                   // Zero offset for pressure sensor1 (bottle). Set through EEPROM in initial factory calibration, and read into pressureOffset during Setup loop
 int offsetP2;                                   // Zero offest for pressure sensor2 (input regulator). Ditto above.
-const int pressureDeltaUp            = 38;      // Pressure at which, during pressurization, full pressure is considered to have been reached // Tried 10; went back to 50 to prevent repressurizing after fill button cycle
+const int pressureDeltaUp            = 50;      // Pressure at which, during pressurization, full pressure is considered to have been reached // Tried 10, 38; went back to 50 to prevent repressurizing after fill button cycle
 const int pressureDeltaDown          = 38;      // Pressure at which, during depressurizing, pressure considered to be close enough to zero// 38 works out to 3.0 psi 
 const int pressureDeltaMax           = 250;     // This is max pressure difference allowed on filling (i.e., limits fill speed)
 const int pressureNull               = 200;     // This is the threshold for the controller deciding that no gas source is attached. 
@@ -394,13 +394,13 @@ void loop()
   boolean inMenuLoop = false;
   boolean inPurgeLoop = false;
 
-  while (!digitalRead(button2Pin) == LOW)
+  while (!digitalRead(button2Pin) == LOW && platformStateUp == false)
   {
     digitalWrite (light2Pin, HIGH);
     
     //PURGE ROUTINE
     //====================================================================
-    while (!digitalRead(button1Pin) == LOW && platformStateUp == false && switchDoorState == HIGH && (P1 - offsetP1 <= pressureDeltaDown))
+    while (!digitalRead(button1Pin) == LOW && switchDoorState == HIGH)
     {
       inPurgeLoop = true;
       lcd.setCursor (0, 2); lcd.print (F("Purging...          "));
@@ -418,7 +418,7 @@ void loop()
  
     //MENU ROUTINE
     //====================================================================
-    if (!digitalRead(button3Pin) == LOW && platformStateUp == false)
+    if (!digitalRead(button3Pin) == LOW)
     {
       inMenuLoop = true;
       menuShell(inMenuLoop);
