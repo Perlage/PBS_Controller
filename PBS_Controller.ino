@@ -88,6 +88,8 @@ boolean inMenuLoop                   = false;
 boolean inManualModeLoop             = false;
 boolean inManualModeLoop1            = false;
 boolean inCleaningMode               = false;
+boolean inPressureDropLoop           = false;
+boolean inPlatformEmergencyLock      = false;
 
 //Key logical states
 boolean autoMode_1                   = false;   // Variable to help differentiate between states reached automatically vs manually 
@@ -208,6 +210,7 @@ void setup()
   // STARTUP ROUTINE
   //===================================================================================
 
+  //===================================================================================
   // EEPROM factory set-reset routine 
   // For some reason, have to include it here and not above with others
   #include "EEPROMset.h"   
@@ -248,10 +251,9 @@ void setup()
     manualModeLoop();
   }
 
-  //============================================================================
+  //===================================================================================
   //NULL PRESSURE: Check for stuck pressurized bottle or implausibly low gas pressure at start 
   #include "nullPressureCheck.h"
-  //============================================================================
 
   //Initial user message 
   messageInitial();
@@ -363,7 +365,7 @@ void loop()
     button3ToggleState = false; //buttonState remains HIGH
   }
    
-  // Monitor door state in null loop
+  // Give relevant instructions in null loop
   //======================================================================
   if (switchDoorState == LOW && platformStateUp == false)
   {
@@ -375,11 +377,18 @@ void loop()
     lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
     lcd.setCursor (0, 1); lcd.print (F("B1 raises platform. "));  
   }  
+  /*
+  if (platformStateUp == true)
+  {
+    lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; ")); //This will rarely get hit
+    lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
+  }
+  */
   lcd.setCursor (0, 2); lcd.print (F("Ready...            "));  
  
 
   //======================================================================
-  //Use this routine to respond to multi-button combos
+  //MULTI BUTTON COMBO ROUTINES
   //======================================================================
 
   boolean inMenuLoop = false;
@@ -389,9 +398,9 @@ void loop()
   {
     digitalWrite (light2Pin, HIGH);
     
-    //Run purgeLoop
+    //PURGE ROUTINE
     //====================================================================
-    while (!digitalRead(button1Pin) == LOW && switchDoorState == HIGH && platformStateUp == false && (P1 - offsetP1 <= pressureDeltaDown))
+    while (!digitalRead(button1Pin) == LOW && platformStateUp == false && switchDoorState == HIGH && (P1 - offsetP1 <= pressureDeltaDown))
     {
       inPurgeLoop = true;
       lcd.setCursor (0, 2); lcd.print (F("Purging...          "));
@@ -407,7 +416,7 @@ void loop()
       digitalWrite(light1Pin, LOW); 
     }
  
-    //Run menuLoop
+    //MENU ROUTINE
     //====================================================================
     if (!digitalRead(button3Pin) == LOW && platformStateUp == false)
     {
@@ -419,7 +428,7 @@ void loop()
   buzzedOnce = false;
   
   
-  // Main Loop idle pressure measurement and LCD print
+  // Main Loop idle pressure measurement and LCD output
   //======================================================================
 
   pressureOutput();
@@ -434,23 +443,11 @@ void loop()
   // Lock platform if gas pressure drops while bottle pressurized  
   //========================================================================
 
-  /*
-  Serial.print ("StartPress: "); 
-  Serial.print (pressureRegStartUp);  
-  Serial.print (" P1: "); 
-  Serial.print (P1);  
-  Serial.print (" P2: "); 
-  Serial.print (P2); 
-  Serial.println ();
-  */
-  
-  boolean inEmergencyLockLoop = false;
-  boolean platformEmergencyLock = false;
   
   // If pressure drops, go into this loop and wait for user to fix
   while (P2 -offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what consitutes a pressure drop.// 2-18 Changed from 75 to 100
   {
-    inEmergencyLockLoop = true;
+    inPressureDropLoop = true;
 
     P1 = analogRead(sensorP1Pin); 
     P2 = analogRead(sensorP2Pin); 
@@ -458,7 +455,7 @@ void loop()
     //If bottle is pressurized (along with pressure sagging), also lock the platform
     if (P1 - offsetP1 > P2 - offsetP2)
     {
-      platformEmergencyLock = true;
+      inPlatformEmergencyLock = true;
       relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
       relayOn (relay3Pin, true);    // Vent the bottle to be safe
 
@@ -466,8 +463,8 @@ void loop()
       buzzOnce(2000, light2Pin);
     }  
     
-    lcd.setCursor (0, 0); lcd.print (F("Input pressure low--"));
-    lcd.setCursor (0, 1); lcd.print (F("Check CO2 tank/hoses"));
+    lcd.setCursor (0, 0); lcd.print (F("Input pressure drop;"));
+    lcd.setCursor (0, 1); lcd.print (F("check tank & hoses. "));
     lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));
     
     // Pressure measurement and output
@@ -479,22 +476,22 @@ void loop()
   } 
   buzzedOnce = false;
   
-  if (inEmergencyLockLoop)
+  if (inPressureDropLoop)
   {
-    inEmergencyLockLoop = false;
+    inPressureDropLoop = false;
     buzzedOnce = false;
     
     // Run this condition if had pressurized bottle
-    if (platformEmergencyLock == true)
+    if (inPlatformEmergencyLock == true)
     {
       relayOn (relay4Pin, true);       // Re-open platform UP solenoid 
       relayOn (relay3Pin, false);      // Re close vent if opened 
-      platformEmergencyLock = false;
+      inPlatformEmergencyLock = false;
+      
+      lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; ")); 
+      lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
     }
       
-    delay(1000);
-    lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
-    lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
     lcd.setCursor (0, 2); lcd.print (F("Problem corrected..."));
     delay(1000);
   }  

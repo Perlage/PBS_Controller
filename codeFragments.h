@@ -40,6 +40,19 @@ const char *strLcdTable[] PROGMEM =  // Name of table following * is arbitrary
 for (int n = 8; n <= 11; n++){
   strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
   printLcd (n % 4, bufferP);}
+  
+  
+//===============================================================================================
+  /*
+  Serial.print ("StartPress: "); 
+  Serial.print (pressureRegStartUp);  
+  Serial.print (" P1: "); 
+  Serial.print (P1);  
+  Serial.print (" P2: "); 
+  Serial.print (P2); 
+  Serial.println ();
+  */
+
       
 
 

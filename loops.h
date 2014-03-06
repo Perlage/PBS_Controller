@@ -114,3 +114,41 @@ void emergencyDepressurize()
 // END EMERGENCY DEPRESSURIZE LOOP FUNCTION
 //========================================================================================
 
+
+
+//========================================================================================
+// EMERGENCY PLATFORM LOCK FUNCTION
+// Lock platform and depressurize if regulator pressure sags below bottle pressure
+//========================================================================================
+
+//If bottle is pressurized (along with pressure sagging), also lock the platform
+void platformEmergencyLock()
+{
+  P1 = analogRead(sensorP1Pin); 
+  P2 = analogRead(sensorP2Pin); 
+
+  while (P2 - offsetP2 < P1 - offsetP1)
+  {
+    inPlatformEmergencyLock = true;
+    
+    P1 = analogRead(sensorP1Pin); 
+    P2 = analogRead(sensorP2Pin);
+    
+    relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
+    relayOn (relay3Pin, true);    // Vent the bottle to be safe
+  
+    lcd.setCursor (0, 2); lcd.print (F("Platform locked...  "));
+    buzzOnce(2000, light2Pin);
+  }  
+  
+  if (inPlatformEmergencyLock)
+  {
+    relayOn (relay4Pin, true);    // Re-open platform UP solenoid 
+    relayOn (relay3Pin, false);   // Re close vent if opened 
+    inPlatformEmergencyLock = false;
+    lcd.setCursor (0, 2); lcd.print (F("Platform unlocked..."));
+    delay(1000);
+    buzzedOnce = false;
+  }
+}
+

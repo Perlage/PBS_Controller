@@ -35,7 +35,7 @@ while (P1 - offsetP1 > pressureDeltaDown)
 }
 buzzedOnce = false;
 
-// CASE 2: GASS OFF OR LOW       
+// CASE 2: GAS OFF OR LOW       
 while (P2 - offsetP2 < pressureNull) 
 {
   inPressureNullLoop = true;
