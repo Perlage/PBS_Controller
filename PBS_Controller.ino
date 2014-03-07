@@ -432,6 +432,7 @@ void loop()
     
     //Enter menuLoop once B3 released
     if (inMenuLoop){
+      digitalWrite (light2Pin, LOW);
       menuShell(inMenuLoop);
     }  
     

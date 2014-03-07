@@ -52,10 +52,10 @@ void menuShell(boolean inMenuLoop)
       inMenuLoop1 = false;   
       button2State = !digitalRead(button2Pin); 
 
-      lcd.setCursor (0, 0); lcd.print (F("***CLEANING MODE***"));
-      lcd.setCursor (0, 1); lcd.print (F("B1: Enter          "));
-      lcd.setCursor (0, 2); lcd.print (F("B3: Exit           "));
-      lcd.setCursor (0, 3); lcd.print (F("                   ")); 
+      lcd.setCursor (0, 0); lcd.print (F("***CLEANING MODE*** "));
+      lcd.setCursor (0, 1); lcd.print (F("B1: Enter Cleaning  "));
+      lcd.setCursor (0, 2); lcd.print (F("B3: Exit Cleaning   "));
+      lcd.setCursor (0, 3); lcd.print (F("                    ")); 
     }  
 
     while (button3State == LOW)

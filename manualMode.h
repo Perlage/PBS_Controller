@@ -21,6 +21,7 @@ void manualModeLoop()
     doorOpen();
   
     // FUNCTION Drop platform if up
+    platformStateUp = true;
     platformDrop();
   
   }
@@ -34,9 +35,6 @@ void manualModeLoop()
       
   while (inManualModeLoop1 == true)
   {    
-    // FUNCTION: PlatformUpLoop
-    platformUpLoop();     
-   
     // FUNCTION: Read all states of buttons, sensors
     readButtons();
     readStates();
@@ -48,7 +46,7 @@ void manualModeLoop()
     if (platformStateUp == false && switchDoorState == HIGH)
     {
       lcd.setCursor (0, 1); lcd.print (F("B1 raises platform; "));
-      lcd.setCursor (0, 2); lcd.print (F("B3 lowers platform  "));
+      lcd.setCursor (0, 2); lcd.print (F("B2 exits Manual Mode"));
     }
     if (platformStateUp == false && switchDoorState == LOW)
     {
@@ -64,13 +62,16 @@ void manualModeLoop()
     {
       lcd.setCursor (0, 0); lcd.print (F("B1: Gas IN          "));
       lcd.setCursor (0, 1); lcd.print (F("B2: Liquid IN       "));
-      lcd.setCursor (0, 2); lcd.print (F("B3: Gas OUT/Plat Dwn"));
+      lcd.setCursor (0, 2); lcd.print (F("B3: Gas OUT/Door opn"));
     }
     else
     {
       lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
     }
       
+    // B1: FUNCTION PlatformUpLoop
+    platformUpLoop();     
+   
     // B1: GAS IN ================================================================
     if (button1State == LOW && platformStateUp == true && switchDoorState == LOW){
       relayOn (relay2Pin, true);}  
@@ -78,8 +79,7 @@ void manualModeLoop()
       relayOn (relay2Pin, false);}
       
     // B2 LIQUID IN ==============================================================
-    if (button2State == LOW && platformStateUp == true && switchDoorState == LOW){
-      // TO DO: ADD WARNING
+    if (button2State == LOW && platformStateUp == true && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)){ //Decided to add pressure condition to eliminate possibility of spewing
       relayOn (relay1Pin, true);}  
     else{
       relayOn (relay1Pin, false);}
@@ -94,7 +94,9 @@ void manualModeLoop()
     if (button3State == LOW && switchDoorState == LOW && (P1 - offsetP1 < pressureDeltaDown))
     {
       doorOpen();
+      button3State = HIGH; 
     }  
+    
     if (button3State == LOW && switchDoorState == HIGH && (P1 - offsetP1 < pressureDeltaDown))
     {
       while (button3State == LOW)
