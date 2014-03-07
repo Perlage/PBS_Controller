@@ -393,9 +393,11 @@ void loop()
 
   boolean inMenuLoop = false;
   boolean inPurgeLoop = false;
-
+  boolean inMultiButtonLockLoop = false;
+  
   while (!digitalRead(button2Pin) == LOW && platformStateUp == false)
   {
+    inMultiButtonLockLoop = true;
     digitalWrite (light2Pin, HIGH);
     
     //PURGE ROUTINE
@@ -411,22 +413,32 @@ void loop()
     {
       relayOn(relay2Pin, false); //Close relay when B1 and B2 not pushed
       inPurgeLoop = false;
-      lcd.setCursor (0, 2); lcd.print (F("Wait...             ")); 
-      delay(750);  //This is to prevent nullPressure loop from kicking in
       digitalWrite(light1Pin, LOW); 
     }
  
     //MENU ROUTINE
     //====================================================================
-    if (!digitalRead(button3Pin) == LOW)
+    while (!digitalRead(button3Pin) == LOW)
     {
       inMenuLoop = true;
-      menuShell(inMenuLoop);
+      lcd.setCursor (0, 2); lcd.print (F("Entering Menu...    ")); 
+      buzzOnce(500, light3Pin);
     }
   }  
-  digitalWrite (light2Pin, LOW);
-  buzzedOnce = false;
-  
+  if (inMultiButtonLockLoop)
+  {
+    inMultiButtonLockLoop = false;
+    buzzedOnce = false;
+    
+    //Enter menuLoop once B3 released
+    if (inMenuLoop){
+      menuShell(inMenuLoop);
+    }  
+    
+    lcd.setCursor (0, 2); lcd.print (F("Wait...             ")); 
+    delay(750);  //This is to prevent nullPressure loop from kicking in
+    digitalWrite (light2Pin, LOW);
+  }
   
   // Main Loop idle pressure measurement and LCD output
   //======================================================================

@@ -61,10 +61,10 @@ void platformUpLoop()
       relayOn(relay4Pin, false);
       relayOn(relay5Pin, true);
       digitalWrite(light1Pin, LOW);
+      lcd.setCursor (0, 2); lcd.print (F("Wait...             ")); // Blanks status line
       delay(2000); 
 
       relayOn(relay5Pin, false);  // Prevents leaving S5 on if this was the last thing user did
-      lcd.setCursor (0, 2); lcd.print (F("                    ")); // Blanks status line
       platformStateUp = false;
     }
 

@@ -6,7 +6,7 @@ void menuExit()
 {
   inMenuLoop = false;
   lcd.clear();
-  lcd.setCursor (0, 3); lcd.print (F("Exiting menu...     "));
+  lcd.setCursor (0, 2); lcd.print (F("Exiting menu...     "));
   buzzer(250); 
   delay(750);  
 }
@@ -22,8 +22,6 @@ void menuShell(boolean inMenuLoop)
 
   if (inMenuLoop == true) 
   {
-      buzzOnce(500, light3Pin);
-      digitalWrite (light2Pin, LOW);
       inMenuLoop1 = true;
   
       lcd.setCursor (0, 0); lcd.print (F("   *** MENU 1 ***   "));
@@ -104,9 +102,11 @@ void menuShell(boolean inMenuLoop)
     while (button3State == LOW)
     {
       inMenuLoop2 = false;
-      button3State = !digitalRead(button3Pin); 
-      menuExit();   
+      menuExit();
+      while (button3State == LOW){
+        button3State = !digitalRead(button3Pin);}  // This catches loop until release 
     }      
+
   }
 
   // ===============================================================================
