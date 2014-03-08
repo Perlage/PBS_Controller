@@ -79,7 +79,7 @@ void manualModeLoop()
       relayOn (relay2Pin, false);}
       
     // B2 LIQUID IN ==============================================================
-    if (button2State == LOW && platformStateUp == true && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)){ //Decided to add pressure condition to eliminate possibility of spewing
+    if (button2State == LOW && platformStateUp == true && switchDoorState == LOW){ 
       relayOn (relay1Pin, true);}  
     else{
       relayOn (relay1Pin, false);}

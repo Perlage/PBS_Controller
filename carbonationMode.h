@@ -4,9 +4,9 @@
 
 float timerTime = 0;
 int timerStart = 0;
-int timerTimeMs = 0;
-int timerTimeMin = 0;
-int timerTimeSec = 0;
+unsigned long timerTimeMs = 0;
+byte timerTimeMin = 0;
+byte timerTimeSec = 0;
 int P2Start = 0;
 boolean inTimingLoop = false;
 String shakeState;
@@ -27,7 +27,6 @@ while (inTimingLoop == true)
   timerTimeSec = int(timerTime) % 60;          //Get 0-60 seconds
   timerTimeMin = int(timerTime/60);            //Get minutes
   
-  /*
   Serial.print ("millis(): "); 
   Serial.print (millis()); 
   Serial.print (" timerStart: "); 
@@ -39,8 +38,8 @@ while (inTimingLoop == true)
   Serial.print (" timerTimeSec: "); 
   Serial.print (timerTimeSec); 
   Serial.println ();
-  */
 
+  
   String (convTimeMin) = floatToString(buffer, timerTimeMin, 0);
   String (convTimeSec) = floatToString(buffer, timerTimeSec, 0);
   
@@ -50,15 +49,16 @@ while (inTimingLoop == true)
   else{
     shakeState = "SHAKE...";}
   
-  //Buzz every 15 sec  
-  if (timerTimeSec % 15 == 0){
-    buzzer(1000);}  
-  
   //Need this IF to account for the fact that seconds 0-9 don't have leading zero
   if (timerTimeSec <= 9){
     printLcd(2, "Timer: " + convTimeMin + ":" + "0" + convTimeSec + " " + shakeState);}
   else{
-    printLcd(2, "Timer: " + convTimeMin + ":" + convTimeSec + " " + shakeState);}          
+    printLcd(2, "Timer: " + convTimeMin + ":" + convTimeSec + " " + shakeState);}  
+
+  //Buzz every 15 sec  
+  if (timerTimeSec % 15 == 0){
+    buzzer(1000);}  
+    
   
   //Get pressure reading
   P2 = analogRead(sensorP2Pin);
@@ -74,7 +74,7 @@ while (inTimingLoop == true)
   String outputPSI_rd  = "Reg:" + convPSI2 + " Dip:" + convPSIdiff + " psi";
   printLcd(3, outputPSI_rd);  
   
-  //Beep if there is a significant pressure drop of 2 psi (12.71 x 2)
+  //Beep if there is a significant pressure drop of 2 psi while shaking (12.71 x 2)
   if (P2 < pressureRegStartUp - 26){
     buzzer(50);}  
  

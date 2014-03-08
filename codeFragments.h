@@ -43,6 +43,7 @@ for (int n = 8; n <= 11; n++){
   
   
 //===============================================================================================
+ 
   /*
   Serial.print ("StartPress: "); 
   Serial.print (pressureRegStartUp);  
@@ -53,6 +54,19 @@ for (int n = 8; n <= 11; n++){
   Serial.println ();
   */
 
+  /*
+  Serial.print ("millis(): "); 
+  Serial.print (millis()); 
+  Serial.print (" timerStart: "); 
+  Serial.print (timerStart); 
+  Serial.print (" timerTime: "); 
+  Serial.print (timerTime); 
+  Serial.print (" timerTimeMin: "); 
+  Serial.print (timerTimeMin); 
+  Serial.print (" timerTimeSec: "); 
+  Serial.print (timerTimeSec); 
+  Serial.println ();
+  */
       
 
 
