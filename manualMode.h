@@ -4,14 +4,10 @@
 
 void manualModeLoop()
 {
-  // Manual Mode Entrance Routines
-  // ==================================================
-  
   if (inManualModeLoop == true)
   {
     inManualModeLoop1 = true;
     sensorFillState = HIGH; // Set it high and don't read it anymore
-  
     buzzer (1000);
     
     // FUNCTION Dump pressure
@@ -23,15 +19,7 @@ void manualModeLoop()
     // FUNCTION Drop platform if up
     platformStateUp = true;
     platformDrop();
-  
   }
-  
-  // END Manual Mode Entrance Routines
-  // ========================================================
-  
-  //======================================================================================
-  // MANUAL MODE LOOP
-  //======================================================================================
       
   while (inManualModeLoop1 == true)
   {    
@@ -79,7 +67,7 @@ void manualModeLoop()
       relayOn (relay2Pin, false);}
       
     // B2 LIQUID IN ==============================================================
-    if (button2State == LOW && platformStateUp == true && switchDoorState == LOW){ 
+    if (button2State == LOW && platformStateUp == true && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)){ 
       relayOn (relay1Pin, true);}  
     else{
       relayOn (relay1Pin, false);}
@@ -94,7 +82,7 @@ void manualModeLoop()
     if (button3State == LOW && switchDoorState == LOW && (P1 - offsetP1 < pressureDeltaDown))
     {
       doorOpen();
-      button3State = HIGH; 
+      button3State = HIGH; //This fixed a bug where opening door passed button state into next loop and was setting platform state to down when still up
     }  
     
     if (button3State == LOW && switchDoorState == HIGH && (P1 - offsetP1 < pressureDeltaDown))
@@ -118,9 +106,6 @@ void manualModeLoop()
       buzzOnce (1000, light2Pin);
     }  
   }
-    
-  //END MANUAL MODE LOOP 
-  //=================================================   
    
   //MANUAL MODE LOOP EXIT ROUTINES 
   //==================================================
@@ -146,8 +131,4 @@ void manualModeLoop()
     platformDrop();
     relayOn (relay3Pin, false);
   }  
-  
-  // END MANUAL MODE
-  //===========================================================================================
-
 }
