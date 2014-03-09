@@ -9,6 +9,7 @@ unsigned long timerTimeMs     = 0;       //Timer value in ms
 byte timerTimeMin             = 0;       //Timer value, minutes part
 byte timerTimeSec             = 0;       //Timer value, seconds part
 int P2Start;                             //Initial regulator reading going into loop
+float PSIStart;
 float timerShakeTime;                    //Time of shaking in sec, less the number of 15 second rest periods               
 boolean inShakeState;                    //Whether r not should be shaking in given 15 sec interval
 String shakeState;                       //REST or SHAKE
@@ -22,6 +23,7 @@ while (button1State == LOW)
   button1State = !digitalRead(button1Pin); delay(10);
   timerStart = millis();
   P2Start = analogRead(sensorP2Pin);
+  PSIStart = pressureConv2(P2Start);
   lcd.setCursor (0, 1); lcd.print (F("Press B3 to exit.  "));
 }
 
@@ -70,39 +72,17 @@ while (inTimingLoop == true)
   
   //Convert current P reading and start pressure to float
   PSI2 = pressureConv2(P2); 
-  float PSIStart = pressureConv2(P2Start);
-  PSIdiff  = constrain (PSIStart - PSI2, 0, 50);
-  
-  //ShakeTime subtracts out the number of 15 sec rest intervals. So 77 sec evaluates to 32 sec of shaking. 
-  timerShakeTime = int(timerTime) - (int(timerTime / 30) + 1) * 15;
-  timerShakeTime = constrain (timerShakeTime, 0, 240); // Keeps it pos in first 15 sec
-  
-  //Method 1
-  //Pressure dip decreases over time according to 2 exp -T. Evaluates to 0 at T=0; cuts down by factor of 2 every 30 seconds of shake time
-  //pressureDipTarget = pressureDipTargetInit * (pow(2, - (timerShakeTime / 30))); //TOO MUCH RAM in pow fcn!
-  
-  //Method 2
-  //pressureDipTarget = pressureDipTargetInit * (1 - constrain ((timerShakeTime / 120), 0, 1));
+  PSIdiff = PSIStart - PSI2;
+  //PSIdiff  = constrain (PSIStart - PSI2, 0, 50);
+  convPSI2 = floatToString(buffer, PSI2, 1);
+  convPSIdiff = floatToString(buffer, PSIdiff, 1);
 
-  //Method 3
+  //Get the factor to reduce target dip by
   float timerShakeTimeSegment = int ((timerTime) / 30) + 1; //Get the number of the 15sec shake interval
-  pressureDipTarget = pressureDipTargetInit * (1 / timerShakeTimeSegment); //So, dipTarget decreases by factor of 1, 1/2, 1/3, 1/4...
-  
-  /*
-  Serial.print ("timerShakeTime: "); 
-  Serial.print (timerShakeTime); 
-  Serial.print (" timerShakeTimeSegment: "); 
-  Serial.print (timerShakeTimeSegment); 
-  Serial.println ();
-  */
-  
-  //Display
-  convPSI2             = floatToString(buffer, PSI2, 1);
-  convPSIdiff          = floatToString(buffer, PSIdiff, 1);
+  pressureDipTarget = pressureDipTargetInit * (1 / timerShakeTimeSegment); //So, dipTarget decreases by factor of 1, 1/2, 1/3, 1/4... 
 
   float convPressureDipTarget = pressureConv2(pressureDipTarget + offsetP2); //Need to add back offset because function subtracts it
   String convPSItarget = floatToString(buffer, convPressureDipTarget, 1);
-
   String outputPSI_td  = "Trgt:" + convPSItarget + " Dip:" + convPSIdiff + " psi";
   printLcd(3, outputPSI_td);  
 
@@ -121,3 +101,29 @@ while (inTimingLoop == true)
   }
   buzzedOnce = false;
 }
+
+
+  //Method 1
+  //ShakeTime subtracts out the number of 15 sec rest intervals. So 77 sec evaluates to 32 sec of shaking. 
+  
+  //timerShakeTime = int(timerTime) - (int(timerTime / 30) + 1) * 15;
+  //timerShakeTime = constrain (timerShakeTime, 0, 240); // Keeps it pos in first 15 sec
+
+  //Pressure dip decreases over time according to 2 exp -T. Evaluates to 0 at T=0; cuts down by factor of 2 every 30 seconds of shake time
+  //pressureDipTarget = pressureDipTargetInit * (pow(2, - (timerShakeTime / 30))); //TOO MUCH RAM in pow fcn!
+  
+  //Method 2
+  //timerShakeTime = int(timerTime) - (int(timerTime / 30) + 1) * 15;
+
+  //timerShakeTime = constrain (timerShakeTime, 0, 240); // Keeps it pos in first 15 sec
+  //pressureDipTarget = pressureDipTargetInit * (1 - constrain ((timerShakeTime / 120), 0, 1));
+  
+    /*
+  Serial.print ("timerShakeTime: "); 
+  Serial.print (timerShakeTime); 
+  Serial.print (" timerShakeTimeSegment: "); 
+  Serial.print (timerShakeTimeSegment); 
+  Serial.println ();
+  */
+
+
