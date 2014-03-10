@@ -197,16 +197,26 @@ void menuShell(boolean inMenuLoop)
     readButtons();
     while (button1State == LOW)
     {
-      button1State = !digitalRead(button1Pin); 
-      menuOption22 = false;
       inManualModeLoop = true;
-      lcd.setCursor (0, 3); lcd.print (F("Manual Mode *ON*  "));
+      menuOption22 = false;
+      button1State = !digitalRead(button1Pin); 
+      lcd.setCursor (0, 3); lcd.print (F("Manual Mode *ON*    "));
+      buzzOnce(500, light1Pin);
+
+      while (!digitalRead(button2Pin) == LOW)
+      {
+        inDiagnosticMode = true;
+        buzzer (100);
+        digitalWrite(light2Pin, HIGH);
+        lcd.setCursor (0, 3); lcd.print (F("Diagnostic Mode *ON*"));
+      }  
+      digitalWrite(light2Pin, LOW);
     }  
 
+    buzzedOnce = false;
     if (menuOption22 == false)
     {
-      //menuExit();
-      delay(1000);
+      inMenuLoop = false;
       manualModeLoop();
     }
   }
