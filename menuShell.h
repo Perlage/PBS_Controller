@@ -80,11 +80,14 @@ void menuShell(boolean inMenuLoop)
       inMenuLoop2 = false;   
       button1State = !digitalRead(button1Pin); 
       
+      lcd.clear();
       lcd.setCursor (0, 0); lcd.print (F("**CARBONATION MODE**"));
       lcd.setCursor (0, 1); lcd.print (F("Press B1 to begin.  "));
-      lcd.setCursor (0, 2); lcd.print (F("                    "));
-      lcd.setCursor (0, 3); lcd.print (F("                    "));   
+      //lcd.setCursor (0, 2); lcd.print (F("                    "));
+      //lcd.setCursor (0, 3); lcd.print (F("                    "));   
+      buzzOnce(750, light1Pin);
     }  
+    buzzedOnce = false;
 
     while (button2State == LOW)
     {
@@ -92,13 +95,14 @@ void menuShell(boolean inMenuLoop)
       inMenuLoop2 = false;   
       button2State = !digitalRead(button2Pin); 
 
+      lcd.clear();
       lcd.setCursor (0, 0); lcd.print (F(" ***MANUAL MODE***  "));
-      lcd.setCursor (0, 1); lcd.print (F("CAUTION: Fill Sensor"));
-      lcd.setCursor (0, 2); lcd.print (F("disabled in Manual. "));
-      lcd.setCursor (0, 3); lcd.print (F("Press B1 to begin.  "));
-      delay(1000); 
+      lcd.setCursor (0, 1); lcd.print (F("Press B1 to begin.  "));
+      //lcd.setCursor (0, 2); lcd.print (F("CAUTION: Fill Sensor"));
+      //lcd.setCursor (0, 3); lcd.print (F("disabled in Manual. "));
+      buzzOnce(750, light2Pin);
     }  
-
+    buzzedOnce = false;
     while (button3State == LOW)
     {
       inMenuLoop2 = false;
@@ -199,9 +203,7 @@ void menuShell(boolean inMenuLoop)
     {
       inManualModeLoop = true;
       menuOption22 = false;
-      button1State = !digitalRead(button1Pin); 
       lcd.setCursor (0, 3); lcd.print (F("Manual Mode *ON*    "));
-      buzzOnce(500, light1Pin);
 
       while (!digitalRead(button2Pin) == LOW)
       {
@@ -211,13 +213,14 @@ void menuShell(boolean inMenuLoop)
         lcd.setCursor (0, 3); lcd.print (F("Diagnostic Mode *ON*"));
       }  
       digitalWrite(light2Pin, LOW);
+      button1State = !digitalRead(button1Pin); 
     }  
 
     buzzedOnce = false;
     if (menuOption22 == false)
     {
-      inMenuLoop = false;
       manualModeLoop();
+      inMenuLoop = false;
     }
   }
 }  

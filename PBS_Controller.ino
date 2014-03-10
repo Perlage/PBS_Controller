@@ -259,7 +259,7 @@ void setup()
   //Initial user message 
   messageInitial();
   
-  ///* Comment out preceding comment delimeter for normal operation--696 bytes
+  /* Comment out preceding comment delimeter for normal operation--696 bytes
   // ################################################################################
 
   // If P1 is not high, then there is no bottle, or bottle pressure is low. So raise platform--but take time to make user close door, so no pinching
@@ -321,7 +321,7 @@ void setup()
   delay(100); digitalWrite(light1Pin, LOW);
 
 // #####################################################################################
-//*/ // Comment out preceding comment delimeter out for normal operation
+*/ // Comment out preceding comment delimeter out for normal operation
 
 }
   

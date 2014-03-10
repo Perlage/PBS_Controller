@@ -8,7 +8,7 @@ void manualModeLoop()
   {
     inManualModeLoop1 = true;
     sensorFillState = HIGH; // Set it high and don't read it anymore
-    buzzer (1000);
+    //buzzer (1000);
     
     // FUNCTION Dump pressure
     pressureDump();
@@ -127,8 +127,9 @@ void manualModeLoop()
   {
     inManualModeLoop = false;
     
+    lcd.clear();
     lcd.setCursor (0, 0); lcd.print (F("EXITING MANUAL MODE "));
-    lcd.setCursor (0, 1); lcd.print (F("                    "));
-    lcd.setCursor (0, 2); lcd.print (F("Continuing...       "));
+    //lcd.setCursor (0, 1); lcd.print (F("                    "));
+    //lcd.setCursor (0, 2); lcd.print (F("Continuing...       "));
   }  
 }
