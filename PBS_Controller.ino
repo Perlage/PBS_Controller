@@ -339,9 +339,20 @@ void loop()
   button1State     = !digitalRead(button1Pin); 
   button2StateTEMP = !digitalRead(button2Pin); 
   button3StateTEMP = !digitalRead(button3Pin); 
-  switchDoorState  =  digitalRead(switchDoorPin);
   switchModeState  =  digitalRead(switchModePin);
   delay(10);
+  
+  boolean switchDoorStateTemp;
+  switchDoorStateTemp  =  digitalRead(switchDoorPin);
+  if (switchDoorStateTemp == !switchDoorState)
+  {
+    buzzer(500);
+    switchDoorState  =  digitalRead(switchDoorPin);
+    if (switchDoorState == switchDoorStateTemp)
+    {
+    }
+  }
+
 
   //Check Button2 toggle state
   //======================================================================

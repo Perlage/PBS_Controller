@@ -57,12 +57,19 @@ float pressureConv2(int P2)
 void doorOpen()
 {
   switchDoorState = digitalRead(switchDoorPin); 
+  if (switchDoorState == !switchDoorState)
+  {
+  }
+  
   while (switchDoorState == LOW && (P1 - offsetP1) <= pressureDeltaDown)
   {
+    digitalWrite(light3Pin, HIGH);
     relayOn (relay6Pin, true);  // Open door
     lcd.setCursor (0, 2); lcd.print (F("Opening door...     "));
+    delay(500);
     switchDoorState = digitalRead(switchDoorPin); 
     P1 = analogRead(sensorP1Pin);
+    digitalWrite(light3Pin, LOW);
   }
   relayOn (relay6Pin, false);
   lcd.setCursor (0, 2); lcd.print (F("                    "));
