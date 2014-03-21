@@ -2,7 +2,7 @@
 // CODE FRAGMENTS 
 // =============================================================================================
 
-
+/*
 // FLASH MEMORY STRING HANDLING
 //=====================================================================================
 
@@ -40,7 +40,8 @@ const char *strLcdTable[] PROGMEM =  // Name of table following * is arbitrary
 for (int n = 8; n <= 11; n++){
   strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
   printLcd (n % 4, bufferP);}
-  
+
+*/  
   
 //===============================================================================================
  

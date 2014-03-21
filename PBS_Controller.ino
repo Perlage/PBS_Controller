@@ -24,6 +24,8 @@ String (versionSoftwareTag) = "v1.0"     ;     // 2nd pressure sensor rev'd to 0
 #include <EEPROM.h>
 //#include <avr/pgmspace.h>                      // 1-26 Added for PROGMEM function // UNUSED now
 //#include <math.h>                              // Unused
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 LiquidCrystal_I2C lcd(0x3F,20,4);  
 
@@ -52,6 +54,22 @@ const int light3Pin                  = A5;     // pin for button3 light
 
 // A0 formerly was sensor1, which is closest to what we now call bottle pressure, and A1 was unused. 
 // So switched sensor1 to A1 to make code changes easier. All reads of sensor1 will now read bottle pressure
+
+//Temperature probe initializtion
+//====================================================
+// Data wire is plugged into pin A2 on the Arduino
+// For parasitic power, must ground power wire!!!
+#define ONE_WIRE_BUS A2
+
+// Setup a oneWire instance to communicate with any OneWire devices
+OneWire oneWire(ONE_WIRE_BUS);
+
+// Pass our oneWire reference to Dallas Temperature. 
+DallasTemperature sensors(&oneWire);
+
+// Assign the addresses of your 1-Wire temp sensors.
+DeviceAddress liquidThermometer = { 0x28, 0x07, 0x74, 0x4E, 0x05, 0x00, 0x00, 0x29 };
+
 
 // Declare variables and inititialize states
 // ===========================================================================  
@@ -206,7 +224,27 @@ void setup()
   lcd.init();
   lcd.backlight();
   
+  // Temperature initialization ======================================================
+  // Start up the library
+  sensors.begin();
+  // set the resolution to 10 bit (good enough?)
+  sensors.setResolution(liquidThermometer, 10);
+  
+  // Main temperature function
+  void printTemperature(DeviceAddress deviceAddress)
+  {
+    float tempC = sensors.getTempC(deviceAddress);
+    if (tempC == -127.00) {
+      Serial.print("Error getting temperature");
+    } else {
+      Serial.print("C: ");
+      Serial.print(tempC);
+      Serial.print(" F: ");
+      Serial.print(DallasTemperature::toFahrenheit(tempC));
+    }
+  }
 
+  
   //===================================================================================
   // STARTUP ROUTINE
   //===================================================================================
@@ -339,9 +377,20 @@ void loop()
   button1State     = !digitalRead(button1Pin); 
   button2StateTEMP = !digitalRead(button2Pin); 
   button3StateTEMP = !digitalRead(button3Pin); 
-  switchDoorState  =  digitalRead(switchDoorPin);
   switchModeState  =  digitalRead(switchModePin);
   delay(10);
+  
+  boolean switchDoorStateTemp;
+  switchDoorStateTemp  =  digitalRead(switchDoorPin);
+  if (switchDoorStateTemp == !switchDoorState)
+  {
+    buzzer(500);
+    switchDoorState  =  digitalRead(switchDoorPin);
+    if (switchDoorState == switchDoorStateTemp)
+    {
+    }
+  }
+
 
   //Check Button2 toggle state
   //======================================================================
