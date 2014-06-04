@@ -182,7 +182,7 @@ void setup()
   pinMode(light1Pin, OUTPUT); 
   pinMode(light2Pin, OUTPUT);
   pinMode(light3Pin, OUTPUT);
-  pinMode(sensorFillPin, INPUT_PULLUP); 
+  pinMode(sensorFillPin, INPUT); 
   pinMode(switchDoorPin, INPUT_PULLUP); 
   pinMode(switchModePin, INPUT_PULLUP);
   pinMode(buzzerPin, OUTPUT);
