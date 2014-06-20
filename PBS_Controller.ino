@@ -14,8 +14,8 @@ Copyright 2013, 2014  All rights reserved
 */
 
 //Version control variables
-String (versionSoftwareTag)   = "v1.0"     ;     // 2nd pressure sensor rev'd to 0.6
-//String (versionHardwareTag) = "v0.6.0.0" ;     // 2nd sensor rev'd to v0.6
+String (versionSoftwareTag)   = "v1.0"   ;     // 2nd pressure sensor rev'd to 0.6
+//String (versionHardwareTag) = "v1.0.0.0" ;     // 2nd sensor rev'd to v0.6
 
 //Library includes
 #include <Wire.h> 
