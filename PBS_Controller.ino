@@ -748,7 +748,8 @@ void loop()
       relayOn(relay2Pin, false);
       
       delay (25);
-      sensorFillState = digitalRead(sensorFillPin); 
+      //sensorFillState = digitalRead(sensorFillPin); //TO DO: SET sensorFillState to LOW rather than meassuring it for force into depressurize loop. This is what we do after detecting foam--not measuring But think about case where liquid doesn't siphone down and stays in contact it
+      sensorFillState = HIGH;
              
       button3State = LOW; // This make AUTO-depressurize after overfill // TO DO: shouldn't this be AutoMode_1?
     }
