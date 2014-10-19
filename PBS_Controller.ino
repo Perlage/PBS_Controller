@@ -334,22 +334,6 @@ void loop()
   //MAIN LOOP IDLE FUNCTIONS
   //=====================================================================
   
-  
-  Serial.print ("IN MAIN LOOP: "); 
-  Serial.print ("button1State= ");
-  Serial.print (button1State);  
-  Serial.print (" button2StateTEMP= ");
-  Serial.print (button2StateTEMP); 
-  Serial.print ("button3StateTEMP= ");
-  Serial.print (button3StateTEMP); 
-  Serial.print ("switchDoorState= ");
-  Serial.print (switchDoorState); 
-  Serial.print ("sensorFillState= ");
-  Serial.print (sensorFillState);   
-  Serial.println (); 
-  
-
-  
   // Read the state of buttons and sensors
   // Boolean NOT (!) added for touchbuttons so that HIGH button state (i.e., button pressed) reads as LOW (this was easiest way to change software from physical buttons, where pressed = LOW) 
   button1State     = !digitalRead(button1Pin); 
@@ -560,7 +544,6 @@ void loop()
   P2 = analogRead(sensorP2Pin);       
   
   while((button2State == LOW || platformLockedNew == true) && switchDoorState == LOW && platformStateUp == true && (P1 - offsetP1 <= P2 - offsetP2 - pressureDeltaUp)) 
-
   { 
     inPressurizeLoop = true;
 
@@ -606,23 +589,6 @@ void loop()
       */
     }
     
-  Serial.print ("IN PRESSURIZE LOOP: "); 
-  Serial.print ("button1State= ");
-  Serial.print (button1State);  
-  Serial.print (" button2StateTEMP= ");
-  Serial.print (button2StateTEMP); 
-  Serial.print ("button3StateTEMP= ");
-  Serial.print (button3StateTEMP); 
-  Serial.print ("switchDoorState= ");
-  Serial.print (switchDoorState); 
-  Serial.print ("sensorFillState= ");
-  Serial.print (sensorFillState);   
-  Serial.println (); 
-  
-
-
-
-
     //Read sensors
     switchDoorState = digitalRead(switchDoorPin); //Check door switch    
     P1 = analogRead(sensorP1Pin); // Don't really even need to read P2; read it going into loop?
@@ -692,26 +658,11 @@ void loop()
   P1 = analogRead (sensorP1Pin);
   P2 = analogRead (sensorP2Pin);
 
-  // pinMode(sensorFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
+  pinMode(sensorFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
 
   // With two sensors, the pressure condition should absolutely prevent any liquid sprewing. pressureDeltaMax ensures: a) filling can't go too fast; b) can't dispense w/ no bottle
   while(button2State == LOW && sensorFillState == HIGH && switchDoorState == LOW && (P1 - offsetP1) > pressureDeltaMax) 
   {     
-
-  Serial.print ("IN FILL LOOP: "); 
-  Serial.print ("button1State= ");
-  Serial.print (button1State);  
-  Serial.print (" button2StateTEMP= ");
-  Serial.print (button2StateTEMP); 
-  Serial.print ("button3StateTEMP= ");
-  Serial.print (button3StateTEMP); 
-  Serial.print ("switchDoorState= ");
-  Serial.print (switchDoorState); 
-  Serial.print ("sensorFillState= ");
-  Serial.print (sensorFillState);   
-  Serial.println (); 
-  
-
     inFillLoop = true;
     inFillLoopExecuted = true; //This is an "is dirty" variable for counting lifetime bottles. Reset in platformUpLoop.
 
@@ -861,22 +812,6 @@ void loop()
   LABEL_inDepressurizeLoop:
   
   while(button3State == LOW && sensorFillState == HIGH && (P1 - offsetP1 >= pressureDeltaDown)) 
-
-
-  Serial.print ("IN DE-PRESSURIZE LOOP: "); 
-  Serial.print ("button1State= ");
-  Serial.print (button1State);  
-  Serial.print (" button2StateTEMP= ");
-  Serial.print (button2StateTEMP); 
-  Serial.print ("button3StateTEMP= ");
-  Serial.print (button3StateTEMP); 
-  Serial.print ("switchDoorState= ");
-  Serial.print (switchDoorState); 
-  Serial.print ("sensorFillState= ");
-  Serial.print (sensorFillState);   
-  Serial.println (); 
-  
-
   {  
     inDepressurizeLoop = true;
     digitalWrite(light3Pin, HIGH);
