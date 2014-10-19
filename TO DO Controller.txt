@@ -1,7 +1,47 @@
-
-
 TO DO
 =============
+
+--Should we consider moving P1 measurement to keg, not regulator? i.e., put T to P1 downstream of Checkvalve
+
+--Do we need to "debounce" with delays? do they even work?
+
+--Remove SwitchModeState code
+
+--DARDEN: Why NOT leave S3 open after depressurization, to account for case where bottle depressurizes quickly and THEN foams. Can get a mini spew if foam and pressure build after platform starts to lower. Answer: I think we are already leaving B3 open until platform drops. Maybe we should add a fill sensor check to platform down?
+
+--DARDEN: Several times had to reboot when machine stuck at "B2 toggles filling, B3 toggles exhaust" screen. I think bottle was empty and pressurized in this state, or possibly after a foam tamp. FillState is not checked before the Fill Loop...maybe add a FillState check before the fill loop, to prevent the FillState being set to low somehow, making it impossible to get back to the fill loop? [UPDATE: On Oct 6 video call with rebecca, watched machine lock twice after closing door. Bottle was empty and pressurized, but no buttons were active. THis tends to support hypothesis about fillstate being set low, and not being able to get into filling loop. All buttons unlit, btw, and inactive. Screen is "B2 toggles, B3 toggles exhaust" ]
+
+--DARDEN: Had to reboot after adjusting Autosiphon value once.
+
+--DARDEN: After a "Filling too fast" error, make user restart flow with B2
+
+--With Needle Valve shut completely, when filling, Reg = 40.7 BOttle = 34.7. When B2 is toggled off, bottle goes up to 38.2. Why does it go up??
+
+--Pressing B3 to open door: When you leave your finger on B3, Platform Down activates.
+
+--Need to find way to eliminate screen flicker on pressure measurements
+
+--MANUAL MODE. Shouldn't B2 be labled liquid IN?. 
+
+--MANUAL MODE: Just report REG and BOTTLE pressure...not Diff
+
+--MANUAL MODE: Should we remove the pressure check? Ie, B2 opens valve whether or not bottle is pressurized. (But door must be closed)
+
+--MANUAL MODE: After filling cycle, platform down gets locked out if you take finger off B3. Hitting B1 will release, but shouldn't hvae to do that
+
+--Manual Mode: Buttons should light.
+
+--No need to show regulator pressure all the time, is there? Just in Idle state.
+
+--With highly conductive liquids, machine sometimes locks after overfill detecttion. this is becasue we are MEASURING the fill state after overfill. Should just SET sensorFillState to LOW rather than meassuring it to force into depressurize loop. This is what we do after detecting foam. BUT--think about case where liquid doesn't siphone down and stays in contact with fill sensor. Then what?
+
+--Can we integrate QA firmware into main? Maybe holding B1+B3 on bootup ==> repeating test phase
+
+--Since bootloader appears to no longer load, may need to introduce slight delay at boot to be able to get to menu or manual mode or EEProm set or QA routine.
+
+--Should be able to get to Menu with no gas attached
+
+--Shouldn't do bootup routine when stuck bottle is detected--confusing (remember Aspen)
 
 --Need way to drop platform w no gas
 
@@ -28,6 +68,12 @@ TO DO
 MECHANICAL
 ================
 
+
+
+
+DONE
+=============
+
 --Stainless valve
 
 http://www.ingersollrandproducts.com/am-en/products/fluid/pneumatic-valves-and-cylinders/pneumatic-valves/flow-controls/in-line-composite
@@ -44,10 +90,6 @@ http://www.ingersollrandproducts.com/am-en/products/fluid/pneumatic-valves-and-c
 --Tip fell off once at SACC
 
 --Door sticks sometimes due to stickiness and sometimes due to rubbing.
-
-
-DONE
-=============
 
 --Buff out menu routine
 
