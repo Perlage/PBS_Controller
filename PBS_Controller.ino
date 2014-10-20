@@ -331,6 +331,8 @@ void setup()
 
 void loop()
 {
+
+  
   //MAIN LOOP IDLE FUNCTIONS
   //=====================================================================
   
@@ -341,6 +343,8 @@ void loop()
   button3StateTEMP = !digitalRead(button3Pin); 
   switchDoorState  =  digitalRead(switchDoorPin);
   switchModeState  =  digitalRead(switchModePin);
+  sensorFillState  =  digitalRead(sensorFillPin); //Check fill sensor
+
   delay(10);
 
   //Check Button2 toggle state
@@ -366,6 +370,23 @@ void loop()
     button3ToggleState = false; //buttonState remains HIGH
   }
    
+  Serial.print ("IN MAIN LOOP: "); 
+  Serial.print ("; button2State= ");
+  Serial.print (button2State); 
+  Serial.print ("; button2ToggleState= ");
+  Serial.print (button2ToggleState); 
+  Serial.print ("; button3State= ");
+  Serial.print (button3State); 
+  Serial.print ("; button3ToggleState= ");
+  Serial.print (button3ToggleState); 
+  Serial.print ("; switchDoorState= ");
+  Serial.print (switchDoorState); 
+  Serial.print ("; sensorFillState= ");
+  Serial.print (sensorFillState);   
+  Serial.println (); 
+
+
+
   // Give relevant instructions in null loop
   //======================================================================
   if (switchDoorState == LOW && platformStateUp == false)
@@ -595,7 +616,7 @@ void loop()
    
     //Check toggle state of B2
     button2StateTEMP = !digitalRead(button2Pin);
-    delay(25);  //Debounce
+    //delay(25);  //Debounce
     if (button2StateTEMP == HIGH && button2ToggleState == false){  //ON release
       button2ToggleState = true;                                   //leave button state LOW
       button2State = LOW;                                          //or make it low if it isn't yet
@@ -611,6 +632,24 @@ void loop()
     // Pressure output
     pressureOutput();
     printLcd(3, outputPSI_b); 
+
+
+  Serial.print ("IN PRESSURIZE LOOP: "); 
+  Serial.print ("; button2State= ");
+  Serial.print (button2State); 
+  Serial.print ("; button2ToggleState= ");
+  Serial.print (button2ToggleState); 
+  Serial.print ("; button3State= ");
+  Serial.print (button3State); 
+  Serial.print ("; button3ToggleState= ");
+  Serial.print (button3ToggleState); 
+  Serial.print ("; switchDoorState= ");
+  Serial.print (switchDoorState); 
+  Serial.print ("; sensorFillState= ");
+  Serial.print (sensorFillState);   
+  Serial.println (); 
+  
+
   }
     
   // PRESSURIZE LOOP EXIT ROUTINES
@@ -661,8 +700,12 @@ void loop()
   pinMode(sensorFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
 
   // With two sensors, the pressure condition should absolutely prevent any liquid sprewing. pressureDeltaMax ensures: a) filling can't go too fast; b) can't dispense w/ no bottle
-  while(button2State == LOW && sensorFillState == HIGH && switchDoorState == LOW && (P1 - offsetP1) > pressureDeltaMax) 
+  // Added inCleaningMode check so can toggle this in Filling Mode
+  while(button2State == LOW && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1) > pressureDeltaMax) 
   {     
+
+
+
     inFillLoop = true;
     inFillLoopExecuted = true; //This is an "is dirty" variable for counting lifetime bottles. Reset in platformUpLoop.
 
@@ -701,6 +744,22 @@ void loop()
     }   
     
     switchModeState = digitalRead(switchModePin); //Check cleaning switch 
+
+  Serial.print ("IN FILL LOOP: "); 
+  Serial.print ("; button2State= ");
+  Serial.print (button2State); 
+  Serial.print ("; button2ToggleState= ");
+  Serial.print (button2ToggleState); 
+  Serial.print ("; button3State= ");
+  Serial.print (button3State); 
+  Serial.print ("; button3ToggleState= ");
+  Serial.print (button3ToggleState); 
+  Serial.print ("; switchDoorState= ");
+  Serial.print (switchDoorState); 
+  Serial.print ("; sensorFillState= ");
+  Serial.print (sensorFillState);   
+  Serial.println (); 
+
   }
 
   // FILL LOOP EXIT ROUTINES
@@ -811,8 +870,10 @@ void loop()
 
   LABEL_inDepressurizeLoop:
   
-  while(button3State == LOW && sensorFillState == HIGH && (P1 - offsetP1 >= pressureDeltaDown)) 
+  while(button3State == LOW && (sensorFillState == HIGH || inCleaningMode == true) && (P1 - offsetP1 >= pressureDeltaDown)) 
   {  
+
+
     inDepressurizeLoop = true;
     digitalWrite(light3Pin, HIGH);
 
@@ -858,6 +919,23 @@ void loop()
     if (button3StateTEMP == LOW && button3ToggleState == true){    // OFF push
       button3State = HIGH;                                         // Exit WHILE loop
     }
+
+  Serial.print ("IN DE-PRESS LOOP: "); 
+  Serial.print ("; button2State= ");
+  Serial.print (button2State); 
+  Serial.print ("; button2ToggleState= ");
+  Serial.print (button2ToggleState); 
+  Serial.print ("; button3State= ");
+  Serial.print (button3State); 
+  Serial.print ("; button3ToggleState= ");
+  Serial.print (button3ToggleState); 
+  Serial.print ("; switchDoorState= ");
+  Serial.print (switchDoorState); 
+  Serial.print ("; sensorFillState= ");
+  Serial.print (sensorFillState);   
+  Serial.println (); 
+
+
   }
 
   // DEPRESSURIZE LOOP EXIT ROUTINES 
