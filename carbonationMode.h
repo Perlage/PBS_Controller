@@ -1,4 +1,4 @@
-/*
+
 
 // =============================================================================================
 // CARBONATION MODE
@@ -15,8 +15,8 @@ float PSIStart;
 float timerShakeTime;                    //Time of shaking in sec, less the number of 15 second rest periods               
 boolean inShakeState;                    //Whether r not should be shaking in given 15 sec interval
 String shakeState;                       //REST or SHAKE
-float pressureDipTargetInit  = 12.7 * 2; //Initial pressure slump user is trying to hit at T=0 (12.7 units per psi)
-float pressureDipTarget;                 //Target pressure dip goes down over time as liquid saturates
+float pressureDipTargetInit  = 12.8 * 8; //Initial pressure slump user is trying to hit at T=0 (12.7 units per psi)
+float pressureDipTarget;                 //Target pressure dip goes down over time as liquid saturates. dipTarget decreases by factor of 1, 1/2, 1/3, 1/4... 
 
 button1State = !digitalRead(button1Pin); delay(10);
 while (button1State == LOW)
@@ -74,7 +74,8 @@ while (inTimingLoop == true)
   
   //Convert current P reading and start pressure to float
   PSI2 = pressureConv2(P2); 
-  PSIdiff = PSIStart - PSI2;
+  PSIdiff = PSIStart - PSI2; // This is the key measure of how much the pressure is dipping
+  
   //PSIdiff  = constrain (PSIStart - PSI2, 0, 50);
   convPSI2 = floatToString(buffer, PSI2, 1);
   convPSIdiff = floatToString(buffer, PSIdiff, 1);
@@ -85,7 +86,7 @@ while (inTimingLoop == true)
 
   float convPressureDipTarget = pressureConv2(pressureDipTarget + offsetP2); //Need to add back offset because function subtracts it
   String convPSItarget = floatToString(buffer, convPressureDipTarget, 1);
-  String outputPSI_td  = "Trgt:" + convPSItarget + " Dip:" + convPSIdiff + " psi";
+  String outputPSI_td  = "Goal:" + convPSItarget + " You:" + convPSIdiff + "psi";
   printLcd(3, outputPSI_td);  
 
   //Give user positive feedback by beeping when there is a significant pressure drop while shaking 

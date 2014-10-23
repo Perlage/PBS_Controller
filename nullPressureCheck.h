@@ -13,7 +13,7 @@ while (P1 - offsetP1 > pressureDeltaDown)
   inPressurizedBottleLoop = true;
   
   lcd.setCursor (0, 0); lcd.print (F("Pressurized bottle  "));
-  lcd.setCursor (0, 1); lcd.print (F("Found. Open valve   "));
+  lcd.setCursor (0, 1); lcd.print (F("Found. Adjust valve "));
   lcd.setCursor (0, 2); lcd.print (F("to contol venting.  "));
   pressureOutput(); printLcd(3, outputPSI_rb); 
 
@@ -64,21 +64,32 @@ if (inPressurizedBottleLoop || inPressureNullLoop)
 {
   delay(2000); // Delay gives time for getting accurate pressure reading
   pressureRegStartUp = analogRead (sensorP2Pin); // Get GOOD start pressure for emergency lock loop
-  lcd.clear();
+
+  buzzer (500);
   doorOpen(); 
-  platformStateUp = true;
-  platformDrop();
+
+  lcd.clear();
+  lcd.setCursor (0, 0); lcd.print (F("Bottle depressurized"));
+  lcd.setCursor (0, 1); lcd.print (F("Press B3 to continue"));
   
+  platformStateUp = true;
   inPressurizedBottleLoop = false;
   inPressureNullLoop = false;
 
-  button1State = !digitalRead(button1Pin);
-  while (button1State == HIGH)
+  
+  button3State = !digitalRead(button3Pin);
+  while (button3State == HIGH)
   {
-    button1State = !digitalRead(button1Pin);    
-    lcd.setCursor (0, 3); lcd.print (F("Press B1 to continue"));
+    button3State = !digitalRead(button3Pin);    
   }
-  button1State == HIGH;    
+  
+  digitalWrite(light3Pin, HIGH);
+  buzzer(500);
+  digitalWrite(light3Pin, LOW);
+
+  platformDrop();
+  button3State = HIGH; 
+  
 } 
 
 // END NULL PRESSURE ROUTINE

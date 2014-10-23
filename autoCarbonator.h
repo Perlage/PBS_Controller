@@ -38,4 +38,3 @@ if (button2State == LOW)
   sensorFillState == HIGH;
 }  
 
-

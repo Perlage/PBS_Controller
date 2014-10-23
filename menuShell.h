@@ -219,7 +219,7 @@ void menuShell(boolean inMenuLoop)
     buzzedOnce = false;
     if (menuOption22 == false)
     {
-      manualModeLoop();
+      //manualModeLoop();
       inMenuLoop = false;
     }
   }

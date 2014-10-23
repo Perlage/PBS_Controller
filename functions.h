@@ -64,6 +64,7 @@ void doorOpen()
     switchDoorState = digitalRead(switchDoorPin); 
     P1 = analogRead(sensorP1Pin);
   }
+  delay(250); // Added delay to prevent door from catching on latch
   relayOn (relay6Pin, false);
   lcd.setCursor (0, 2); lcd.print (F("                    "));
 }
@@ -114,7 +115,7 @@ void readButtons()
   button1State = !digitalRead(button1Pin); 
   button2State = !digitalRead(button2Pin); 
   button3State = !digitalRead(button3Pin); 
-  delay (10); //debounce
+  //delay (10); //debounce
 }
 
 // FUNCTION: Read Sensors
@@ -124,7 +125,7 @@ void readStates()
   switchDoorState = digitalRead(switchDoorPin);
   switchModeState = digitalRead(switchModePin);
   sensorFillState = digitalRead(sensorFillPin);
-  delay (25); //debounce
+  //delay (25); //debounce
 }
 
 // FUNCTION: Read Sensors
@@ -139,7 +140,7 @@ void readInputs()
   switchModeState = digitalRead(switchModePin);
   P1 = analogRead(sensorP1Pin);
   P2 = analogRead(sensorP2Pin); 
-  delay (25); //debounce
+  //delay (25); //debounce
 }
 
 // FUNCTION: Pressure reading/conversion/output
