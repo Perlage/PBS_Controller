@@ -45,8 +45,8 @@ void platformUpLoop()
       platformStateUp = true;
       platformLockedNew = true; //Pass this to PressureLoop for autopressurize on door close--better than trying to pass button2State = LOW, which causes problems
 
-      lcd.setCursor (0, 0); lcd.print (F("To fill, close door "));
-      lcd.setCursor (0, 1); lcd.print (F("B2 toggles filling  "));
+      lcd.setCursor (0, 0); lcd.print (F("To fill, close door;"));
+      lcd.setCursor (0, 1); lcd.print (F("B3 drops platform.  "));
       lcd.setCursor (0, 2); lcd.print (F("Ready...            "));
 
       buzzer(250);

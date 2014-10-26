@@ -99,7 +99,7 @@
       <IsBreakWhenHit>0</IsBreakWhenHit>
       <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
       <UseChecksum>1</UseChecksum>
-      <Labels />
+      <Labels>MAIN LOOP</Labels>
       <RequestRemapped>0</RequestRemapped>
       <parentIndex>-1</parentIndex>
     </Breakpoint>
@@ -201,7 +201,7 @@
       <IsBreakWhenHit>0</IsBreakWhenHit>
       <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
       <UseChecksum>1</UseChecksum>
-      <Labels />
+      <Labels>PRESSURE LOOP</Labels>
       <RequestRemapped>0</RequestRemapped>
       <parentIndex>-1</parentIndex>
     </Breakpoint>
@@ -252,7 +252,7 @@
       <IsBreakWhenHit>0</IsBreakWhenHit>
       <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
       <UseChecksum>1</UseChecksum>
-      <Labels />
+      <Labels>PRESSURE LOOP EXIT</Labels>
       <RequestRemapped>0</RequestRemapped>
       <parentIndex>-1</parentIndex>
     </Breakpoint>
@@ -303,7 +303,7 @@
       <IsBreakWhenHit>0</IsBreakWhenHit>
       <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
       <UseChecksum>1</UseChecksum>
-      <Labels />
+      <Labels>FILL LOOP</Labels>
       <RequestRemapped>0</RequestRemapped>
       <parentIndex>-1</parentIndex>
     </Breakpoint>
@@ -354,7 +354,7 @@
       <IsBreakWhenHit>0</IsBreakWhenHit>
       <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
       <UseChecksum>1</UseChecksum>
-      <Labels />
+      <Labels>FILL LOOP EXIT</Labels>
       <RequestRemapped>0</RequestRemapped>
       <parentIndex>-1</parentIndex>
     </Breakpoint>
@@ -405,7 +405,7 @@
       <IsBreakWhenHit>0</IsBreakWhenHit>
       <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
       <UseChecksum>1</UseChecksum>
-      <Labels />
+      <Labels>AFTER OVERFILL</Labels>
       <RequestRemapped>0</RequestRemapped>
       <parentIndex>-1</parentIndex>
     </Breakpoint>
@@ -451,12 +451,12 @@
       </AddressLocation>
       <DataCount>4</DataCount>
       <AutomationInfo>&lt;vmbp Id='8c17b4df-3c2c-4795-9ece-ef49f6d2533e'/&gt;</AutomationInfo>
-      <TracepointText>DEPRESSURIZE LOOP: switchDoorState: {switchDoorState}; sensorFillState: {sensorFillStateTEMP}</TracepointText>
+      <TracepointText>DEPRESSURIZE LOOP: switchDoorState: {switchDoorState}; sensorFillState: {sensorFillState}</TracepointText>
       <IsTracepointActive>1</IsTracepointActive>
       <IsBreakWhenHit>0</IsBreakWhenHit>
       <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
       <UseChecksum>1</UseChecksum>
-      <Labels />
+      <Labels>DEPRESSURIZE LOOP</Labels>
       <RequestRemapped>0</RequestRemapped>
       <parentIndex>-1</parentIndex>
     </Breakpoint>
@@ -507,7 +507,7 @@
       <IsBreakWhenHit>0</IsBreakWhenHit>
       <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
       <UseChecksum>1</UseChecksum>
-      <Labels />
+      <Labels>DEPRESSURIZE LOOP EXIT</Labels>
       <RequestRemapped>0</RequestRemapped>
       <parentIndex>-1</parentIndex>
     </Breakpoint>
@@ -522,10 +522,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\PBS_Controller.ino</FileName>
-        <startLine>822</startLine>
+        <startLine>820</startLine>
         <StartColumn>0</StartColumn>
-        <EndLine>822</EndLine>
-        <EndColumn>44</EndColumn>
+        <EndLine>820</EndLine>
+        <EndColumn>6</EndColumn>
         <MarkerId>45</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -552,13 +552,13 @@
         <Language>00000000-0000-0000-0000-000000000000</Language>
       </AddressLocation>
       <DataCount>4</DataCount>
-      <AutomationInfo>&lt;vmbp Id='e8178366-664d-4974-a23e-b9d2f4cea734'/&gt;</AutomationInfo>
+      <AutomationInfo>&lt;vmbp Id='3f688933-ac0c-419a-ac17-88d003714684'/&gt;</AutomationInfo>
       <TracepointText> sensorFillState:  {digitalRead(sensorFillPin)}</TracepointText>
       <IsTracepointActive>1</IsTracepointActive>
       <IsBreakWhenHit>0</IsBreakWhenHit>
       <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
       <UseChecksum>1</UseChecksum>
-      <Labels />
+      <Labels>AFTER FOAM DETECTION</Labels>
       <RequestRemapped>0</RequestRemapped>
       <parentIndex>-1</parentIndex>
     </Breakpoint>

@@ -104,7 +104,7 @@ int offsetP1;                                   // Zero offset for pressure sens
 int offsetP2;                                   // Zero offest for pressure sensor2 (input regulator). Ditto above.
 const int pressureDeltaUp            = 50;      // Pressure at which, during pressurization, full pressure is considered to have been reached // Tried 10, 38; went back to 50 to prevent repressurizing after fill button cycle
 const int pressureDeltaDown          = 38;      // Pressure at which, during depressurizing, pressure considered to be close enough to zero // 38 works out to 3.0 psi 
-const int pressureDeltaMax           = 100;     // This is max pressure difference allowed on filling (i.e., limits fill speed) //v1.1 Now can reduce this significantly from 250 since have two pressure sensors
+const int pressureDeltaMax           = 300;     // This is max pressure difference allowed on filling (i.e., limits fill speed) //v1.1 Now can reduce this significantly from 250 since have two pressure sensors. 100 is good.
 const int pressureNull               = 200;     // This is the threshold for the controller deciding that no gas source is attached. 
 const int pressureDropAllowed        = 100;     // Max pressure drop allowed in session before alarm sounds
 int pressureRegStartUp;                         // Starting regulator pressure. Will use to detect pressure sag during session; and to find proportional values for key pressure variables (e.g. pressureDeltaMax)
@@ -268,6 +268,8 @@ void setup()
   //UNCOMMENT OUT NEXT LINE FOR SHOW
   //relayOn(relay4Pin, true);  // Now Raise platform     
   
+  
+  /*
   // Leave blink loop and light all lights 
   digitalWrite(light1Pin, HIGH); delay(500);
   digitalWrite(light2Pin, HIGH); delay(500);
@@ -281,14 +283,14 @@ void setup()
   String (convInt) = floatToString(buffer, autoSiphonDurationSec, 1);
   String (outputInt) = "Autosiphon: " + convInt + " sec";
   printLcd (2, outputInt); 
-  delay(1500); 
+  delay(1000); 
 
   convInt = floatToString(buffer, numberCycles, 0);
   outputInt = "Total fills: " + convInt;
   printLcd (2, outputInt);  
   delay (1000);
 
-  // Open door if closed. Moved this to make sure door opens before plaform drops in case of unpressurized stuck bottle
+  // Open door if closed. Moved this to make sure door opens before platform drops in case of unpressurized stuck bottle
   doorOpen();
   
   // Drop platform in case it is up, which had been raised before nullpressure checks
@@ -298,13 +300,15 @@ void setup()
   relayOn(relay5Pin, false); 
   relayOn(relay3Pin, false); // Close this so solenoid doesn't overhead on normal startup
 
-  delay(500); digitalWrite(light3Pin, LOW);
+  digitalWrite(light3Pin, LOW);
   delay(100); digitalWrite(light2Pin, LOW);
   delay(100); digitalWrite(light1Pin, LOW);
   
   buzzer (1000);
+  */
 }
-  
+
+    
 //====================================================================================================================================
 // MAIN LOOP =========================================================================================================================
 //====================================================================================================================================
@@ -358,13 +362,12 @@ void loop()
   }
   if (switchDoorState == HIGH && platformStateUp == false)
   {
-    lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
-    lcd.setCursor (0, 1); lcd.print (F("B1 raises platform. "));  
+	messageInsertBottle(); //Insert Bottle; B1 raises Platform
   }  
   /*
-  if (platformStateUp == true)
+  if (platformStateUp == true && switchDoorState == HIGH)
   {
-    lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; ")); //This will rarely get hit
+    lcd.setCursor (0, 0); lcd.print (F("B3 drops platform   ")); //This will rarely get hit
     lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
   }
   */
@@ -429,7 +432,7 @@ void loop()
   //======================================================================
 
   pressureOutput();
-  if (P1 - offsetP1 > pressureDeltaDown){
+  if (P1 - offsetP1 > pressureDeltaDown || (platformStateUp ==  true && autoMode_1 == true)){
     printLcd(3, outputPSI_rb); // Print reg and bottle if bottle pressurized
   }
   else{
@@ -444,10 +447,8 @@ void loop()
     emergencyDepressurize();
   }  
 
-
   //  This routine takes action if pressure drops in idle loop. TO DO: NEEDS WORK
   idleLoopPressureDrop();
-  
   
   // =====================================================================================  
   // PLATFORM RAISING LOOP
@@ -586,8 +587,6 @@ void loop()
   P1 = analogRead (sensorP1Pin);
   P2 = analogRead (sensorP2Pin);
 
-  //pinMode(sensorFillPin, INPUT_PULLUP); //Probably no longer necessary since FillSwitch was moved off Pin13 (Zach proposed this Oct-7)
-
   // First pressureDeltaMax condition ensures filling can't go too fast (unless in cleaning mode); second ensures can't dispense w/out pressurized bottle
   // v1.1 Changed the pressureDeltaMax condition to reflect fact that there are two sensors
   while(button2State == LOW && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true) && (P1 - offsetP1) > pressureDeltaMax) 
@@ -684,7 +683,6 @@ void loop()
       }  
       //sensorFillState = digitalRead(sensorFillPin); //TO DO: SET sensorFillState to LOW rather than meassuring it for force into depressurize loop. This is what we do after detecting foam--not measuring But think about case where liquid doesn't siphone down and stays in contact it
       sensorFillState = HIGH; // Changed it back to this
-
       button3State = LOW; // This make AUTO-depressurize after overfill // TO DO: shouldn't this be AutoMode_1?
     }
     else 
@@ -745,13 +743,23 @@ void loop()
   // DEPRESSURIZE LOOP
   //========================================================================================
   
-  while(button3State == LOW && (sensorFillState == HIGH || inCleaningMode == true) && (P1 - offsetP1 >= pressureDeltaDown)) 
+  while(button3State == LOW && (sensorFillState == HIGH || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && (P1 - offsetP1 >= pressureDeltaDown)) //v1.1 added sensor override
   {  
     inDepressurizeLoop = true;
-    digitalWrite(light3Pin, HIGH);
-
     relayOn(relay3Pin, true); //Open Gas Out solenoid
-    
+   
+	digitalWrite(light3Pin, HIGH);
+	
+	//v1.1 added as part of sensor override
+	if (!digitalRead(button1Pin) == LOW)
+	{
+		digitalWrite(light1Pin, HIGH);
+	}
+	else 
+	{
+		digitalWrite(light1Pin, LOW);
+	}
+	
     // Pressure output    
     pressureOutput();
     printLcd(3, outputPSI_rb); 
@@ -803,7 +811,10 @@ void loop()
     printLcd(2, "");
     //relayOn(relay3Pin, false);     //Used to close S3 here. Try leaving it open when in auto mode until platform drops
     
-    // CASE 1: Button3 released
+	// Turn off Light 1 if on
+	digitalWrite(light1Pin, LOW);
+    
+	// CASE 1: Button3 released
     if (button3State == HIGH)  
     { 
       relayOn(relay3Pin, false);     //Used to repressurize here; now we don't  
@@ -811,7 +822,7 @@ void loop()
     }
     
     // CASE 2: Foam tripped sensor
-    if (sensorFillState == LOW)
+    if (sensorFillState == LOW && !digitalRead(button1Pin) == HIGH)
     {
       lcd.setCursor (0, 2); lcd.print (F("Foam detected...wait"));
       relayOn(relay3Pin, false);  
@@ -824,8 +835,6 @@ void loop()
       {
         lcd.setCursor (0, 2); lcd.print (F("Clearing Foam Sensor"));
         delay(1000); //Decided to just have a delay instead
-        //relayOn(relay3Pin, true); delay (750); relayOn(relay3Pin, false);
-        //relayOn(relay2Pin, true); delay (250); relayOn(relay2Pin, false);
       }
       
       lcd.setCursor (0, 2); lcd.print (F("                    "));
@@ -839,6 +848,8 @@ void loop()
     {
       buzzer(100);
       autoMode_1 = true;  //Going to platform loop automatically, so set this var to partially drop platform 
+	  			lcd.setCursor (0, 0); lcd.print (F("B3 lowers platform; "));
+	  			lcd.setCursor (0, 1); lcd.print (F("Grasp bottle first. "));
     }
     
     digitalWrite(light3Pin, LOW);
@@ -885,19 +896,37 @@ void loop()
   // PLATFORM LOWER LOOP 
   // Platform will not lower with door closed. This prevents someone from defeating door switch
   // ===========================================================================================
-
-  LABEL_PlatformLowerLoop:
   
-  // 1-24 Added sensorFillState == HIGH to prevent lowering plaform is foam is hitting sensor
-  while((button3State == LOW || autoMode_1 == true) && switchDoorState == HIGH && sensorFillState == HIGH && (P1 - offsetP1) <= pressureDeltaDown)
+  // This is a catch routine to remind the user to open the exhaust if there is foam present in the neck of bottle
+  if (digitalRead(sensorFillPin) == LOW && switchDoorState == HIGH && platformStateUp == true && inFillLoopExecuted == true)
+  {
+	lcd.setCursor (0, 0); lcd.print (F("Open Exhaust valve  "));
+	lcd.setCursor (0, 1); lcd.print (F("to prevent spray;   "));
+	lcd.setCursor (0, 2); lcd.print (F("press B3 to resume. "));
+	//button3State = HIGH; // Force button state high and wait for input
+	
+	while(!digitalRead(button3Pin) == HIGH)
+	{
+		pressureOutput();
+		printLcd(3, outputPSI_b);
+		digitalWrite(light3Pin, HIGH);
+		buzzer (75);
+		digitalWrite(light3Pin, LOW);
+		delay (350);
+	}
+  }
+
+  while((!digitalRead(button3Pin) == LOW) && switchDoorState == HIGH && (P1 - offsetP1) <= pressureDeltaDown) // Removed || autoMode_1 == true and  && (digitalRead(sensorFillPin) == HIGH)
   {
     inPlatformLowerLoop = true;
-    relayOn(relay4Pin, false); // Finally can close platform up solenoid
+    digitalWrite(light3Pin, HIGH);
+	relayOn(relay4Pin, false); // Finally can close platform up solenoid
     lcd.setCursor (0, 2); lcd.print (F("Lowering platform..."));
     
     if(autoMode_1 == true)
     {
-      relayOn(relay5Pin, true);
+      digitalWrite(light3Pin, HIGH);
+	  relayOn(relay5Pin, true);
       delay(autoPlatformDropDuration);  //Can adjust this value to determine how much to drop the platform in full auto mode
       relayOn(relay5Pin, false);
       button3State = HIGH;
@@ -906,14 +935,15 @@ void loop()
     else
     {
       //relayOn(relay3Pin, true);  // May as well leave this open? YES. Liquid is still outgassing.//TO DO: Don't need this here?? it's already open?
-      relayOn(relay5Pin, true);  // Open cylinder exhaust
       digitalWrite(light3Pin, HIGH); 
+	  relayOn(relay5Pin, true);  // Open cylinder exhaust
     }
 
     P1 = analogRead(sensorP1Pin);
     button3State = !digitalRead(button3Pin);
     switchDoorState =  digitalRead(switchDoorPin);
     sensorFillState =  digitalRead(sensorFillPin);
+	digitalWrite(light3Pin, LOW);
   }
 
   // PLATFORM LOWER LOOP EXIT ROUTINES
@@ -921,7 +951,10 @@ void loop()
   
   if(inPlatformLowerLoop)
   {
-    //close platform release 
+    
+
+	
+	//close platform release 
     lcd.setCursor (0, 2); lcd.print (F("                    "));
     relayOn(relay3Pin, false); 
     relayOn(relay5Pin, false);
@@ -932,8 +965,7 @@ void loop()
     platformStateUp = false;
 
     //Prepare for next cycle
-    lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
-    lcd.setCursor (0, 1); lcd.print (F("B1 raises platform  "));
+	messageInsertBottle();
 
     // Calculate lifetime and session fills    
     if (inFillLoopExecuted)

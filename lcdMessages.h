@@ -23,3 +23,8 @@ void messageB2B3Toggles()
   lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
 }
 
+void messageInsertBottle()
+{
+  lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
+  lcd.setCursor (0, 1); lcd.print (F("B1 raises platform  "));
+}

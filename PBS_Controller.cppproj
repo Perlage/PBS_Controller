@@ -280,6 +280,8 @@ vmresolved.tools.path=C:\Program Files (x86)\Arduino\hardware\tools\avr
         <visualmicro.platform.name>avr</visualmicro.platform.name>
         <arduino.upload.port>COM6</arduino.upload.port>
         <VM.DebugVariablesWindow.ColumnVisibleBreakPointName>1</VM.DebugVariablesWindow.ColumnVisibleBreakPointName>
+        <VM.DebugVariablesWindow.ColumnVisibleVariableTimeStamp>1</VM.DebugVariablesWindow.ColumnVisibleVariableTimeStamp>
+        <VM.DebugVariablesWindow.ColumnVisibleVariableRefreshOn>1</VM.DebugVariablesWindow.ColumnVisibleVariableRefreshOn>
       </VisualMicroSettings>
     </VisualMicroSettings>
   </PropertyGroup>
@@ -523,6 +525,8 @@ vmresolved.tools.path=C:\Program Files (x86)\Arduino\hardware\tools\avr
         <visualmicro.platform.name>avr</visualmicro.platform.name>
         <arduino.upload.port>COM6</arduino.upload.port>
         <VM.DebugVariablesWindow.ColumnVisibleBreakPointName>1</VM.DebugVariablesWindow.ColumnVisibleBreakPointName>
+        <VM.DebugVariablesWindow.ColumnVisibleVariableTimeStamp>1</VM.DebugVariablesWindow.ColumnVisibleVariableTimeStamp>
+        <VM.DebugVariablesWindow.ColumnVisibleVariableRefreshOn>1</VM.DebugVariablesWindow.ColumnVisibleVariableRefreshOn>
       </VisualMicroSettings>
     </VisualMicroSettings>
   </PropertyGroup>

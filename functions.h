@@ -143,10 +143,10 @@ void pressureOutput()
   (convPSI2)      = floatToString(buffer, PSI2, 1);
   (convPSIdiff)   = floatToString(buffer, PSIdiff, 1);
 
-  (outputPSI_rbd) = "R:" + convPSI2 + " B:" + convPSI1 + " d:" + convPSIdiff; 
-  (outputPSI_rb)  = "Reg:" + convPSI2 + " Bottle:" + convPSI1;
+  (outputPSI_rbd) = "K:" + convPSI2 + " B:" + convPSI1 + " d:" + convPSIdiff; // Was R
+  (outputPSI_rb)  = "Keg:" + convPSI2 + " Bottle:" + convPSI1; //was Reg
   (outputPSI_b)   = "Bottle: " + convPSI1 + " psi"; 
-  (outputPSI_r)   = "Regulator: " + convPSI2 + " psi"; 
+  (outputPSI_r)   = "Keg: " + convPSI2 + " psi"; //Was "Regulator"
   (outputPSI_d)   = "Difference: " + convPSIdiff + " psi"; 
 }  
 
