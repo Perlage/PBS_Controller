@@ -71,6 +71,7 @@ boolean relay4State                  = HIGH;
 boolean relay5State                  = HIGH;
 boolean relay6State                  = HIGH;
 boolean sensorFillState              = HIGH; 
+boolean sensorFillStateTEMP          = HIGH;
 boolean switchDoorState              = HIGH;
 boolean switchModeState              = HIGH; //LOW is Manual, HIGH (or up) is auto (normal)
 
@@ -345,13 +346,13 @@ void loop()
 
   // Read the state of buttons and sensors
   // Boolean NOT (!) added for touchbuttons so that HIGH button state (i.e., button pressed) reads as LOW (this was easiest way to change software from physical buttons, where pressed = LOW) 
-  button1State     = !digitalRead(button1Pin); 
-  button2StateTEMP = !digitalRead(button2Pin); 
-  button3StateTEMP = !digitalRead(button3Pin); 
-  switchDoorState  =  digitalRead(switchDoorPin);
-  switchModeState  =  digitalRead(switchModePin); 
-  //sensorFillState  =  digitalRead(sensorFillPin); // Maybe we don't need to measure this
-  sensorFillState  =  HIGH; //Instead we SET the sensorState HIGH
+  button1State			= !digitalRead(button1Pin); 
+  button2StateTEMP		= !digitalRead(button2Pin); 
+  button3StateTEMP		= !digitalRead(button3Pin); 
+  switchDoorState		=  digitalRead(switchDoorPin);
+  switchModeState		=  digitalRead(switchModePin); 
+  sensorFillStateTEMP   =  digitalRead(sensorFillPin); // Maybe we don't need to measure this
+  sensorFillState		=  HIGH; //Instead we SET the sensorState HIGH
   //delay(10); //Don't need this
 
   //Check Button2 toggle state
@@ -377,23 +378,6 @@ void loop()
     button3ToggleState = false; //buttonState remains HIGH
   }
    
-  Serial.print ("IN MAIN LOOP: "); 
-  Serial.print ("; button2State= ");
-  Serial.print (button2State); 
-  Serial.print ("; button2ToggleState= ");
-  Serial.print (button2ToggleState); 
-  Serial.print ("; button3State= ");
-  Serial.print (button3State); 
-  Serial.print ("; button3ToggleState= ");
-  Serial.print (button3ToggleState); 
-  Serial.print ("; switchDoorState= ");
-  Serial.print (switchDoorState); 
-  Serial.print ("; sensorFillState= ");
-  Serial.print (digitalRead(sensorFillPin));   
-  Serial.println (); 
-
-
-
   // Give relevant instructions in null loop
   //======================================================================
   if (switchDoorState == LOW && platformStateUp == false)
@@ -646,15 +630,6 @@ void loop()
     // Pressure output
     pressureOutput();
     printLcd(3, outputPSI_b); 
-
-
-  Serial.print ("IN PRESSURIZE LOOP: "); 
-  Serial.print ("; switchDoorState= ");
-  Serial.print (switchDoorState); 
-  Serial.print ("; sensorFillState= ");
-  Serial.print (sensorFillState);   
-  Serial.println (); 
-  
 
   }
     
@@ -923,16 +898,7 @@ void loop()
     }
     if (button3StateTEMP == LOW && button3ToggleState == true){    // OFF push
       button3State = HIGH;                                         // Exit WHILE loop
-    }
-
-  Serial.print ("IN DE-PRESS LOOP: "); 
-  Serial.print ("; switchDoorState= ");
-  Serial.print (switchDoorState); 
-  Serial.print ("; sensorFillState= ");
-  Serial.print (sensorFillState);   
-  Serial.println (); 
-
-
+    } // COMMENTASDFSDFSDF
   }
 
   // DEPRESSURIZE LOOP EXIT ROUTINES 
