@@ -69,4 +69,47 @@ for (int n = 8; n <= 11; n++){
   */
       
 
+// STARTUP ROUTINE
+  // /* Comment out preceding comment delimeter for normal operation--696 bytes
+  // ################################################################################
 
+  // If P1 is not high, then there is no bottle, or bottle pressure is low. So raise platform--but take time to make user close door, so no pinching
+
+  /*
+  while (switchDoorState == HIGH) // Make sure door is closed
+  {
+    switchDoorState = digitalRead(switchDoorPin); 
+    lcd.setCursor (0, 2); lcd.print (F("PLEASE CLOSE DOOR..."));
+    buzzer(100);
+    delay(100);
+  }
+  lcd.setCursor (0, 2); lcd.print (F("                    "));
+  delay(500);  // A little delay after closing door before raising platform
+
+  relayOn(relay4Pin, true);  // Now Raise platform     
+  */
+
+  /*
+  // Blinks lights and give time to de-pressurize stuck bottle
+  for (int n = 1; n < 0; n++)
+  {
+    digitalWrite(light1Pin, HIGH); delay(500);
+    digitalWrite(light2Pin, HIGH); delay(500);
+    digitalWrite(light3Pin, HIGH); delay(500);
+    digitalWrite(light1Pin, LOW);
+    digitalWrite(light2Pin, LOW);
+    digitalWrite(light3Pin, LOW); delay(325);
+  }
+  */
+    /*
+  // Blinks lights and give time to de-pressurize stuck bottle
+  for (int n = 1; n < 0; n++)
+  {
+    digitalWrite(light1Pin, HIGH); delay(500);
+    digitalWrite(light2Pin, HIGH); delay(500);
+    digitalWrite(light3Pin, HIGH); delay(500);
+    digitalWrite(light1Pin, LOW);
+    digitalWrite(light2Pin, LOW);
+    digitalWrite(light3Pin, LOW); delay(325);
+  }
+  */

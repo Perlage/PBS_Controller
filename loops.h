@@ -114,8 +114,6 @@ void emergencyDepressurize()
 // END EMERGENCY DEPRESSURIZE LOOP FUNCTION
 //========================================================================================
 
-
-
 //========================================================================================
 // EMERGENCY PLATFORM LOCK FUNCTION
 // Lock platform and depressurize if regulator pressure sags below bottle pressure

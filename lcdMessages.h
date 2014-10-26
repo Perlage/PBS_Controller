@@ -2,7 +2,7 @@
 // LCD MESSAGES
 // ====================================================================================
 
-/*
+
 void messageInitial()
 {
   lcd.setCursor (0, 0);  lcd.print (F("FIZZIQ Cocktail     "));
@@ -17,5 +17,4 @@ void messageGasLow()
   lcd.setCursor (0, 2); lcd.print (F("B3 opens door.      "));
 }
 
-*/
 

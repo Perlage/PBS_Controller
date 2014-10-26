@@ -54,7 +54,7 @@ const int light3Pin                  = A5;     // pin for button3 light
 // A0 formerly was sensor1, which is closest to what we now call bottle pressure, and A1 was unused. 
 // So switched sensor1 to A1 to make code changes easier. All reads of sensor1 will now read bottle pressure
 
-// Declare variables and inititialize states
+// Declare variables and initialize states
 // ===========================================================================  
 
 //Component states //FEB 1: Changed from int to boolean. 300 byte drop in program size
@@ -159,11 +159,12 @@ char buffer[25];                                 // Used in float to string conv
 //======================================================================================
 
 // Order is important!!!! Must include an include before it is referenced by other includes
-#include "functions.h"   //Functions
-#include "lcdMessages.h" //User messages
-#include "loops.h"       //Major resused loops
-#include "manualMode.h"  //Manual Mode function
-#include "menuShell.h"   //Menu shell
+#include "functions.h"			//Functions
+#include "lcdMessages.h"		//User messages
+#include "loops.h"				//Major resused loops
+#include "manualMode.h"			//Manual Mode function
+#include "menuShell.h"			//Menu shell
+#include "nullPressureCheck.h"	//Null Pressure routines
 
 //=====================================================================================
 // SETUP LOOP
@@ -202,7 +203,7 @@ void setup()
   digitalWrite(button2Pin, HIGH);
   digitalWrite(button3Pin, HIGH);
   
-  Serial.begin(9600); // TO DO: remove when done
+  //Serial.begin(9600); // TO DO: remove when done
   
   // Initialize LCD - Absolutely necessary
   lcd.init();
@@ -216,6 +217,10 @@ void setup()
   //===================================================================================
   // EEPROM factory set-reset routine 
   // For some reason, have to include it here and not above with others
+  
+  messageInitial();
+  delay(1000);
+  
   #include "EEPROMset.h"   
   
   // Read EEPROM
@@ -251,52 +256,22 @@ void setup()
   if (inManualModeLoop == true){
     manualModeLoop();
   }
-
+  
   //===================================================================================
   //NULL PRESSURE: Check for stuck pressurized bottle or implausibly low gas pressure at start 
-  #include "nullPressureCheck.h"
+  
+  nullPressureStartup();
 
   //Initial user message 
-  lcd.setCursor (0, 0);  lcd.print (F("FIZZIQ Cocktail     "));
-  printLcd (1, "Bottling System " + versionSoftwareTag);
-  lcd.setCursor (0, 3);  lcd.print (F("Initializing...     "));
+  messageInitial();
   
-  // /* Comment out preceding comment delimeter for normal operation--696 bytes
-  // ################################################################################
-
-  // If P1 is not high, then there is no bottle, or bottle pressure is low. So raise platform--but take time to make user close door, so no pinching
-
-  /*
-  while (switchDoorState == HIGH) // Make sure door is closed
-  {
-    switchDoorState = digitalRead(switchDoorPin); 
-    lcd.setCursor (0, 2); lcd.print (F("PLEASE CLOSE DOOR..."));
-    buzzer(100);
-    delay(100);
-  }
-  lcd.setCursor (0, 2); lcd.print (F("                    "));
-  delay(500);  // A little delay after closing door before raising platform
-
-  relayOn(relay4Pin, true);  // Now Raise platform     
-  */
-
-
-  // Blinks lights and give time to de-pressurize stuck bottle
-  for (int n = 0; n < 0; n++)
-  {
-    digitalWrite(light1Pin, HIGH); delay(500);
-    digitalWrite(light2Pin, HIGH); delay(500);
-    digitalWrite(light3Pin, HIGH); delay(500);
-    digitalWrite(light1Pin, LOW);
-    digitalWrite(light2Pin, LOW);
-    digitalWrite(light3Pin, LOW); delay(325);
-  }
-
+  //UNCOMMENT OUT NEXT LINE FOR SHOW
+  //relayOn(relay4Pin, true);  // Now Raise platform     
+  
   // Leave blink loop and light all lights 
   digitalWrite(light1Pin, HIGH); delay(500);
   digitalWrite(light2Pin, HIGH); delay(500);
-  digitalWrite(light3Pin, HIGH); delay(500);
-  
+  digitalWrite(light3Pin, HIGH); delay(500); 
 
   // Continue with normal ending when pressure is OK
   // ====================================================================================
@@ -312,14 +287,14 @@ void setup()
   outputInt = "Total fills: " + convInt;
   printLcd (2, outputInt);  
   delay (1000);
-  
+
   // Open door if closed. Moved this to make sure door opens before plaform drops in case of unpressurized stuck bottle
   doorOpen();
   
   // Drop platform in case it is up, which had been raised before nullpressure checks
   relayOn(relay4Pin, false);  
   relayOn(relay5Pin, true);
-  delay(3000);  
+  delay(2000);  
   relayOn(relay5Pin, false); 
   relayOn(relay3Pin, false); // Close this so solenoid doesn't overhead on normal startup
 
@@ -328,10 +303,6 @@ void setup()
   delay(100); digitalWrite(light1Pin, LOW);
   
   buzzer (1000);
-
-// #####################################################################################
-// */ // Comment out preceding comment delimeter out for normal operation
-
 }
   
 //====================================================================================================================================
@@ -352,8 +323,8 @@ void loop()
   switchDoorState		=  digitalRead(switchDoorPin);
   switchModeState		=  digitalRead(switchModePin); 
   sensorFillStateTEMP   =  digitalRead(sensorFillPin); // Maybe we don't need to measure this
-  sensorFillState		=  HIGH; //Instead we SET the sensorState HIGH
-  //delay(10); //Don't need this
+  
+  sensorFillState		=  HIGH; //Instead we SET the sensorState HIGH.
 
   //Check Button2 toggle state
   //======================================================================
@@ -473,68 +444,11 @@ void loop()
     emergencyDepressurize();
   }  
 */
-    
-  // EMERGENCY PLATFORM LOCK LOOP: 
-  // Lock platform if gas pressure drops while bottle pressurized  
-  //========================================================================
 
+  //  This routine takes action if pressure drops in idle loop. TO DO: NEEDS WORK
+  idleLoopPressureDrop();
   
-  // If pressure drops, go into this loop and wait for user to fix
-  while (P2 - offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what constitutes a pressure drop.// 2-18 Changed from 75 to 100
-  {
-    inPressureDropLoop = true;
-
-    P1 = analogRead(sensorP1Pin); 
-    P2 = analogRead(sensorP2Pin); 
-    
-    //If bottle is pressurized (along with pressure sagging), also lock the platform
-    if (P1 - offsetP1 > P2 - offsetP2)
-    {
-      inPlatformEmergencyLock = true;
-      relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
-      relayOn (relay3Pin, true);    // Vent the bottle to be safe
-
-      lcd.setCursor (0, 2); lcd.print (F("Platform locked...  "));
-      buzzOnce(2000, light2Pin);
-    }  
-    
-    lcd.setCursor (0, 0); lcd.print (F("Input pressure drop;"));
-    lcd.setCursor (0, 1); lcd.print (F("check tank & hoses. "));
-    lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));
-    
-    // Pressure measurement and output
-    pressureOutput();
-    printLcd (3, outputPSI_rb);
-
-    //Only sound buzzer once
-    buzzOnce(2000, light2Pin);
-  } 
-  buzzedOnce = false;
   
-  if (inPressureDropLoop)
-  {
-    inPressureDropLoop = false;
-    buzzedOnce = false;
-    
-    // Run this condition if had pressurized bottle
-    if (inPlatformEmergencyLock == true)
-    {
-      relayOn (relay4Pin, true);       // Re-open platform UP solenoid 
-      relayOn (relay3Pin, false);      // Re close vent if opened 
-      inPlatformEmergencyLock = false;
-      
-      lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; ")); 
-      lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
-    }
-      
-    lcd.setCursor (0, 2); lcd.print (F("Problem corrected..."));
-    delay(1000);
-  }  
-  
-  //END EMERGENCY PLATFORM LOCK LOOP
-  //======================================================================================  
-
-
   // =====================================================================================  
   // PLATFORM RAISING LOOP
   // while B1 is pressed, platform is not UP, and door is open, raise bottle platform.
@@ -542,10 +456,6 @@ void loop()
 
   platformUpLoop();
 
-  
-  // END PURGE LOOP
-  //============================================================================================
-   
   //============================================================================================
   // PRESSURIZE LOOP
   // Pressurization will start automatically when door closes IF platfromLockedNew is true
@@ -597,7 +507,7 @@ void loop()
         }  
         platformLockedNew = false;
       }
-      /*
+      /* This code works better than breakpoint. BP can't process messages fast enough
       Serial.print ("T= "); 
       Serial.print (pressurizeDuration);
       Serial.print (" P1= ");  
@@ -651,7 +561,7 @@ void loop()
 
       pressureDump();   // Dump any pressure that built up
       doorOpen();       // Open door
-      platformDrop();   // Drop plaform
+      platformDrop();   // Drop platform
       
       //Reset variables
       PTestFail = false;      
@@ -781,10 +691,7 @@ void loop()
     else 
     {
       // CASE 3: Bottle pressure dropped below Deltatamp threshold; i.e., filling too fast
-      //=============================================
-      // REPRESSURIZE LOOP
-      //=============================================
-      
+      // FILLING TOO FAST LOOP    
       while (platformStateUp == true && switchDoorState == LOW && (P1 - offsetP1) <= (P2 - offsetP2) - pressureDeltaUp)
       {
         inPressurizeLoop = true;
@@ -798,9 +705,8 @@ void loop()
         lcd.setCursor (0, 2); lcd.print (F("Press B2 to resume  "));
         delay (500); // This seems to be necessary
       }
-      // REPRESSURIZE LOOP EXIT ROUTINES
-      //=============================================
-      
+	  
+      // FILLING TOO FAST LOOP EXIT ROUTINES      
       if(inPressurizeLoop)
       { 
         relayOn(relay2Pin, false);  
@@ -818,7 +724,7 @@ void loop()
         printLcd(2,"");
         inPressurizeLoop = false; 
       } 
-      // END REPRESSUIZE LOOP   
+      // END FILLING TOO FAST LOOP   
       //=============================================     
     } 
    
@@ -833,7 +739,7 @@ void loop()
     lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
   }
 
-  // END FILL LOOP EXIT ROUTINE
+  // END FILL LOOP EXIT ROUTINES
   //========================================================================================
 
   // #include "autoCarbonator.h"
@@ -892,7 +798,7 @@ void loop()
 
   // DEPRESSURIZE LOOP EXIT ROUTINES 
   // If in this loop, Button3 was released, or Fill/Foam Sensor tripped, 
-  // or bottle is propely pressurized. Find out which reason and repond.
+  // or bottle is propeRly pressurized. Find out which reason and reSpond.
   //========================================================================
   
   if(inDepressurizeLoop)

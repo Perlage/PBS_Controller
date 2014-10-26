@@ -128,21 +128,6 @@ void readStates()
   //delay (25); //debounce
 }
 
-// FUNCTION: Read Sensors
-// =======================================================================================
-void readInputs()
-{
-  button1State = !digitalRead(button1Pin); 
-  button2State = !digitalRead(button2Pin); 
-  button3State = !digitalRead(button3Pin); 
-  sensorFillState = digitalRead(sensorFillPin);
-  switchDoorState = digitalRead(switchDoorPin);
-  switchModeState = digitalRead(switchModePin);
-  P1 = analogRead(sensorP1Pin);
-  P2 = analogRead(sensorP2Pin); 
-  //delay (25); //debounce
-}
-
 // FUNCTION: Pressure reading/conversion/output
 // ====================================================================================
 void pressureOutput()
@@ -178,4 +163,19 @@ void pressureDump()
     printLcd (3, outputPSI_b);
   }  
   relayOn(relay3Pin, false);  
+}
+
+// FUNCTION: Read Sensors (CURRENTLY UNUSED, so/but doesn't use memory
+// =======================================================================================
+void readInputs()
+{
+	button1State = !digitalRead(button1Pin);
+	button2State = !digitalRead(button2Pin);
+	button3State = !digitalRead(button3Pin);
+	sensorFillState = digitalRead(sensorFillPin);
+	switchDoorState = digitalRead(switchDoorPin);
+	switchModeState = digitalRead(switchModePin);
+	P1 = analogRead(sensorP1Pin);
+	P2 = analogRead(sensorP2Pin);
+	//delay (25); //debounce
 }
