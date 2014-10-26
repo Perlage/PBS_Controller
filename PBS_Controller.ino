@@ -898,7 +898,7 @@ void loop()
     }
     if (button3StateTEMP == LOW && button3ToggleState == true){    // OFF push
       button3State = HIGH;                                         // Exit WHILE loop
-    } // COMMENTASDFSDFSDF
+    }
   }
 
   // DEPRESSURIZE LOOP EXIT ROUTINES 

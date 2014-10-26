@@ -57,6 +57,7 @@
             <Value>USB_PID=0x8037</Value>
             <Value>USB_MANUFACTURER=</Value>
             <Value>USB_PRODUCT="\"Arduino Micro\""</Value>
+            <Value>_VMDEBUG=1</Value>
             <Value>ARDUINO=101</Value>
             <Value>ARDUINO_MAIN</Value>
             <Value>F_CPU=16000000L</Value>
@@ -100,6 +101,7 @@
             <Value>USB_PID=0x8037</Value>
             <Value>USB_MANUFACTURER=</Value>
             <Value>USB_PRODUCT="\"Arduino Micro\""</Value>
+            <Value>_VMDEBUG=1</Value>
             <Value>ARDUINO=101</Value>
             <Value>ARDUINO_MAIN</Value>
             <Value>F_CPU=16000000L</Value>
@@ -276,6 +278,8 @@ vmresolved.tools.path=C:\Program Files (x86)\Arduino\hardware\tools\avr
         <visualmicro.application.name>arduino15x</visualmicro.application.name>
         <visualmicro.package.name>arduino</visualmicro.package.name>
         <visualmicro.platform.name>avr</visualmicro.platform.name>
+        <arduino.upload.port>COM6</arduino.upload.port>
+        <VM.DebugVariablesWindow.ColumnVisibleBreakPointName>1</VM.DebugVariablesWindow.ColumnVisibleBreakPointName>
       </VisualMicroSettings>
     </VisualMicroSettings>
   </PropertyGroup>
@@ -296,6 +300,7 @@ vmresolved.tools.path=C:\Program Files (x86)\Arduino\hardware\tools\avr
             <Value>USB_PID=0x8037</Value>
             <Value>USB_MANUFACTURER=</Value>
             <Value>USB_PRODUCT="\"Arduino Micro\""</Value>
+            <Value>_VMDEBUG=1</Value>
             <Value>ARDUINO=101</Value>
             <Value>ARDUINO_MAIN</Value>
             <Value>F_CPU=16000000L</Value>
@@ -339,6 +344,7 @@ vmresolved.tools.path=C:\Program Files (x86)\Arduino\hardware\tools\avr
             <Value>USB_PID=0x8037</Value>
             <Value>USB_MANUFACTURER=</Value>
             <Value>USB_PRODUCT="\"Arduino Micro\""</Value>
+            <Value>_VMDEBUG=1</Value>
             <Value>ARDUINO=101</Value>
             <Value>ARDUINO_MAIN</Value>
             <Value>F_CPU=16000000L</Value>
@@ -515,6 +521,8 @@ vmresolved.tools.path=C:\Program Files (x86)\Arduino\hardware\tools\avr
         <visualmicro.application.name>arduino15x</visualmicro.application.name>
         <visualmicro.package.name>arduino</visualmicro.package.name>
         <visualmicro.platform.name>avr</visualmicro.platform.name>
+        <arduino.upload.port>COM6</arduino.upload.port>
+        <VM.DebugVariablesWindow.ColumnVisibleBreakPointName>1</VM.DebugVariablesWindow.ColumnVisibleBreakPointName>
       </VisualMicroSettings>
     </VisualMicroSettings>
   </PropertyGroup>
