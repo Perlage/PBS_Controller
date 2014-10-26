@@ -462,7 +462,7 @@ void loop()
     printLcd(3, outputPSI_rb); // Print reg and bottle if bottle pressurized
   }
   else{
-    printLcd(3, outputPSI_r);  // Print only reg if bottle not pressent or at zero pressure
+    printLcd(3, outputPSI_r);  // Print only reg if bottle not present or at zero pressure
   }  
   
 /*  
@@ -480,7 +480,7 @@ void loop()
 
   
   // If pressure drops, go into this loop and wait for user to fix
-  while (P2 - offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what consitutes a pressure drop.// 2-18 Changed from 75 to 100
+  while (P2 - offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what constitutes a pressure drop.// 2-18 Changed from 75 to 100
   {
     inPressureDropLoop = true;
 
@@ -630,7 +630,6 @@ void loop()
     // Pressure output
     pressureOutput();
     printLcd(3, outputPSI_b); 
-
   }
     
   // PRESSURIZE LOOP EXIT ROUTINES
@@ -719,17 +718,7 @@ void loop()
       sensorFillState = digitalRead(sensorFillPin); //Check fill sensor
       switchDoorState = digitalRead(switchDoorPin); //Check door switch 
       lcd.setCursor (0, 2); lcd.print (F("Filling...          "));
-    }   
-    
-    switchModeState = digitalRead(switchModePin); //Check cleaning switch 
-
-  Serial.print ("IN FILL LOOP: "); 
-  Serial.print ("; switchDoorState= ");
-  Serial.print (switchDoorState); 
-  Serial.print ("; sensorFillState= ");
-  Serial.print (sensorFillState);   
-  Serial.println (); 
-
+    }
   }
 
   // FILL LOOP EXIT ROUTINES
@@ -899,7 +888,7 @@ void loop()
     if (button3StateTEMP == LOW && button3ToggleState == true){    // OFF push
       button3State = HIGH;                                         // Exit WHILE loop
     }
-  }
+}
 
   // DEPRESSURIZE LOOP EXIT ROUTINES 
   // If in this loop, Button3 was released, or Fill/Foam Sensor tripped, 

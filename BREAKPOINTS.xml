@@ -42,6 +42,7 @@
         <Language>00000000-0000-0000-0000-000000000000</Language>
       </AddressLocation>
       <DataCount>4</DataCount>
+      <AutomationInfo>&lt;vmbp Id='b915ab2d-3285-4cbb-a343-16d57fb1bf92'/&gt;</AutomationInfo>
       <TracepointText>B2: {button2State}; B2 toggle: {button2ToggleState}; B3: {button3State}; B3 toggle: {button3ToggleState}; Door: {switchDoorState}; FillSensor: {sensorFillStateTEMP}</TracepointText>
       <IsTracepointActive>1</IsTracepointActive>
       <IsBreakWhenHit>0</IsBreakWhenHit>
@@ -62,10 +63,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\PBS_Controller.ino</FileName>
-        <startLine>633</startLine>
+        <startLine>631</startLine>
         <StartColumn>0</StartColumn>
-        <EndLine>633</EndLine>
-        <EndColumn>3</EndColumn>
+        <EndLine>631</EndLine>
+        <EndColumn>30</EndColumn>
         <MarkerId>45</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -92,6 +93,7 @@
         <Language>00000000-0000-0000-0000-000000000000</Language>
       </AddressLocation>
       <DataCount>4</DataCount>
+      <AutomationInfo>&lt;vmbp Id='9e483180-dfd2-4567-802b-d8ad2579d402'/&gt;</AutomationInfo>
       <TracepointText>PRESSURIZE LOOP: switchDoorState: {switchDoorState}; sensorFillState: {sensorFillStateTEMP}</TracepointText>
       <IsTracepointActive>1</IsTracepointActive>
       <IsBreakWhenHit>0</IsBreakWhenHit>
@@ -112,10 +114,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\PBS_Controller.ino</FileName>
-        <startLine>732</startLine>
+        <startLine>720</startLine>
         <StartColumn>0</StartColumn>
-        <EndLine>732</EndLine>
-        <EndColumn>3</EndColumn>
+        <EndLine>720</EndLine>
+        <EndColumn>5</EndColumn>
         <MarkerId>45</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -142,6 +144,7 @@
         <Language>00000000-0000-0000-0000-000000000000</Language>
       </AddressLocation>
       <DataCount>4</DataCount>
+      <AutomationInfo>&lt;vmbp Id='30b7625b-5080-4353-aef0-ae2f0779e36f'/&gt;</AutomationInfo>
       <TracepointText>FILL LOOP: switchDoorState: {switchDoorState}; sensorFillState: {sensorFillStateTEMP}</TracepointText>
       <IsTracepointActive>1</IsTracepointActive>
       <IsBreakWhenHit>0</IsBreakWhenHit>
@@ -162,10 +165,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\PBS_Controller.ino</FileName>
-        <startLine>901</startLine>
+        <startLine>889</startLine>
         <StartColumn>0</StartColumn>
-        <EndLine>901</EndLine>
-        <EndColumn>3</EndColumn>
+        <EndLine>889</EndLine>
+        <EndColumn>5</EndColumn>
         <MarkerId>45</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -192,6 +195,7 @@
         <Language>00000000-0000-0000-0000-000000000000</Language>
       </AddressLocation>
       <DataCount>4</DataCount>
+      <AutomationInfo>&lt;vmbp Id='8c17b4df-3c2c-4795-9ece-ef49f6d2533e'/&gt;</AutomationInfo>
       <TracepointText>DEPRESSURIZE LOOP: switchDoorState: {switchDoorState}; sensorFillState: {sensorFillStateTEMP}</TracepointText>
       <IsTracepointActive>1</IsTracepointActive>
       <IsBreakWhenHit>0</IsBreakWhenHit>
