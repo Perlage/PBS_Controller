@@ -17,4 +17,9 @@ void messageGasLow()
   lcd.setCursor (0, 2); lcd.print (F("B3 opens door.      "));
 }
 
+void messageB2B3Toggles()
+{
+  lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
+  lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
+}
 

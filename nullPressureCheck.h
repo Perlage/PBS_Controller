@@ -145,8 +145,7 @@ void idleLoopPressureDrop()
 			  relayOn (relay3Pin, false);      // Re close vent if opened
 			  inPlatformEmergencyLock = false;
 			  
-			  lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
-			  lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
+			  messageB2B3Toggles();
 		  }
 		  
 		  lcd.setCursor (0, 2); lcd.print (F("Problem corrected..."));

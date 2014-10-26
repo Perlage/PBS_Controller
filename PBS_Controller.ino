@@ -436,14 +436,14 @@ void loop()
     printLcd(3, outputPSI_r);  // Print only reg if bottle not present or at zero pressure
   }  
   
-/*  
+
   // v1.1 Door opened while bottle pressurized...emergency dump of pressure  
   //========================================================================
-  if (platformStateUp == true && switchDoorState == HIGH && (P1 - offsetP1 >= pressureDeltaDown)) // May need to raise this threshold
+  if (platformStateUp == true && switchDoorState == HIGH && (P1 - offsetP1 >= pressureDeltaDown + 50)) // May need to raise this threshold
   { 
     emergencyDepressurize();
   }  
-*/
+
 
   //  This routine takes action if pressure drops in idle loop. TO DO: NEEDS WORK
   idleLoopPressureDrop();
@@ -533,8 +533,7 @@ void loop()
       button2State = HIGH;                                         //exit WHILE loop
     }  
       
-    lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
-    lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
+	messageB2B3Toggles();
     lcd.setCursor (0, 2); lcd.print (F("Pressurizing...     "));
 
     // Pressure output
@@ -620,7 +619,7 @@ void loop()
     if (inCleaningMode == true)
     {
       sensorFillState = HIGH;      
-      lcd.setCursor (0, 2); lcd.print (F("Filling (Clean Mode)"));
+      lcd.setCursor (0, 2); lcd.print (F("Filling--Cleaning ON"));
     }
     else
     {
@@ -734,9 +733,7 @@ void loop()
       emergencyDepressurize();
     }      
     inFillLoop = false;
-
-    lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
-    lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
+	messageB2B3Toggles();
   }
 
   // END FILL LOOP EXIT ROUTINES
@@ -774,7 +771,7 @@ void loop()
     if (inCleaningMode == true)
     {
       sensorFillState = HIGH;      
-      lcd.setCursor (0, 2); lcd.print (F("Venting (Clean Mode)"));
+      lcd.setCursor (0, 2); lcd.print (F("Venting--Cleaning ON"));
     }
     else
     {
