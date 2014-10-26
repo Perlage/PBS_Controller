@@ -118,16 +118,16 @@ float PSIdiff;
 String (convPSI1);
 String (convPSI2);
 String (convPSIdiff);
-String (outputPSI_rbd);                         // Input, bottle, difference
-String (outputPSI_rb);                          // Input, bottle
+String (outputPSI_rbd);                         // Keg, bottle, difference
+String (outputPSI_rb);                          // Keg, bottle
 String (outputPSI_b);                           // Bottle
-String (outputPSI_r);                           // Regulator
+String (outputPSI_r);                           // Keg
 String (outputPSI_d);                           // Difference
 
 //Variables for platform function and timing
 int timePlatformInit;                           // Time in ms going into loop
 int timePlatformCurrent;                        // Time in ms currently in loop
-int timePlatformRising               = 0;       // Time diffence between Init and Current
+int timePlatformRising               = 0;       // Time difference between Init and Current
 const int timePlatformLock           = 1250;    // Time in ms before platform locks in up position
 const int autoPlatformDropDuration   = 1500;    // Duration of platform autodrop in ms
 
@@ -208,7 +208,6 @@ void setup()
   // Initialize LCD - Absolutely necessary
   lcd.init();
   lcd.backlight();
-  
 
   //===================================================================================
   // STARTUP ROUTINE
@@ -268,8 +267,6 @@ void setup()
   //UNCOMMENT OUT NEXT LINE FOR SHOW
   //relayOn(relay4Pin, true);  // Now Raise platform     
   
-  
-  /*
   // Leave blink loop and light all lights 
   digitalWrite(light1Pin, HIGH); delay(500);
   digitalWrite(light2Pin, HIGH); delay(500);
@@ -303,11 +300,8 @@ void setup()
   digitalWrite(light3Pin, LOW);
   delay(100); digitalWrite(light2Pin, LOW);
   delay(100); digitalWrite(light1Pin, LOW);
-  
   buzzer (1000);
-  */
 }
-
     
 //====================================================================================================================================
 // MAIN LOOP =========================================================================================================================
@@ -315,7 +309,6 @@ void setup()
 
 void loop()
 {
-  
   //MAIN LOOP IDLE FUNCTIONS
   //=====================================================================
 
@@ -327,8 +320,8 @@ void loop()
   switchDoorState		=  digitalRead(switchDoorPin);
   switchModeState		=  digitalRead(switchModePin); 
   sensorFillStateTEMP   =  digitalRead(sensorFillPin); // Maybe we don't need to measure this
-  
-  sensorFillState		=  HIGH; //Instead we SET the sensorState HIGH.
+
+  sensorFillState		=  HIGH; //v1.1: We now SET the sensorState HIGH.
 
   //Check Button2 toggle state
   //======================================================================
@@ -364,15 +357,7 @@ void loop()
   {
 	messageInsertBottle(); //Insert Bottle; B1 raises Platform
   }  
-  /*
-  if (platformStateUp == true && switchDoorState == HIGH)
-  {
-    lcd.setCursor (0, 0); lcd.print (F("B3 drops platform   ")); //This will rarely get hit
-    lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
-  }
-  */
-  lcd.setCursor (0, 2); lcd.print (F("Ready...            "));  
- 
+  lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));  
 
   //======================================================================
   //MULTI BUTTON COMBO ROUTINES
@@ -508,7 +493,8 @@ void loop()
         }  
         platformLockedNew = false;
       }
-      /* This code works better than breakpoint. BP can't process messages fast enough
+      /* 
+	  //This code works better than breakpoint. BP can't process messages fast enough
       Serial.print ("T= "); 
       Serial.print (pressurizeDuration);
       Serial.print (" P1= ");  
@@ -618,7 +604,7 @@ void loop()
     if (inCleaningMode == true)
     {
       sensorFillState = HIGH;      
-      lcd.setCursor (0, 2); lcd.print (F("Filling--Cleaning ON"));
+      lcd.setCursor (0, 2); lcd.print (F("Filling--SENSOR OFF "));
     }
     else
     {
@@ -627,6 +613,8 @@ void loop()
       switchDoorState = digitalRead(switchDoorPin); //Check door switch 
       lcd.setCursor (0, 2); lcd.print (F("Filling...          "));
     }
+	lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
+	lcd.setCursor (0, 1); lcd.print (F("                   " ));
   }
 
   // FILL LOOP EXIT ROUTINES
@@ -779,7 +767,7 @@ void loop()
     if (inCleaningMode == true)
     {
       sensorFillState = HIGH;      
-      lcd.setCursor (0, 2); lcd.print (F("Venting--Cleaning ON"));
+      lcd.setCursor (0, 2); lcd.print (F("Venting--SENSOR OFF"));
     }
     else
     {
@@ -787,9 +775,18 @@ void loop()
       switchDoorState = digitalRead(switchDoorPin); //Check door switch // Not using this
       lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
     }   
-    
-    //switchModeState = digitalRead(switchModePin); //Check cleaning switch //Not using this
-    
+		
+	lcd.setCursor (0, 0); lcd.print (F("B3 toggles venting; "));
+	// Rotate messages once every 1000 millisec
+	if (float(millis())/4000 - int(millis()/4000) > .5)
+	{
+		lcd.setCursor (0, 1); lcd.print (F("B2: Burst tamping   "));
+	}
+	else	
+	{
+		lcd.setCursor (0, 1); lcd.print (F("B1: Overrides sensor"));
+	}
+		
     //Check toggle state of B3
     button3StateTEMP = !digitalRead(button3Pin);
     if (button3StateTEMP == HIGH && button3ToggleState == false){  // ON release
@@ -818,11 +815,11 @@ void loop()
     if (button3State == HIGH)  
     { 
       relayOn(relay3Pin, false);     //Used to repressurize here; now we don't  
-      //TO DO: either a quick burst to clear the sensor, or check for overfill and tamp in case bottle foams up
+	  lcd.setCursor (0, 1); lcd.print (F("B2 toggles filling. ")); //Overwrites second line on exit
     }
     
     // CASE 2: Foam tripped sensor
-    if (sensorFillState == LOW && !digitalRead(button1Pin) == HIGH)
+    if (sensorFillState == LOW && !digitalRead(button1Pin) == HIGH) // The second condition is part of fillSensor overide
     {
       lcd.setCursor (0, 2); lcd.print (F("Foam detected...wait"));
       relayOn(relay3Pin, false);  
@@ -848,10 +845,9 @@ void loop()
     {
       buzzer(100);
       autoMode_1 = true;  //Going to platform loop automatically, so set this var to partially drop platform 
-	  			lcd.setCursor (0, 0); lcd.print (F("B3 lowers platform; "));
-	  			lcd.setCursor (0, 1); lcd.print (F("Grasp bottle first. "));
+	  			lcd.setCursor (0, 0); lcd.print (F("Grasp bottle; then  "));
+	  			lcd.setCursor (0, 1); lcd.print (F("B3 lowers platform. "));
     }
-    
     digitalWrite(light3Pin, LOW);
     inDepressurizeLoop = false;
    }
@@ -951,9 +947,6 @@ void loop()
   
   if(inPlatformLowerLoop)
   {
-    
-
-	
 	//close platform release 
     lcd.setCursor (0, 2); lcd.print (F("                    "));
     relayOn(relay3Pin, false); 

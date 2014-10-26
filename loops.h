@@ -47,7 +47,7 @@ void platformUpLoop()
 
       lcd.setCursor (0, 0); lcd.print (F("To fill, close door;"));
       lcd.setCursor (0, 1); lcd.print (F("B3 drops platform.  "));
-      lcd.setCursor (0, 2); lcd.print (F("Ready...            "));
+      lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));
 
       buzzer(250);
       
