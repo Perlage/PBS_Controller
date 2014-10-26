@@ -249,7 +249,7 @@ void setup()
   buzzedOnce = false;
 
   if (inManualModeLoop == true){
-    //manualModeLoop();
+    manualModeLoop();
   }
 
   //===================================================================================
