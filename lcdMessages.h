@@ -2,7 +2,6 @@
 // LCD MESSAGES
 // ====================================================================================
 
-
 void messageInitial()
 {
   lcd.setCursor (0, 0);  lcd.print (F("FIZZIQ Cocktail     "));

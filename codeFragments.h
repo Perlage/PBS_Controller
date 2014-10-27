@@ -1,11 +1,9 @@
 // =============================================================================================
 // CODE FRAGMENTS 
 // =============================================================================================
-
-
+/*
 // FLASH MEMORY STRING HANDLING
 //=====================================================================================
-
 
 //char bufferP[30];                                // make sure this is large enough for the largest string it must hold; used for PROGMEM write to LCD
 //byte strIndex;                                   // Used to refer to index of the string in *srtLcdTable (e.g., strLcd_0 has strLcdIndex = 0
@@ -41,7 +39,7 @@ for (int n = 8; n <= 11; n++){
   strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
   printLcd (n % 4, bufferP);}
   
-  
+*/  
 //===============================================================================================
  
   /*

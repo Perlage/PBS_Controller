@@ -29,7 +29,7 @@ void manualModeLoop()
     
     // FUNCTION: Read and output pressure
     pressureOutput();
-    printLcd(3, outputPSI_rbd);    
+    printLcd(3, outputPSI_rb);    
   
     if (platformStateUp == false && switchDoorState == HIGH && !inDiagnosticMode)
     {
@@ -49,16 +49,15 @@ void manualModeLoop()
 
     if (inDiagnosticMode)
     {
-      lcd.setCursor (0, 1); lcd.print (F("B2: LIQUID OUT!!!!  "));
+      lcd.setCursor (0, 1); lcd.print (F("B2: LIQUID-CAUTION! "));
       lcd.setCursor (0, 2); lcd.print (F("Close door to exit. "));
     }
-
 
     if (platformStateUp == true && switchDoorState == LOW && !inDiagnosticMode) //Add a pressure check to this
     {
       lcd.setCursor (0, 0); lcd.print (F("B1: Gas IN          "));
-      lcd.setCursor (0, 1); lcd.print (F("B2: Liquid OUT      "));
-      lcd.setCursor (0, 2); lcd.print (F("B3: Gas OUT/Door opn"));
+      lcd.setCursor (0, 1); lcd.print (F("B2: Liquid IN       "));
+      lcd.setCursor (0, 2); lcd.print (F("B3: Gas OUT/Open Dr."));
     }
     else
     {
@@ -70,39 +69,52 @@ void manualModeLoop()
    
     // B1: GAS IN ================================================================
     if (button1State == LOW && platformStateUp == true && switchDoorState == LOW){
+	  digitalWrite(light1Pin, HIGH);
       relayOn (relay2Pin, true);}  
     else{
+	  digitalWrite(light1Pin, LOW);
       relayOn (relay2Pin, false);}
       
     // B2 LIQUID IN ==============================================================
     if ((button2State == LOW && platformStateUp == true && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) || (button2State == LOW) && inDiagnosticMode == true){ 
+	  digitalWrite(light2Pin, HIGH);
       relayOn (relay1Pin, true);}  
     else{
+	  digitalWrite(light2Pin, LOW);
       relayOn (relay1Pin, false);}
       
     // B3 GAS OUT ================================================================
     if (button3State == LOW && platformStateUp == true && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)){
+	  digitalWrite(light3Pin, HIGH);
       relayOn (relay3Pin, true);}  
     else{
+	  digitalWrite(light3Pin, LOW);
       relayOn (relay3Pin, false);}
       
-    // B3: Open Door or drops platform if pressure low============================
+    // B3: OPEN DOOR =============================================================
     if (button3State == LOW && switchDoorState == LOW && (P1 - offsetP1 < pressureDeltaDown))
     {
+	  digitalWrite(light3Pin, HIGH);
+      relayOn (relay3Pin, true);
       doorOpen();
       button3State = HIGH; //This fixed a bug where opening door passed button state into next loop and was setting platform state to down when still up
+	  digitalWrite(light3Pin, LOW);
     }  
-    
+
+    // B3: DROP PLATFORM =========================================================
     if (button3State == LOW && switchDoorState == HIGH && (P1 - offsetP1 < pressureDeltaDown))
     {
       while (button3State == LOW)
       {
         button3State = !digitalRead(button3Pin); 
-        delay(10);
-        relayOn(relay4Pin, false);   
+		digitalWrite(light3Pin, HIGH);        
+		relayOn (relay3Pin, true);
+		relayOn(relay4Pin, false);   
         relayOn(relay5Pin, true); 
       }  
-      relayOn(relay5Pin, false); 
+	  digitalWrite(light3Pin, LOW);      
+	  relayOn (relay3Pin, true);
+	  relayOn(relay5Pin, false); 
       platformStateUp = false;
     }  
 
@@ -126,10 +138,7 @@ void manualModeLoop()
   if (inManualModeLoop)
   {
     inManualModeLoop = false;
-    
     lcd.clear();
     lcd.setCursor (0, 0); lcd.print (F("EXITING MANUAL MODE "));
-    //lcd.setCursor (0, 1); lcd.print (F("                    "));
-    //lcd.setCursor (0, 2); lcd.print (F("Continuing...       "));
   }  
 }

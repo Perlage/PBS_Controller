@@ -860,19 +860,16 @@ void loop()
   // ===========================================================================================
  
   // Only activate door solenoid if door is already closed
-  
   while((button3State == LOW || autoMode_1 == true) && switchDoorState == LOW && (P1 - offsetP1) <= pressureDeltaDown)
   {
     inDoorOpenLoop = true;
     digitalWrite(light3Pin, HIGH);
     doorOpen(); // Run door open function
-
     //TO DO: Add timer: if door not open in 2 sec, must be stuck; show error message
   }
 
   // DOOR OPEN LOOP EXIT ROUTINES
   //============================================================================================
-
   if(inDoorOpenLoop)
   {
     while(button3State == LOW)
@@ -884,7 +881,7 @@ void loop()
     digitalWrite(light3Pin, LOW);
     button3State = HIGH; 
   }
-  
+
   // END DOOR OPEN LOOP
   //============================================================================================
     

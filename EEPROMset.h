@@ -49,7 +49,6 @@ if (button1State == LOW && button2State == LOW && button3State == LOW)
   delay(4000);
 
   lcd.setCursor (0, 2); lcd.print (F("                    "));
-  //lcd.setCursor (0, 3); lcd.print (F("                    ")); // Not necessary
 }    
 
 // END EEPROM SET

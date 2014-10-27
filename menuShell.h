@@ -205,7 +205,7 @@ void menuShell(boolean inMenuLoop)
       menuOption22 = false;
       lcd.setCursor (0, 3); lcd.print (F("Manual Mode *ON*    "));
 
-      while (!digitalRead(button2Pin) == LOW)
+      while (!digitalRead(button2Pin) == LOW) // This a secret diagnostic mode? B1 + B2
       {
         inDiagnosticMode = true;
         buzzer (100);
@@ -219,7 +219,7 @@ void menuShell(boolean inMenuLoop)
     buzzedOnce = false;
     if (menuOption22 == false)
     {
-      //manualModeLoop();
+      manualModeLoop();
       inMenuLoop = false;
     }
   }
