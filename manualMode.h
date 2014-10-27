@@ -69,36 +69,36 @@ void manualModeLoop()
    
     // B1: GAS IN ================================================================
     if (button1State == LOW && platformStateUp == true && switchDoorState == LOW){
-	  digitalWrite(light1Pin, HIGH);
+			digitalWrite(light1Pin, HIGH);
       relayOn (relay2Pin, true);}  
     else{
-	  digitalWrite(light1Pin, LOW);
+			digitalWrite(light1Pin, LOW);
       relayOn (relay2Pin, false);}
       
     // B2 LIQUID IN ==============================================================
     if ((button2State == LOW && platformStateUp == true && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) || (button2State == LOW) && inDiagnosticMode == true){ 
-	  digitalWrite(light2Pin, HIGH);
+			digitalWrite(light2Pin, HIGH);
       relayOn (relay1Pin, true);}  
     else{
-	  digitalWrite(light2Pin, LOW);
+			digitalWrite(light2Pin, LOW);
       relayOn (relay1Pin, false);}
       
     // B3 GAS OUT ================================================================
     if (button3State == LOW && platformStateUp == true && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)){
-	  digitalWrite(light3Pin, HIGH);
+			digitalWrite(light3Pin, HIGH);
       relayOn (relay3Pin, true);}  
     else{
-	  digitalWrite(light3Pin, LOW);
+			digitalWrite(light3Pin, LOW);
       relayOn (relay3Pin, false);}
       
     // B3: OPEN DOOR =============================================================
     if (button3State == LOW && switchDoorState == LOW && (P1 - offsetP1 < pressureDeltaDown))
     {
-	  digitalWrite(light3Pin, HIGH);
+			digitalWrite(light3Pin, HIGH);
       relayOn (relay3Pin, true);
       doorOpen();
       button3State = HIGH; //This fixed a bug where opening door passed button state into next loop and was setting platform state to down when still up
-	  digitalWrite(light3Pin, LOW);
+			digitalWrite(light3Pin, LOW);
     }  
 
     // B3: DROP PLATFORM =========================================================
@@ -107,14 +107,14 @@ void manualModeLoop()
       while (button3State == LOW)
       {
         button3State = !digitalRead(button3Pin); 
-		digitalWrite(light3Pin, HIGH);        
-		relayOn (relay3Pin, true);
-		relayOn(relay4Pin, false);   
+				digitalWrite(light3Pin, HIGH);        
+				relayOn (relay3Pin, true);
+				relayOn(relay4Pin, false);   
         relayOn(relay5Pin, true); 
       }  
-	  digitalWrite(light3Pin, LOW);      
-	  relayOn (relay3Pin, true);
-	  relayOn(relay5Pin, false); 
+			digitalWrite(light3Pin, LOW);      
+			relayOn (relay3Pin, true);
+			relayOn(relay5Pin, false); 
       platformStateUp = false;
     }  
 

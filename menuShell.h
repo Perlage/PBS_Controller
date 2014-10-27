@@ -153,7 +153,7 @@ void menuShell(boolean inMenuLoop)
       menuOption11 = false;
       menuExit();
       while (button3State == LOW){
-        button3State = !digitalRead(button3Pin);}  // This catches loop until release 
+      button3State = !digitalRead(button3Pin);}  // This catches loop until release 
     }
     buzzedOnce = false;  
   }  

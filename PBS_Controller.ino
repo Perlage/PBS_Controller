@@ -10,9 +10,13 @@ Author:
   
 Copyright 2013, 2014  All rights reserved
 
-10-26-2014
-27,000k Release
-27,934k Debug w/no breakpt
+10-26-2014:
+
+Release Version
+27,000k 
+
+Debug w/all breakpoints deactivated
+27,934k 
 
 //===========================================================================  
 */
@@ -316,12 +320,12 @@ void loop()
 
   // Read the state of buttons and sensors
   // Boolean NOT (!) added for touchbuttons so that HIGH button state (i.e., button pressed) reads as LOW (this was easiest way to change software from physical buttons, where pressed = LOW) 
-  button1State			= !digitalRead(button1Pin); 
+  button1State				= !digitalRead(button1Pin); 
   button2StateTEMP		= !digitalRead(button2Pin); 
   button3StateTEMP		= !digitalRead(button3Pin); 
-  switchDoorState		=  digitalRead(switchDoorPin);
-  switchModeState		=  digitalRead(switchModePin); 
-  sensorFillStateTEMP   =  digitalRead(sensorFillPin); // Maybe we don't need to measure this
+  switchDoorState			=  digitalRead(switchDoorPin);
+  switchModeState			=  digitalRead(switchModePin); 
+  sensorFillStateTEMP =  digitalRead(sensorFillPin); // Maybe we don't need to measure this
 
   sensorFillState		=  HIGH; //v1.1: We now SET the sensorState HIGH.
 
@@ -357,7 +361,7 @@ void loop()
   }
   if (switchDoorState == HIGH && platformStateUp == false)
   {
-	messageInsertBottle(); //Insert Bottle; B1 raises Platform
+		messageInsertBottle(); //Insert Bottle; B1 raises Platform
   }  
   lcd.setCursor (0, 2); lcd.print (F("Ready...            "));  
 
@@ -615,8 +619,8 @@ void loop()
       switchDoorState = digitalRead(switchDoorPin); //Check door switch 
       lcd.setCursor (0, 2); lcd.print (F("Filling...          "));
     }
-	lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
-	lcd.setCursor (0, 1); lcd.print (F("                   " ));
+		lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
+		lcd.setCursor (0, 1); lcd.print (F("                   " ));
   }
 
   // FILL LOOP EXIT ROUTINES
@@ -700,14 +704,14 @@ void loop()
         digitalWrite(light2Pin, LOW);
         
         //This is a little trap for B2 button to demand user input; doesn't change button states. Just wants user input.
-        while(!digitalRead(button2Pin) == HIGH){
+        while(!digitalRead(button2Pin) == HIGH)
+				{
           digitalWrite(light2Pin, HIGH);
           buzzer (150);
           digitalWrite(light2Pin, LOW);
           delay (350);
         }
         button2ToggleState = false; // button2State is still LOW, with toggleState true. Setting toggleState to false should be like pressing Fill again
-
         printLcd(2,"");
         inPressurizeLoop = false; 
       } 
@@ -721,7 +725,7 @@ void loop()
       emergencyDepressurize();
     }      
     inFillLoop = false;
-	messageB2B3Toggles();
+		messageB2B3Toggles();
   }
 
   // END FILL LOOP EXIT ROUTINES
@@ -737,8 +741,7 @@ void loop()
   {  
     inDepressurizeLoop = true;
     relayOn(relay3Pin, true); //Open Gas Out solenoid
-   
-	digitalWrite(light3Pin, HIGH);
+		digitalWrite(light3Pin, HIGH);
 	
 	//v1.1 added as part of sensor override
 	if (!digitalRead(button1Pin) == LOW)
@@ -756,14 +759,15 @@ void loop()
     
     //Allow momentary "burst" foam tamping
     button2State = !digitalRead(button2Pin);
-      if(button2State == LOW)
-      {
-        digitalWrite(light2Pin, HIGH); 
-        relayOn(relay2Pin, true);
-        delay(50);  // Burst duration
-        relayOn(relay2Pin, false);
-        digitalWrite(light2Pin, LOW);
-      }
+    
+		if(button2State == LOW)
+    {
+      digitalWrite(light2Pin, HIGH); 
+      relayOn(relay2Pin, true);
+      delay(50);  // Burst duration
+      relayOn(relay2Pin, false);
+      digitalWrite(light2Pin, LOW);
+    }
     
     // CLEANING MODE: If in cleaning mode, set FillState HIGH
     if (inCleaningMode == true)
@@ -777,17 +781,17 @@ void loop()
       switchDoorState = digitalRead(switchDoorPin); //Check door switch // Not using this
       lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
     }   
-		
-	lcd.setCursor (0, 0); lcd.print (F("B3 toggles venting; "));
-	// Rotate messages once every 1000 millisec
-	if (float(millis())/4000 - int(millis()/4000) > .5)
-	{
-		lcd.setCursor (0, 1); lcd.print (F("B2: Burst tamping   "));
-	}
-	else	
-	{
-		lcd.setCursor (0, 1); lcd.print (F("B1: Overrides sensor"));
-	}
+		lcd.setCursor (0, 0); lcd.print (F("B3 toggles venting; "));
+
+		// Rotate messages once every 1000 millisec
+		if (float(millis())/4000 - int(millis()/4000) > .5)
+		{
+			lcd.setCursor (0, 1); lcd.print (F("B2: Burst tamping   "));
+		}
+		else	
+		{
+			lcd.setCursor (0, 1); lcd.print (F("B1: Overrides sensor"));
+		}
 		
     //Check toggle state of B3
     button3StateTEMP = !digitalRead(button3Pin);
@@ -810,14 +814,14 @@ void loop()
     printLcd(2, "");
     //relayOn(relay3Pin, false);     //Used to close S3 here. Try leaving it open when in auto mode until platform drops
     
-	// Turn off Light 1 if on
-	digitalWrite(light1Pin, LOW);
+		// Turn off Light 1 if on
+		digitalWrite(light1Pin, LOW);
     
-	// CASE 1: Button3 released
+		// CASE 1: Button3 released
     if (button3State == HIGH)  
     { 
       relayOn(relay3Pin, false);     //Used to repressurize here; now we don't  
-	  lcd.setCursor (0, 1); lcd.print (F("B2 toggles filling. ")); //Overwrites second line on exit
+			lcd.setCursor (0, 1); lcd.print (F("B2 toggles filling. ")); //Overwrites second line on exit
     }
     
     // CASE 2: Foam tripped sensor
@@ -835,11 +839,8 @@ void loop()
         lcd.setCursor (0, 2); lcd.print (F("Clearing Foam Sensor"));
         delay(1000); //Decided to just have a delay instead
       }
-      
       lcd.setCursor (0, 2); lcd.print (F("                    "));
-
       sensorFillState = HIGH; //v1.1 Set the sensorState to HIGH
-      //sensorFillState = digitalRead(sensorFillPin); 
     }
 
     //CASE 3: Bottle was properly depressurized. If we reach here, the pressure must have reached threshold. Go to Platform lower loop
@@ -847,8 +848,8 @@ void loop()
     {
       buzzer(100);
       autoMode_1 = true;  //Going to platform loop automatically, so set this var to partially drop platform 
-	  			lcd.setCursor (0, 0); lcd.print (F("Grasp bottle; then  "));
-	  			lcd.setCursor (0, 1); lcd.print (F("B3 lowers platform. "));
+	  	lcd.setCursor (0, 0); lcd.print (F("Grasp bottle; then  "));
+	  	lcd.setCursor (0, 1); lcd.print (F("B3 lowers platform. "));
     }
     digitalWrite(light3Pin, LOW);
     inDepressurizeLoop = false;
@@ -933,7 +934,6 @@ void loop()
 			digitalWrite(light3Pin, HIGH); 
 			relayOn(relay5Pin, true);  // Open cylinder exhaust
     }
-
     P1 = analogRead(sensorP1Pin);
     button3State = !digitalRead(button3Pin);
     switchDoorState =  digitalRead(switchDoorPin);
@@ -957,7 +957,7 @@ void loop()
     platformStateUp = false;
 
     //Prepare for next cycle
-	messageInsertBottle();
+		messageInsertBottle();
 
     // Calculate lifetime and session fills    
     if (inFillLoopExecuted)

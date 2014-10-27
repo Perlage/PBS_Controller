@@ -149,7 +149,6 @@ void pressureOutput()
 }  
 
 // FUNCTION: pressureDump()
-// Dumps pressure if pressure high
 // =====================================================================================
 void pressureDump()
 {

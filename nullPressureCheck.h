@@ -74,7 +74,6 @@ void nullPressureStartup()
 	  platformStateUp = true;
 	  inPressurizedBottleLoop = false;
 	  inPressureNullLoop = false;
-
   
 	  button3State = !digitalRead(button3Pin);
 	  while (button3State == HIGH)
@@ -101,7 +100,7 @@ void nullPressureStartup()
 
 void idleLoopPressureDrop()
 {	  
-	  // If pressure drops, go into this loop and wait for user to fix
+		// If pressure drops, go into this loop and wait for user to fix
 	  while (P2 - offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what constitutes a pressure drop.// 2-18 Changed from 75 to 100
 	  {
 		  inPressureDropLoop = true;
