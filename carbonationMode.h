@@ -40,7 +40,6 @@ while (inTimingLoop == true)
   String (convTimeSec) = floatToString(buffer, timerTimeSec, 0);
   
   //Find shakeState. Rest first and every other 15 second segment
-  
   if (timerTime <= 240)
   {
     if ((timerTimeSec >=  0 && timerTimeSec < 15) || (timerTimeSec >= 30 && timerTimeSec < 45))
@@ -104,29 +103,3 @@ while (inTimingLoop == true)
   }
   buzzedOnce = false;
 }
-
-
-  //Method 1
-  //ShakeTime subtracts out the number of 15 sec rest intervals. So 77 sec evaluates to 32 sec of shaking. 
-  
-  //timerShakeTime = int(timerTime) - (int(timerTime / 30) + 1) * 15;
-  //timerShakeTime = constrain (timerShakeTime, 0, 240); // Keeps it pos in first 15 sec
-
-  //Pressure dip decreases over time according to 2 exp -T. Evaluates to 0 at T=0; cuts down by factor of 2 every 30 seconds of shake time
-  //pressureDipTarget = pressureDipTargetInit * (pow(2, - (timerShakeTime / 30))); //TOO MUCH RAM in pow fcn!
-  
-  //Method 2
-  //timerShakeTime = int(timerTime) - (int(timerTime / 30) + 1) * 15;
-
-  //timerShakeTime = constrain (timerShakeTime, 0, 240); // Keeps it pos in first 15 sec
-  //pressureDipTarget = pressureDipTargetInit * (1 - constrain ((timerShakeTime / 120), 0, 1));
-  
-    /*
-  Serial.print ("timerShakeTime: "); 
-  Serial.print (timerShakeTime); 
-  Serial.print (" timerShakeTimeSegment: "); 
-  Serial.print (timerShakeTimeSegment); 
-  Serial.println ();
-  */
-
-

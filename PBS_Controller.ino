@@ -122,11 +122,9 @@ float PSIdiff;
 String (convPSI1);
 String (convPSI2);
 String (convPSIdiff);
-String (outputPSI_rbd);                         // Keg, bottle, difference
 String (outputPSI_rb);                          // Keg, bottle
 String (outputPSI_b);                           // Bottle
 String (outputPSI_r);                           // Keg
-String (outputPSI_d);                           // Difference
 
 //Variables for platform function and timing
 int timePlatformInit;                           // Time in ms going into loop
@@ -361,7 +359,7 @@ void loop()
   {
 	messageInsertBottle(); //Insert Bottle; B1 raises Platform
   }  
-  lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));  
+  lcd.setCursor (0, 2); lcd.print (F("Ready...            "));  
 
   //======================================================================
   //MULTI BUTTON COMBO ROUTINES
@@ -897,33 +895,33 @@ void loop()
   // This is a catch routine to remind the user to open the exhaust if there is foam present in the neck of bottle
   if (digitalRead(sensorFillPin) == LOW && switchDoorState == HIGH && platformStateUp == true && inFillLoopExecuted == true)
   {
-	lcd.setCursor (0, 0); lcd.print (F("Open Exhaust valve  "));
-	lcd.setCursor (0, 1); lcd.print (F("to prevent spray;   "));
-	lcd.setCursor (0, 2); lcd.print (F("press B3 to resume. "));
-	//button3State = HIGH; // Force button state high and wait for input
+		lcd.setCursor (0, 0); lcd.print (F("Open Exhaust valve  "));
+		lcd.setCursor (0, 1); lcd.print (F("to prevent spray;   "));
+		lcd.setCursor (0, 2); lcd.print (F("press B3 to resume. "));
+		//button3State = HIGH; // Force button state high and wait for input
 	
-	while(!digitalRead(button3Pin) == HIGH)
-	{
-		pressureOutput();
-		printLcd(3, outputPSI_b);
-		digitalWrite(light3Pin, HIGH);
-		buzzer (75);
-		digitalWrite(light3Pin, LOW);
-		delay (350);
-	}
+		while(!digitalRead(button3Pin) == HIGH)
+		{
+			pressureOutput();
+			printLcd(3, outputPSI_b);
+			digitalWrite(light3Pin, HIGH);
+			buzzer (75);
+			digitalWrite(light3Pin, LOW);
+			delay (350);
+		}
   }
 
   while((!digitalRead(button3Pin) == LOW) && switchDoorState == HIGH && (P1 - offsetP1) <= pressureDeltaDown) // Removed || autoMode_1 == true and  && (digitalRead(sensorFillPin) == HIGH)
   {
     inPlatformLowerLoop = true;
     digitalWrite(light3Pin, HIGH);
-	relayOn(relay4Pin, false); // Finally can close platform up solenoid
+		relayOn(relay4Pin, false); // Finally can close platform up solenoid
     lcd.setCursor (0, 2); lcd.print (F("Lowering platform..."));
     
     if(autoMode_1 == true)
     {
       digitalWrite(light3Pin, HIGH);
-	  relayOn(relay5Pin, true);
+			relayOn(relay5Pin, true);
       delay(autoPlatformDropDuration);  //Can adjust this value to determine how much to drop the platform in full auto mode
       relayOn(relay5Pin, false);
       button3State = HIGH;
@@ -931,16 +929,16 @@ void loop()
     }
     else
     {
-      //relayOn(relay3Pin, true);  // May as well leave this open? YES. Liquid is still outgassing.//TO DO: Don't need this here?? it's already open?
-      digitalWrite(light3Pin, HIGH); 
-	  relayOn(relay5Pin, true);  // Open cylinder exhaust
+			//relayOn(relay3Pin, true);  // May as well leave this open? YES. Liquid is still outgassing.//TO DO: Don't need this here?? it's already open?
+			digitalWrite(light3Pin, HIGH); 
+			relayOn(relay5Pin, true);  // Open cylinder exhaust
     }
 
     P1 = analogRead(sensorP1Pin);
     button3State = !digitalRead(button3Pin);
     switchDoorState =  digitalRead(switchDoorPin);
     sensorFillState =  digitalRead(sensorFillPin);
-	digitalWrite(light3Pin, LOW);
+		digitalWrite(light3Pin, LOW);
   }
 
   // PLATFORM LOWER LOOP EXIT ROUTINES

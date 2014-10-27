@@ -39,7 +39,13 @@ void platformUpLoop()
 
   if (inPlatformUpLoop)
   {
-    if (timePlatformRising >= timePlatformLock)
+
+		if (switchDoorState == LOW) // PBSFIRM-44
+		{
+			doorOpen();
+		}
+
+		if (timePlatformRising >= timePlatformLock)
     {
       // PlatformLoop lockin reached
       platformStateUp = true;
@@ -47,7 +53,7 @@ void platformUpLoop()
 
       lcd.setCursor (0, 0); lcd.print (F("To fill, close door;"));
       lcd.setCursor (0, 1); lcd.print (F("B3 drops platform.  "));
-      lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));
+      lcd.setCursor (0, 2); lcd.print (F("Ready...            "));
 
       buzzer(250);
       
@@ -55,7 +61,7 @@ void platformUpLoop()
       relayOn(relay5Pin, false); 
       digitalWrite(light1Pin, LOW); //Decided to turn this off. Lights should be lit only if pressing button or releasing it can change a state. 
     }  
-    else    
+    else
     {
       // Drop Platform
       relayOn(relay4Pin, false);

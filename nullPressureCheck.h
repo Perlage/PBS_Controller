@@ -122,7 +122,7 @@ void idleLoopPressureDrop()
 		  
 		  lcd.setCursor (0, 0); lcd.print (F("Input pressure drop;"));
 		  lcd.setCursor (0, 1); lcd.print (F(""));
-		  lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));
+		  lcd.setCursor (0, 2); lcd.print (F("Ready...            "));
 		  
 		  // Pressure measurement and output
 		  pressureOutput();
