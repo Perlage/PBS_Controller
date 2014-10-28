@@ -158,11 +158,12 @@ boolean buzzedOnce                   = false;
 boolean inFillLoopExecuted           = false;    // True of FillLoop is dirty. Used to compute numberCycles
 char buffer[25];                                 // Used in float to string conv // 1-26 Changed from 25 to 20 //CHANGED BACK TO 25!! SEEMS TO BE IMPORTANT!
 
-//For display throttling
-int Nf1;								// 
-int Nf2 = 0;						// 
-boolean PFlag	= true;		// Print flag
-int throttleVal = 500;	// This is a global value; indidual functions can overwritten. The smaller the number, the higher the frequency of positive PFlags, given by (2000/throttleInt)
+//For display throttling and rotating messages
+int Nf1;
+int Nf2 = 0;
+boolean PFlag	= true;			// Print flag
+int throttleVal = 500;		// This is a global value; indidual functions can overwritten. The smaller the number, the higher the frequency of positive PFlags, given by (2000/throttleInt)
+int rotateInt = 4000;     // This value divided by 4 gives the rotation speed in seconds
 
 //======================================================================================
 // PROCESS LOCAL INCLUDES
@@ -364,12 +365,20 @@ void loop()
   //======================================================================
   if (switchDoorState == LOW && platformStateUp == false)
   {
-    lcd.setCursor (0, 0); lcd.print (F("B3 opens door;      ")); 
-    lcd.setCursor (0, 1); lcd.print (F("Insert bottle...    "));
+		lcd.setCursor (0, 0); lcd.print (F("B3 opens door;      "));
+		lcd.setCursor (0, 1); lcd.print (F("Press B2+B3 for Menu"));
   }
   if (switchDoorState == HIGH && platformStateUp == false)
   {
-		messageInsertBottle(); // MESSAGE: Insert Bottle; B1 raises Platform
+		// Rotate messages once every 1000 millisec
+		if (float(millis())/rotateInt - int(millis()/rotateInt) > .5)
+		{
+			messageInsertBottle(); // MESSAGE: Insert Bottle; B1 raises Platform
+		}
+		else
+		{
+			lcd.setCursor (0, 1); lcd.print (F("B2+B1 purges bottle "));
+		}
   }  
   lcd.setCursor (0, 2); lcd.print (F("Ready...            "));  
 	
@@ -796,7 +805,7 @@ void loop()
 	lcd.setCursor (0, 0); lcd.print (F("B3 toggles venting; "));
 
 	// Rotate messages once every 1000 millisec
-	if (float(millis())/4000 - int(millis()/4000) > .5){
+	if (float(millis())/rotateInt - int(millis()/rotateInt) > .5){
 		lcd.setCursor (0, 1); lcd.print (F("B2: Burst tamping   "));
 	}
 	else{

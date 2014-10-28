@@ -154,7 +154,6 @@ void readButtons()
   button1State = !digitalRead(button1Pin); 
   button2State = !digitalRead(button2Pin); 
   button3State = !digitalRead(button3Pin); 
-  //delay (10); //debounce
 }
 
 // FUNCTION: Read Sensors
@@ -164,7 +163,6 @@ void readStates()
   switchDoorState = digitalRead(switchDoorPin);
   switchModeState = digitalRead(switchModePin);
   sensorFillState = digitalRead(sensorFillPin);
-  //delay (25); //debounce
 }
 
 // FUNCTION: Pressure reading/conversion/output
@@ -182,9 +180,9 @@ void pressureOutput()
   (convPSI2)      = floatToString(buffer, PSI2, 1);
   (convPSIdiff)   = floatToString(buffer, PSIdiff, 1);
 
-  (outputPSI_rb)  = "Keg:" + convPSI2 + " Bottle:" + convPSI1; //was Reg
+  (outputPSI_rb)  = "Keg:" + convPSI2 + " Bottle:" + convPSI1;	//was Reg
   (outputPSI_b)   = "Bottle: " + convPSI1 + " psi"; 
-  (outputPSI_r)   = "Keg:" + convPSI2 + " psi"; //Was "Regulator"
+  (outputPSI_r)   = "Keg:" + convPSI2 + " psi";									//Was "Regulator"
 }  
 
 // FUNCTION: pressureDump()
