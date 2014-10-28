@@ -11,10 +11,8 @@ Author:
 Copyright 2013, 2014  All rights reserved
 
 10-27-2014:
-
 Release Version
 27,284k 
-
 Debug w/all breakpoints deactivated
 27,934k 
 
@@ -164,6 +162,7 @@ char buffer[25];                                 // Used in float to string conv
 int Nf1;								// 
 int Nf2 = 0;						// 
 boolean PFlag	= true;		// Print flag
+int throttleVal = 500;	// This is a global value; indidual functions can overwritten. The smaller the number, the higher the frequency of positive PFlags, given by (2000/throttleInt)
 
 //======================================================================================
 // PROCESS LOCAL INCLUDES
@@ -278,7 +277,8 @@ void setup()
   //UNCOMMENT OUT NEXT LINE FOR SHOW
   //relayOn(relay4Pin, true);  // Now Raise platform     
   
-	/*
+	// /* COMMENT OUT THIS LINE AND END DELIMETER BELOW TO SPEED BOOTUP
+	
   // Leave blink loop and light all lights 
   digitalWrite(light1Pin, HIGH); delay(500);
   digitalWrite(light2Pin, HIGH); delay(500);
@@ -288,16 +288,16 @@ void setup()
   // ====================================================================================
 
   //NOW print lifetime fills and autosiphon duration 
-  autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;
-  String (convInt) = floatToString(buffer, autoSiphonDurationSec, 1);
-  String (outputInt) = "Autosiphon: " + convInt + " sec";
-  printLcd (2, outputInt); 
-  delay(1000); 
+  //autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;
+  //String (convInt) = floatToString(buffer, autoSiphonDurationSec, 1);
+  //String (outputInt) = "Autosiphon: " + convInt + " sec";
+  //printLcd (2, outputInt); 
+  //delay(1000); 
 
-  convInt = floatToString(buffer, numberCycles, 0);
-  outputInt = "Total fills: " + convInt;
+  String convInt = floatToString(buffer, numberCycles, 0);
+  String outputInt = "Total fills: " + convInt;
   printLcd (2, outputInt);  
-  delay (1000);
+  delay (1500);
 
   // Open door if closed. Moved this to make sure door opens before platform drops in case of unpressurized stuck bottle
   doorOpen();
@@ -313,7 +313,8 @@ void setup()
   delay(100); digitalWrite(light2Pin, LOW);
   delay(100); digitalWrite(light1Pin, LOW);
   buzzer (1000);
-	*/
+	
+	// */ COMMENT OUT THIS LINE AND BEGINNING DELIMETER ABOVE TO SPEED BOOTUP
 }
     
 //====================================================================================================================================
@@ -379,12 +380,12 @@ void loop()
   
   if (P1 - offsetP1 > pressureDeltaDown || (platformStateUp ==  true && autoMode_1 == true))
   {
-	  printLcd(3, outputPSI_rb); // Print reg and bottle if bottle pressurized
+	  printLcd2(3, outputPSI_rb, throttleVal); // Print reg and bottle if bottle pressurized
   }
   else
   {
 		//if (PFlag == true){printLcd(3, outputPSI_rb); PFlag=false;} // Print only reg if bottle not present or at zero pressure
-		printLcd2(3, outputPSI_rb, 500);
+		printLcd2(3, outputPSI_r, throttleVal);
   }
 
   //======================================================================
@@ -541,7 +542,7 @@ void loop()
 
     // Pressure output
     pressureOutput();
-    printLcd(3, outputPSI_b); 
+    printLcd2(3, outputPSI_b, throttleVal); 
   }
     
   // PRESSURIZE LOOP EXIT ROUTINES
@@ -616,7 +617,7 @@ void loop()
     delay(100);
 		
 		pressureOutput();
-    printLcd2 (3, outputPSI_rb, 500); 
+    printLcd2 (3, outputPSI_rb, throttleVal); 
     
     // CLEANING MODE: If in Cleaning Mode, set FillState HIGH to disable sensor
     if (inCleaningMode == true)
@@ -767,7 +768,7 @@ void loop()
   
 	// Pressure output
 	pressureOutput();
-	printLcd2 (3, outputPSI_rb, 500);
+	printLcd2 (3, outputPSI_rb, throttleVal);
   
 	//Allow momentary "burst" foam tamping
   button2State = !digitalRead(button2Pin);
@@ -913,7 +914,7 @@ void loop()
 		while(!digitalRead(button3Pin) == HIGH)
 		{
 			pressureOutput();
-			printLcd(3, outputPSI_b);
+			printLcd2(3, outputPSI_b, throttleVal);
 			digitalWrite(light3Pin, HIGH);
 			buzzer (75);
 			digitalWrite(light3Pin, LOW);
@@ -986,7 +987,7 @@ void loop()
       String (convNumberCyclesSession) = floatToString(buffer, numberCyclesSession, 0);
       String outputInt = "Session fills: " + convNumberCyclesSession;
       printLcd(2, outputInt); 
-      delay(2000);
+      delay(1500);
     
       inFillLoopExecuted = false;
     }      
@@ -994,7 +995,6 @@ void loop()
   
   // END PLAFORM LOWER LOOP
   //============================================================================================
-
 }
 
 //=======================================================================================================

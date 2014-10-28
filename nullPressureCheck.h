@@ -17,7 +17,8 @@ void nullPressureStartup()
 	  lcd.setCursor (0, 0); lcd.print (F("Pressurized bottle! "));
 	  lcd.setCursor (0, 1); lcd.print (F("Open exhaust valve  "));
 	  lcd.setCursor (0, 2); lcd.print (F("for faster venting. "));
-	  pressureOutput(); printLcd(3, outputPSI_rb); 
+	  pressureOutput(); 
+		printLcd2(3, outputPSI_rb, throttleVal); 
 
 	  buzzOnce(1000, light2Pin);
  
@@ -45,7 +46,8 @@ void nullPressureStartup()
 
 	  // Write Null Pressure warning 
 	  messageGasLow();
-	  pressureOutput(); printLcd(3, outputPSI_r);  
+	  pressureOutput(); 
+		printLcd2(3, outputPSI_r, throttleVal);  
 
 	  button3State = !digitalRead(button3Pin);
         

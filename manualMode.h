@@ -29,7 +29,7 @@ void manualModeLoop()
     
     // FUNCTION: Read and output pressure
     pressureOutput();
-    printLcd(3, outputPSI_rb);    
+    printLcd2(3, outputPSI_rb, throttleVal);    
   
     if (platformStateUp == false && switchDoorState == HIGH && !inDiagnosticMode)
     {

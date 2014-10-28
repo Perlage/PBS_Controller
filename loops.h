@@ -100,7 +100,7 @@ void emergencyDepressurize()
     digitalWrite(buzzerPin, HIGH); //Leave buzzer on until closed
       
     pressureOutput();
-    printLcd(3, outputPSI_b);     
+    printLcd2(3, outputPSI_b, throttleVal);     
     
     switchDoorState = digitalRead(switchDoorPin); //Check door switch    
     P1 = analogRead(sensorP1Pin);

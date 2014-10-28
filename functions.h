@@ -6,6 +6,7 @@
 //ThrottleInt is in ms. The duration between positive PFlags is given by (throttleInt/1000)/2
 // ======================================================================================
 
+// Currently unused
 void displayThrottle(float throttleInt)
 {
 	Nf1  = int((millis()/throttleInt - int(millis()/throttleInt)) * 2); // For display timing
@@ -17,13 +18,12 @@ void displayThrottle(float throttleInt)
 }
 
 // FUNCTION printLcd2:
-//This throttles the number of times the display updates per second
-//ThrottleInt is in ms. The duration between positive PFlags is given by (throttleInt/1000)/2
+// This function allows us to throttle the number of times the display updates per second. The larger the number, the less frequent the screen updates
+// The frequency of screen updates is given by (2000/throttleInt)
 // =======================================================================================
 
 void printLcd2 (int line, String newString, float throttleInt)
 {
-
 	Nf1  = int((millis()/throttleInt - int(millis()/throttleInt)) * 2); // For display timing
 	if (Nf1 != Nf2)
 	{
@@ -57,10 +57,10 @@ void printLcd (int line, String newString)
   }
 }
 
-
 // FUNCTION relayOn
 // Allows relay states to be easily be changed from HI=on to LOW=on
 // =======================================================================================
+
 void relayOn(int pinNum, boolean on){
   if(on){
     digitalWrite(pinNum, LOW);} //turn relay on
@@ -184,7 +184,7 @@ void pressureOutput()
 
   (outputPSI_rb)  = "Keg:" + convPSI2 + " Bottle:" + convPSI1; //was Reg
   (outputPSI_b)   = "Bottle: " + convPSI1 + " psi"; 
-  (outputPSI_r)   = "Keg: " + convPSI2 + " psi"; //Was "Regulator"
+  (outputPSI_r)   = "Keg:" + convPSI2 + " psi"; //Was "Regulator"
 }  
 
 // FUNCTION: pressureDump()
