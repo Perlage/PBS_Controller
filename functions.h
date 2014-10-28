@@ -2,22 +2,61 @@
 // DECLARE FUNCTIONS
 // ======================================================================================
 
-// FUNCTION printLcd: 
-// To simplify string output. Prevents rewriting unless string has changed; 
-// if string has changed, blanks out line first and reprints
+//This throttles the number of times the display updates per second
+//ThrottleInt is in ms. The duration between positive PFlags is given by (throttleInt/1000)/2
+// ======================================================================================
+
+void displayThrottle(float throttleInt)
+{
+	Nf1  = int((millis()/throttleInt - int(millis()/throttleInt)) * 2); // For display timing
+	if (Nf1 != Nf2)
+	{
+		PFlag = true;
+		Nf2 = Nf1;
+	}
+}
+
+// FUNCTION printLcd2:
+//This throttles the number of times the display updates per second
+//ThrottleInt is in ms. The duration between positive PFlags is given by (throttleInt/1000)/2
 // =======================================================================================
-String currentLcdString[3];
+
+void printLcd2 (int line, String newString, float throttleInt)
+{
+
+	Nf1  = int((millis()/throttleInt - int(millis()/throttleInt)) * 2); // For display timing
+	if (Nf1 != Nf2)
+	{
+		PFlag = true;
+		Nf2 = Nf1;
+	}
+	if (PFlag == true)
+	{
+    lcd.setCursor(0,line);
+    lcd.print("                    ");
+    lcd.setCursor(0,line);
+    lcd.print(newString);
+		PFlag = false;
+  }
+}
+
+//String currentLcdString[3]; // Jeremy's original
+String currentLcdString;
+
 void printLcd (int line, String newString)
 {
-  if(!currentLcdString[line].equals(newString))
-  {
-    currentLcdString[line] = newString;
+  //if(!currentLcdString[line].equals(newString)) // see Arduino reference, Data types / String object / equals() function
+  if(!currentLcdString.equals(newString)) // see Arduino reference, Data types / String object / equals() function
+	{
+    //currentLcdString[line] = newString;
+		currentLcdString = newString;
     lcd.setCursor(0,line);
     lcd.print("                    ");
     lcd.setCursor(0,line);
     lcd.print(newString);
   }
 }
+
 
 // FUNCTION relayOn
 // Allows relay states to be easily be changed from HI=on to LOW=on

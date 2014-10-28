@@ -10,10 +10,10 @@ Author:
   
 Copyright 2013, 2014  All rights reserved
 
-10-26-2014:
+10-27-2014:
 
 Release Version
-27,000k 
+27,284k 
 
 Debug w/all breakpoints deactivated
 27,934k 
@@ -160,16 +160,21 @@ boolean buzzedOnce                   = false;
 boolean inFillLoopExecuted           = false;    // True of FillLoop is dirty. Used to compute numberCycles
 char buffer[25];                                 // Used in float to string conv // 1-26 Changed from 25 to 20 //CHANGED BACK TO 25!! SEEMS TO BE IMPORTANT!
 
+//For display throttling
+int Nf1;								// 
+int Nf2 = 0;						// 
+boolean PFlag	= true;		// Print flag
+
 //======================================================================================
 // PROCESS LOCAL INCLUDES
 //======================================================================================
 
 // Order is important!!!! Must include an include before it is referenced by other includes
-#include "functions.h"			//Functions
-#include "lcdMessages.h"		//User messages
-#include "loops.h"				//Major resused loops
-#include "manualMode.h"			//Manual Mode function
-#include "menuShell.h"			//Menu shell
+#include "functions.h"					//Functions
+#include "lcdMessages.h"				//User messages
+#include "loops.h"							//Major resused loops
+#include "manualMode.h"					//Manual Mode function
+#include "menuShell.h"					//Menu shell
 #include "nullPressureCheck.h"	//Null Pressure routines
 
 //=====================================================================================
@@ -273,6 +278,7 @@ void setup()
   //UNCOMMENT OUT NEXT LINE FOR SHOW
   //relayOn(relay4Pin, true);  // Now Raise platform     
   
+	/*
   // Leave blink loop and light all lights 
   digitalWrite(light1Pin, HIGH); delay(500);
   digitalWrite(light2Pin, HIGH); delay(500);
@@ -307,6 +313,7 @@ void setup()
   delay(100); digitalWrite(light2Pin, LOW);
   delay(100); digitalWrite(light1Pin, LOW);
   buzzer (1000);
+	*/
 }
     
 //====================================================================================================================================
@@ -361,9 +368,24 @@ void loop()
   }
   if (switchDoorState == HIGH && platformStateUp == false)
   {
-		messageInsertBottle(); //Insert Bottle; B1 raises Platform
+		messageInsertBottle(); // MESSAGE: Insert Bottle; B1 raises Platform
   }  
   lcd.setCursor (0, 2); lcd.print (F("Ready...            "));  
+	
+  // Main Loop idle pressure measurement and LCD output
+  //======================================================================+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=++++++
+
+  pressureOutput();
+  
+  if (P1 - offsetP1 > pressureDeltaDown || (platformStateUp ==  true && autoMode_1 == true))
+  {
+	  printLcd(3, outputPSI_rb); // Print reg and bottle if bottle pressurized
+  }
+  else
+  {
+		//if (PFlag == true){printLcd(3, outputPSI_rb); PFlag=false;} // Print only reg if bottle not present or at zero pressure
+		printLcd2(3, outputPSI_rb, 500);
+  }
 
   //======================================================================
   //MULTI BUTTON COMBO ROUTINES
@@ -419,18 +441,6 @@ void loop()
     digitalWrite (light2Pin, LOW);
   }
   
-  // Main Loop idle pressure measurement and LCD output
-  //======================================================================
-
-  pressureOutput();
-  if (P1 - offsetP1 > pressureDeltaDown || (platformStateUp ==  true && autoMode_1 == true)){
-    printLcd(3, outputPSI_rb); // Print reg and bottle if bottle pressurized
-  }
-  else{
-    printLcd(3, outputPSI_r);  // Print only reg if bottle not present or at zero pressure
-  }  
-  
-
   // v1.1 Door opened while bottle pressurized...emergency dump of pressure  
   //========================================================================
   if (platformStateUp == true && switchDoorState == HIGH && (P1 - offsetP1 >= pressureDeltaDown + 50)) // May need to raise this threshold
@@ -526,7 +536,7 @@ void loop()
       button2State = HIGH;                                         //exit WHILE loop
     }  
       
-	messageB2B3Toggles();
+		messageB2B3Toggles();
     lcd.setCursor (0, 2); lcd.print (F("Pressurizing...     "));
 
     // Pressure output
@@ -603,8 +613,10 @@ void loop()
     }
     
     //Read and output pressure
-    pressureOutput();
-    printLcd (3, outputPSI_rb); 
+    delay(100);
+		
+		pressureOutput();
+    printLcd2 (3, outputPSI_rb, 500); 
     
     // CLEANING MODE: If in Cleaning Mode, set FillState HIGH to disable sensor
     if (inCleaningMode == true)
@@ -752,56 +764,53 @@ void loop()
 	{
 		digitalWrite(light1Pin, LOW);
 	}
-	
-    // Pressure output    
-    pressureOutput();
-    printLcd(3, outputPSI_rb); 
+  
+	// Pressure output
+	pressureOutput();
+	printLcd2 (3, outputPSI_rb, 500);
+  
+	//Allow momentary "burst" foam tamping
+  button2State = !digitalRead(button2Pin);
+	if(button2State == LOW)
+  {
+    digitalWrite(light2Pin, HIGH); 
+    relayOn(relay2Pin, true);
+    delay(50);  // Burst duration
+    relayOn(relay2Pin, false);
+    digitalWrite(light2Pin, LOW);
+  }
     
-    //Allow momentary "burst" foam tamping
-    button2State = !digitalRead(button2Pin);
-    
-		if(button2State == LOW)
-    {
-      digitalWrite(light2Pin, HIGH); 
-      relayOn(relay2Pin, true);
-      delay(50);  // Burst duration
-      relayOn(relay2Pin, false);
-      digitalWrite(light2Pin, LOW);
-    }
-    
-    // CLEANING MODE: If in cleaning mode, set FillState HIGH
-    if (inCleaningMode == true)
-    {
-      sensorFillState = HIGH;      
-      lcd.setCursor (0, 2); lcd.print (F("Venting--SENSOR OFF"));
-    }
-    else
-    {
-      sensorFillState = digitalRead(sensorFillPin); //Check fill sensor
-      switchDoorState = digitalRead(switchDoorPin); //Check door switch // Not using this
-      lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
-    }   
-		lcd.setCursor (0, 0); lcd.print (F("B3 toggles venting; "));
+  // CLEANING MODE: If in cleaning mode, set FillState HIGH
+  if (inCleaningMode == true)
+  {
+    sensorFillState = HIGH;      
+    lcd.setCursor (0, 2); lcd.print (F("Venting--SENSOR OFF"));
+  }
+  else
+  {
+    sensorFillState = digitalRead(sensorFillPin); //Check fill sensor
+    switchDoorState = digitalRead(switchDoorPin); //Check door switch // Not using this
+    lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
+  }   
+	lcd.setCursor (0, 0); lcd.print (F("B3 toggles venting; "));
 
-		// Rotate messages once every 1000 millisec
-		if (float(millis())/4000 - int(millis()/4000) > .5)
-		{
-			lcd.setCursor (0, 1); lcd.print (F("B2: Burst tamping   "));
-		}
-		else	
-		{
-			lcd.setCursor (0, 1); lcd.print (F("B1: Overrides sensor"));
-		}
+	// Rotate messages once every 1000 millisec
+	if (float(millis())/4000 - int(millis()/4000) > .5){
+		lcd.setCursor (0, 1); lcd.print (F("B2: Burst tamping   "));
+	}
+	else{
+		lcd.setCursor (0, 1); lcd.print (F("B1: Overrides sensor"));
+	}
 		
-    //Check toggle state of B3
-    button3StateTEMP = !digitalRead(button3Pin);
-    if (button3StateTEMP == HIGH && button3ToggleState == false){  // ON release
-      button3ToggleState = true;                                   // Leaves buttonState LOW
-      button3State = LOW; 
-    }
-    if (button3StateTEMP == LOW && button3ToggleState == true){    // OFF push
-      button3State = HIGH;                                         // Exit WHILE loop
-    }
+  //Check toggle state of B3
+  button3StateTEMP = !digitalRead(button3Pin);
+  if (button3StateTEMP == HIGH && button3ToggleState == false){  // ON release
+    button3ToggleState = true;                                   // Leaves buttonState LOW
+    button3State = LOW; 
+  }
+  if (button3StateTEMP == LOW && button3ToggleState == true){    // OFF push
+    button3State = HIGH;                                         // Exit WHILE loop
+  }
 }
 
   // DEPRESSURIZE LOOP EXIT ROUTINES 
@@ -893,7 +902,7 @@ void loop()
   // Platform will not lower with door closed. This prevents someone from defeating door switch
   // ===========================================================================================
   
-  // This is a catch routine to remind the user to open the exhaust if there is foam present in the neck of bottle
+  // v1.1 This is a catch routine to remind the user to open the exhaust if there is foam present in the neck of bottle
   if (digitalRead(sensorFillPin) == LOW && switchDoorState == HIGH && platformStateUp == true && inFillLoopExecuted == true)
   {
 		lcd.setCursor (0, 0); lcd.print (F("Open Exhaust valve  "));
@@ -912,7 +921,8 @@ void loop()
 		}
   }
 
-  while((!digitalRead(button3Pin) == LOW) && switchDoorState == HIGH && (P1 - offsetP1) <= pressureDeltaDown) // Removed || autoMode_1 == true and  && (digitalRead(sensorFillPin) == HIGH)
+	// v1.1 Removed "|| autoMode_1 == true and  && (digitalRead(sensorFillPin) == HIGH)" so platform no longer drops automatically
+  while((!digitalRead(button3Pin) == LOW) && switchDoorState == HIGH && (P1 - offsetP1) <= pressureDeltaDown) 
   {
     inPlatformLowerLoop = true;
     digitalWrite(light3Pin, HIGH);
