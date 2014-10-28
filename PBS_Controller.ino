@@ -862,7 +862,7 @@ void loop()
     //CASE 3: Bottle was properly depressurized. If we reach here, the pressure must have reached threshold. Go to Platform lower loop
     if (P1 - offsetP1 <= pressureDeltaDown)
     {
-      buzzer(100);
+      buzzer(500);
       autoMode_1 = true;  //Going to platform loop automatically, so set this var to partially drop platform 
 	  	lcd.setCursor (0, 0); lcd.print (F("Grasp bottle; then  "));
 	  	lcd.setCursor (0, 1); lcd.print (F("B3 lowers platform. "));
