@@ -81,7 +81,7 @@ for (int n = 8; n <= 11; n++){
     buzzer(100);
     delay(100);
   }
-  lcd.setCursor (0, 2); lcd.print (F("                    "));
+  messageLcdBlank();
   delay(500);  // A little delay after closing door before raising platform
 
   relayOn(relay4Pin, true);  // Now Raise platform     

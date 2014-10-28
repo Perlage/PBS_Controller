@@ -163,7 +163,7 @@ int Nf1;
 int Nf2 = 0;
 boolean PFlag	= true;			// Print flag
 int throttleVal = 500;		// This is a global value; indidual functions can overwritten. The smaller the number, the higher the frequency of positive PFlags, given by (2000/throttleInt)
-int rotateInt = 4000;     // This value divided by 4 gives the rotation speed in seconds
+int rotateInt = 8000;     // This value divided by 4 gives the rotation speed in seconds
 
 //======================================================================================
 // PROCESS LOCAL INCLUDES
@@ -324,7 +324,7 @@ void setup()
 
 void loop()
 {
-  //MAIN LOOP IDLE FUNCTIONS
+	//MAIN LOOP IDLE FUNCTIONS
   //=====================================================================
 
   // Read the state of buttons and sensors
@@ -371,7 +371,7 @@ void loop()
   if (switchDoorState == HIGH && platformStateUp == false)
   {
 		// Rotate messages once every 1000 millisec
-		if (float(millis())/rotateInt - int(millis()/rotateInt) > .5)
+		if (float(millis())/rotateInt - int(millis()/rotateInt) > .250) // number at end "tunes" the percentage of time spent on each message
 		{
 			messageInsertBottle(); // MESSAGE: Insert Bottle; B1 raises Platform
 		}
@@ -453,7 +453,7 @@ void loop()
   
   // v1.1 Door opened while bottle pressurized...emergency dump of pressure  
   //========================================================================
-  if (platformStateUp == true && switchDoorState == HIGH && (P1 - offsetP1 >= pressureDeltaDown + 50)) // May need to raise this threshold
+  if (platformStateUp == true && switchDoorState == HIGH && (P1 - offsetP1 >= pressureDeltaDown + 50)) // Can adjust this threshold by adding a value to pressureDeltaDown
   { 
     emergencyDepressurize();
   }  
@@ -463,15 +463,13 @@ void loop()
   
   // =====================================================================================  
   // PLATFORM RAISING LOOP
-  // while B1 is pressed, platform is not UP, and door is open, raise bottle platform.
   // =====================================================================================  
 
   platformUpLoop();
 
-  //============================================================================================
+  //======================================================================================
   // PRESSURIZE LOOP
-  // Pressurization will start automatically when door closes IF platfromLockedNew is true
-  //============================================================================================
+  //======================================================================================
     
   int PTest1;
   int PTest2;
@@ -667,7 +665,6 @@ void loop()
       
       //lcd.setCursor (0, 2); lcd.print (F("Preventing drip... "));
       delay(antiDripDuration); // This setting determines duration of autosiphon 
-      //lcd.setCursor (0, 2); lcd.print (F("                   "));
 
       relayOn(relay1Pin, false);
       relayOn(relay2Pin, false);
@@ -805,7 +802,7 @@ void loop()
 	lcd.setCursor (0, 0); lcd.print (F("B3 toggles venting; "));
 
 	// Rotate messages once every 1000 millisec
-	if (float(millis())/rotateInt - int(millis()/rotateInt) > .5){
+	if (float(millis())/rotateInt - int(millis()/rotateInt) > .500){ //number at end "tunes" the percentage of time spent on each message
 		lcd.setCursor (0, 1); lcd.print (F("B2: Burst tamping   "));
 	}
 	else{
@@ -938,6 +935,7 @@ void loop()
     digitalWrite(light3Pin, HIGH);
 		relayOn(relay4Pin, false); // Finally can close platform up solenoid
     lcd.setCursor (0, 2); lcd.print (F("Lowering platform..."));
+		lcd.setCursor (0, 3); lcd.print (F("                    "));
     
     if(autoMode_1 == true)
     {

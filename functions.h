@@ -22,9 +22,10 @@ void displayThrottle(float throttleInt)
 // The frequency of screen updates is given by (2000/throttleInt)
 // =======================================================================================
 
-void printLcd2 (int line, String newString, float throttleInt)
+void printLcd2 (int line, String newString, int throttleInt) //Changed throttleInt to integer
 {
-	Nf1  = int((millis()/throttleInt - int(millis()/throttleInt)) * 2); // For display timing
+	//Nf1  = int((millis()/throttleInt - int(millis()/throttleInt)) * 2); // For display timing
+	Nf1  = int((millis() % throttleInt)/(throttleInt / 2)); //This is better method using Modulo. Doesn't require float for throttleInt
 	if (Nf1 != Nf2)
 	{
 		PFlag = true;
@@ -180,9 +181,9 @@ void pressureOutput()
   (convPSI2)      = floatToString(buffer, PSI2, 1);
   (convPSIdiff)   = floatToString(buffer, PSIdiff, 1);
 
-  (outputPSI_rb)  = "Keg:" + convPSI2 + " Bottle:" + convPSI1;	//was Reg
+  (outputPSI_rb)  = "Reg:" + convPSI2 + " Bottle:" + convPSI1;	//was Reg
   (outputPSI_b)   = "Bottle: " + convPSI1 + " psi"; 
-  (outputPSI_r)   = "Keg:" + convPSI2 + " psi";									//Was "Regulator"
+  (outputPSI_r)   = "Regulator:" + convPSI2 + " psi";									//Was "Regulator"
 }  
 
 // FUNCTION: pressureDump()

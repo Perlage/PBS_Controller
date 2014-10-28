@@ -10,7 +10,7 @@
 void platformUpLoop()
 {
   timePlatformInit = millis(); // Inititalize time for platform lockin routine
-  int n = 0;
+  int nn = 0;
   
   while (button1State == LOW && platformStateUp == false && switchDoorState == HIGH && (timePlatformRising < timePlatformLock)) 
   { 
@@ -26,8 +26,8 @@ void platformUpLoop()
     
     // Writes a lengthening line of dots
     lcd.setCursor (0, 2); lcd.print (F("Raising             "));
-    lcd.setCursor (((n + 12) % 12) + 7, 2); lcd.print (F(".")); 
-    n = n++;
+    lcd.setCursor (((nn + 12) % 12) + 7, 2); lcd.print (F(".")); 
+    nn = nn++;
     delay(100);  
     
     button1State = !digitalRead(button1Pin); 
@@ -113,7 +113,7 @@ void emergencyDepressurize()
     inEmergencyDepressurizeLoop = false;
     relayOn(relay3Pin, false);  
     digitalWrite(buzzerPin, LOW); // Now turn off
-    lcd.setCursor (0, 2); lcd.print (F("                    "));
+    messageLcdBlank();
     button2State = HIGH;  // Pass HIGH state to next routine so filling doesn't automatically resume. Make user think about it!
   }  
 }  

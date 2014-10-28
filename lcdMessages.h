@@ -27,3 +27,9 @@ void messageInsertBottle()
   lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
   lcd.setCursor (0, 1); lcd.print (F("B1 raises platform  "));
 }
+
+void messageLcdBlank()
+{
+  lcd.setCursor (0, 2); lcd.print (F("                    "));
+}
+
