@@ -188,7 +188,7 @@ void pressureOutput()
 
 // FUNCTION: pressureDump()
 // =====================================================================================
-void pressureDump()
+void pressureDump() //Must close S3 manually
 {
   while (P1 - offsetP1 > pressureDeltaDown)
   {
@@ -196,6 +196,20 @@ void pressureDump()
     P1 = analogRead (sensorP1Pin);
     pressureOutput();
     printLcd (3, outputPSI_b);
-  }  
-  relayOn(relay3Pin, false);  
+  } 
+}
+
+//FUNCTION: messageRotator() UNDER CONSTRUCTION
+//=======================================================================================
+boolean messageID;
+void messageRotator(int rotateRate, float weight)
+{
+	if ((millis() % rotateRate)/rotateRate > weight)
+	{
+		messageID = true;
+	}
+	else
+	{
+		messageID = false;
+	}
 }

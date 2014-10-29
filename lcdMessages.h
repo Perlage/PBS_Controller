@@ -11,7 +11,7 @@ void messageInitial()
 
 void messageGasLow()
 {
-  lcd.setCursor (0, 0); lcd.print (F("Gas off or empty;   "));
+  lcd.setCursor (0, 0); lcd.print (F("CO2 pressure low;   "));
   lcd.setCursor (0, 1); lcd.print (F("check tank & hoses. "));
   lcd.setCursor (0, 2); lcd.print (F("B3 opens door.      "));
 }

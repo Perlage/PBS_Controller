@@ -1,6 +1,18 @@
 // =============================================================================================
 // CODE FRAGMENTS 
 // =============================================================================================
+
+// FROM BOOTUP ROUTINE
+//===================================================================================
+
+//NOW print lifetime fills and autosiphon duration
+//autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;
+//String (convInt) = floatToString(buffer, autoSiphonDurationSec, 1);
+//String (outputInt) = "Autosiphon: " + convInt + " sec";
+//printLcd (2, outputInt);
+//delay(1000);
+
+
 /*
 // FLASH MEMORY STRING HANDLING
 //=====================================================================================
@@ -38,6 +50,10 @@ const char *strLcdTable[] PROGMEM =  // Name of table following * is arbitrary
 for (int n = 8; n <= 11; n++){
   strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
   printLcd (n % 4, bufferP);}
+	
+
+strcpy_P(bufferP, (char*)pgm_read_word(&(strLcdTable[n])));
+printLcd (line, bufferP);
   
 */  
 //===============================================================================================

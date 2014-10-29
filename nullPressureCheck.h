@@ -14,9 +14,9 @@ void nullPressureStartup()
 	  relayOn (relay3Pin, true);   // Vent bottle immediately
 	  inPressurizedBottleLoop = true;
   
-	  lcd.setCursor (0, 0); lcd.print (F("Pressurized bottle! "));
-	  lcd.setCursor (0, 1); lcd.print (F("Open exhaust valve  "));
-	  lcd.setCursor (0, 2); lcd.print (F("for faster venting. "));
+	  lcd.setCursor (0, 0); lcd.print (F("Pressurized bottle  "));
+	  lcd.setCursor (0, 1); lcd.print (F("found. Open exhaust "));
+	  lcd.setCursor (0, 2); lcd.print (F("valve to vent...    "));
 	  pressureOutput(); 
 		printLcd2(3, outputPSI_rb, throttleVal); 
 
@@ -49,11 +49,15 @@ void nullPressureStartup()
 	  pressureOutput(); 
 		printLcd2(3, outputPSI_r, throttleVal);  
 
-	  button3State = !digitalRead(button3Pin);
-        
-	  if (button3State == LOW){
-		doorOpen();
+	  while (!digitalRead(button3Pin) == LOW){
+			digitalWrite(light3Pin, HIGH);
+			doorOpen();
+			relayOn (relay4Pin, true); 
+			relayOn (relay5Pin, true);		
 	  }  
+		relayOn (relay4Pin, false);
+		relayOn (relay5Pin, false);
+		digitalWrite(light3Pin, LOW);
 	}
 	buzzedOnce = false;
 
@@ -95,7 +99,7 @@ void nullPressureStartup()
 // =======================================================================
 
 //========================================================================
-// EMERGENCY PLATFORM LOCK LOOP:
+// PRESSURE SAG ROUTINES IN MAIN LOOP:
 // Lock platform if gas pressure drops while bottle pressurized
 // This function takes action if pressure drops in idle loop
 //========================================================================

@@ -102,12 +102,12 @@ boolean inDiagnosticMode             = false;
 
 //Key logical states
 boolean autoMode_1                   = false;   // Variable to help differentiate between states reached automatically vs manually 
-boolean platformLockedNew            = false;   // Variable to be set when platfrom first locks up. This is for autofill-on-doorclose function
+boolean platformLockedNew            = false;   // Variable to be set when platform first locks up. This is for autofill-on-door close function
 boolean platformStateUp              = false;   // true means platform locked in UP; toggled false when S5 opens
 
 //Pressure constants                            // NOTE: 1 psi = 12.6 units. 
 int offsetP1;                                   // Zero offset for pressure sensor1 (bottle). Set through EEPROM in initial factory calibration, and read into pressureOffset during Setup loop
-int offsetP2;                                   // Zero offest for pressure sensor2 (input regulator). Ditto above.
+int offsetP2;                                   // Zero offset for pressure sensor2 (input regulator). Ditto above.
 const int pressureDeltaUp            = 50;      // Pressure at which, during pressurization, full pressure is considered to have been reached // Tried 10, 38; went back to 50 to prevent repressurizing after fill button cycle
 const int pressureDeltaDown          = 38;      // Pressure at which, during depressurizing, pressure considered to be close enough to zero // 38 works out to 3.0 psi 
 const int pressureDeltaMax           = 300;     // This is max pressure difference allowed on filling (i.e., limits fill speed) //v1.1 Now can reduce this significantly from 250 since have two pressure sensors. 100 is good.
@@ -133,7 +133,7 @@ int timePlatformInit;                           // Time in ms going into loop
 int timePlatformCurrent;                        // Time in ms currently in loop
 int timePlatformRising               = 0;       // Time difference between Init and Current
 const int timePlatformLock           = 1250;    // Time in ms before platform locks in up position
-const int autoPlatformDropDuration   = 1500;    // Duration of platform autodrop in ms
+const int autoPlatformDropDuration   = 1500;    // Duration of platform auto drop in ms
 
 //Key performance parameters
 int autoSiphonDuration;                         // Duration of autosiphon function in ms
@@ -172,7 +172,7 @@ int rotateInt = 8000;     // This value divided by 4 gives the rotation speed in
 // Order is important!!!! Must include an include before it is referenced by other includes
 #include "functions.h"					//Functions
 #include "lcdMessages.h"				//User messages
-#include "loops.h"							//Major resused loops
+#include "loops.h"							//Major reused loops
 #include "manualMode.h"					//Manual Mode function
 #include "menuShell.h"					//Menu shell
 #include "nullPressureCheck.h"	//Null Pressure routines
@@ -288,13 +288,6 @@ void setup()
   // Continue with normal ending when pressure is OK
   // ====================================================================================
 
-  //NOW print lifetime fills and autosiphon duration 
-  //autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;
-  //String (convInt) = floatToString(buffer, autoSiphonDurationSec, 1);
-  //String (outputInt) = "Autosiphon: " + convInt + " sec";
-  //printLcd (2, outputInt); 
-  //delay(1000); 
-
   String convInt = floatToString(buffer, numberCycles, 0);
   String outputInt = "Total fills: " + convInt;
   printLcd (2, outputInt);  
@@ -370,8 +363,8 @@ void loop()
   }
   if (switchDoorState == HIGH && platformStateUp == false)
   {
-		// Rotate messages once every 1000 millisec
-		if (float(millis())/rotateInt - int(millis()/rotateInt) > .250) // number at end "tunes" the percentage of time spent on each message
+		// Rotate messages once every rotateInt/2 ms // number at end "tunes" the percentage of time spent on each message. Small number biases first message
+		if (float(millis())/rotateInt - int(millis()/rotateInt) > .250) 
 		{
 			messageInsertBottle(); // MESSAGE: Insert Bottle; B1 raises Platform
 		}
@@ -379,24 +372,50 @@ void loop()
 		{
 			lcd.setCursor (0, 1); lcd.print (F("B2+B1 purges bottle "));
 		}
+	
+	/* Message rotator in progress
+	if (P1 - offsetP1 > pressureDeltaDown || (platformStateUp ==  true && autoMode_1 == true))
+	{
+		messageRotator(2000, .25);
+		if (messageID)
+		{
+			lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust  "));
+		}
+		else
+		{
+			lcd.setCursor (0, 1); lcd.print (F("B1 fixes overfill.  "));
+		}
+	}
+	*/
+		
   }  
   lcd.setCursor (0, 2); lcd.print (F("Ready...            "));  
 	
   // Main Loop idle pressure measurement and LCD output
-  //======================================================================+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=++++++
+  //======================================================================
 
   pressureOutput();
-  
   if (P1 - offsetP1 > pressureDeltaDown || (platformStateUp ==  true && autoMode_1 == true))
   {
 	  printLcd2(3, outputPSI_rb, throttleVal); // Print reg and bottle if bottle pressurized
   }
   else
   {
-		//if (PFlag == true){printLcd(3, outputPSI_rb); PFlag=false;} // Print only reg if bottle not present or at zero pressure
-		printLcd2(3, outputPSI_r, throttleVal);
+		printLcd2(3, outputPSI_r, throttleVal); // Print only reg if bottle unpressurized
   }
-
+	
+	// Autosiphon in Main loop
+	//=====================================================================
+	while (!digitalRead(button1Pin) == LOW && (P1 - offsetP1 > pressureDeltaDown) && platformStateUp ==  true)
+	{
+		 relayOn(relay1Pin, true);                            
+		 relayOn(relay2Pin, true);                               
+		 digitalWrite(light1Pin, HIGH);
+	}
+	relayOn(relay1Pin, false);
+	relayOn(relay2Pin, false);
+	digitalWrite(light1Pin, LOW);
+	
   //======================================================================
   //MULTI BUTTON COMBO ROUTINES
   //======================================================================
@@ -518,7 +537,7 @@ void loop()
         platformLockedNew = false;
       }
       /* 
-	  //This code works better than breakpoint. BP can't process messages fast enough
+	    //This code works better than breakpoint. BP can't process messages fast enough
       Serial.print ("T= "); 
       Serial.print (pressurizeDuration);
       Serial.print (" P1= ");  
@@ -569,9 +588,11 @@ void loop()
       lcd.setCursor (0, 3); lcd.print (F("Wait...             "));
       digitalWrite(light1Pin, LOW); 
 
-      pressureDump();   // Dump any pressure that built up
-      doorOpen();       // Open door
-      platformDrop();   // Drop platform
+      pressureDump();							// Dump any pressure that built up
+      doorOpen();									// Open door
+			delay(2000);								// Give time to degas
+			platformDrop();							// Drop platform
+			relayOn(relay3Pin, false);  // Now close S3
       
       //Reset variables
       PTestFail = false;      
@@ -593,11 +614,6 @@ void loop()
   // FILL LOOP
   //========================================================================================
 
-  // Get fresh pressure readings
-  P1 = analogRead (sensorP1Pin);
-  P2 = analogRead (sensorP2Pin);
-
-  // First pressureDeltaMax condition ensures filling can't go too fast (unless in cleaning mode); second ensures can't dispense w/out pressurized bottle
   // v1.1 Changed the pressureDeltaMax condition to reflect fact that there are two sensors
   while(button2State == LOW && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true) && (P1 - offsetP1) > pressureDeltaMax) 
   {     
@@ -611,18 +627,15 @@ void loop()
 
     //Check toggle state of B2    
     button2StateTEMP = !digitalRead(button2Pin);
-    //delay(25);
     if (button2StateTEMP == HIGH && button2ToggleState == false){  //ON release
       button2ToggleState = true;                                   //Leaves buttonState LOW
       button2State = LOW;                                          //Or makes it low
     }
-    if (button2StateTEMP == LOW && button2ToggleState == true){    // OFF push
+    if (button2StateTEMP == LOW && button2ToggleState == true){    //OFF push
       button2State = HIGH;                                         //exit WHILE loop
     }
     
     //Read and output pressure
-    delay(100);
-		
 		pressureOutput();
     printLcd2 (3, outputPSI_rb, throttleVal); 
     
@@ -640,7 +653,7 @@ void loop()
       lcd.setCursor (0, 2); lcd.print (F("Filling...          "));
     }
 		lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
-		lcd.setCursor (0, 1); lcd.print (F("                   " ));
+		lcd.setCursor (0, 1); lcd.print (F("                    "));
   }
 
   // FILL LOOP EXIT ROUTINES
@@ -659,20 +672,17 @@ void loop()
     // CASE 1: Button2 pressed when filling (B2 low and toggle state true). Run Anti-Drip
     if (button2State == HIGH && !inCleaningMode == true)
     {
-      // Anti-drip rountine
+      // Anti-drip routine
       relayOn(relay1Pin, true);
       relayOn(relay2Pin, true);
       
       //lcd.setCursor (0, 2); lcd.print (F("Preventing drip... "));
-      delay(antiDripDuration); // This setting determines duration of autosiphon 
+      delay(antiDripDuration); 
 
       relayOn(relay1Pin, false);
       relayOn(relay2Pin, false);
-      
-      //delay (25);
-      //sensorFillState = digitalRead(sensorFillPin); //v1.1 This doesn't do anything
     }
-    
+
     // CASE 2: FillSensor tripped--Overfill condition
     else if (inFillLoop && sensorFillState == LOW) 
     {
@@ -694,8 +704,7 @@ void loop()
         relayOn(relay3Pin, true); delay (1000); relayOn(relay3Pin, false);
         relayOn(relay2Pin, true); delay (250); relayOn(relay2Pin, false);
       }  
-      //sensorFillState = digitalRead(sensorFillPin); //TO DO: SET sensorFillState to LOW rather than meassuring it for force into depressurize loop. This is what we do after detecting foam--not measuring But think about case where liquid doesn't siphone down and stays in contact it
-      sensorFillState = HIGH; // Changed it back to this
+      sensorFillState = HIGH; // v1.1 Changed it back to this
       button3State = LOW; // This make AUTO-depressurize after overfill // TO DO: shouldn't this be AutoMode_1?
     }
     else 
@@ -935,7 +944,7 @@ void loop()
     digitalWrite(light3Pin, HIGH);
 		relayOn(relay4Pin, false); // Finally can close platform up solenoid
     lcd.setCursor (0, 2); lcd.print (F("Lowering platform..."));
-		lcd.setCursor (0, 3); lcd.print (F("                    "));
+		lcd.setCursor (0, 3); lcd.print (F("Regulator...        "));
     
     if(autoMode_1 == true)
     {
