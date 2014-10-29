@@ -12,7 +12,7 @@ void platformUpLoop()
   timePlatformInit = millis(); // Initialize time for platform lock-in routine
   int nn = 0;
   
-  while (button1State == LOW && platformStateUp == false && switchDoorState == HIGH && (timePlatformRising < timePlatformLock)) 
+	while (button1State == LOW && platformStateUp == false && switchDoorState == HIGH && (timePlatformRising < timePlatformLock)) 
   { 
     inPlatformUpLoop = true; 
     digitalWrite(light1Pin, HIGH);
@@ -25,10 +25,10 @@ void platformUpLoop()
     timePlatformRising = timePlatformCurrent - timePlatformInit;
     
     // Writes a lengthening line of dots
-    lcd.setCursor (0, 2); lcd.print (F("Raising"));
-    lcd.setCursor (((nn + 12) % 12) + 7, 2); lcd.print (F(".")); 
+    lcd.setCursor (0, 2); lcd.print (F("Raising            "));
+    lcd.setCursor (((nn + 12) % 12) + 7, 2); lcd.print (F("...")); 
     nn = ++nn; //Had to change this from n++ to ++n. Maybe from the upgrade from v1.0 to v1.5?
-    if (nn > 12){nn = 12;} //This keeps dots from overwriting parts of screen
+    if (nn > 12){nn = 10;} //This keeps dots from overwriting parts of screen
 		delay(100);  
     
     button1State = !digitalRead(button1Pin); 
