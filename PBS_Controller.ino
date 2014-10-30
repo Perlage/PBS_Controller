@@ -350,6 +350,7 @@ void loop()
 
   //Check Button2 toggle state
   //======================================================================
+
   if (button2StateTEMP == LOW && button2ToggleState == false){  //ON push
     button2State = LOW;         //goto while loop
   }
@@ -359,7 +360,8 @@ void loop()
   if (button2StateTEMP == HIGH && button2ToggleState == true){  //OFF release
     button2ToggleState = false; //buttonState remains HIGH
   }
-  //Check Button3 toggle state
+  
+	//Check Button3 toggle state
   //======================================================================
   if (button3StateTEMP == LOW && button3ToggleState == false){  //ON push
     button3State = LOW;         //goto while loop
@@ -405,7 +407,7 @@ void loop()
   //======================================================================
 
   pressureOutput();
-  if (P1 - offsetP1 > pressureDeltaDown || (platformStateUp ==  true && autoMode_1 == true))
+  if (P1 - offsetP1 > pressureDeltaDown)
   {
 	  printLcd2(3, outputPSI_rb, throttleVal); // Print reg and bottle if bottle pressurized
   }
@@ -487,7 +489,7 @@ void loop()
     emergencyDepressurize();
   }  
 
-  //  This routine takes action if pressure drops in idle loop. TO DO: NEEDS WORK
+  //  This routine takes action if pressure drops in idle loop.
   idleLoopPressureDrop();
   
   // =====================================================================================  
@@ -496,9 +498,9 @@ void loop()
 
   platformUpLoop();
 
-  //======================================================================================
-  // PRESSURIZE LOOP
-  //======================================================================================
+	//======================================================================================
+	// PRESSURIZE LOOP
+	//======================================================================================
     
   int PTest1;
   int PTest2;
@@ -515,7 +517,7 @@ void loop()
   { 
     inPressurizeLoop = true;
 
-    // Only want to run this once per platformUp--not on subsequent repressurizations within a cycle 
+		// Only want to run this once per platformUp--not on subsequent repressurizations within a cycle 
     if (platformLockedNew == true)
     {
       //delay(250);                                         //Make a slight delay in starting pressuriztion when door is first closed
@@ -715,7 +717,7 @@ void loop()
         relayOn(relay2Pin, true); delay (250); relayOn(relay2Pin, false);
       }  
       sensorFillState = HIGH; // v1.1 Changed it back to this
-      button3State = LOW; // This make AUTO-depressurize after overfill // TO DO: shouldn't this be AutoMode_1?
+      button3State = LOW; // This make AUTO-depressurize after overfill
     }
     else 
     {
@@ -725,7 +727,7 @@ void loop()
       {
         inPressurizeLoop = true;
         digitalWrite(light2Pin, HIGH); 
-        relayOn(relay2Pin, true);       //open S2 to equalize
+        relayOn(relay2Pin, true);        //open S2 to equalize
         P1 = analogRead(sensorP1Pin);    //do sensor read again to check
         P2 = analogRead(sensorP2Pin);    //do sensor read again to check
 
@@ -883,7 +885,7 @@ void loop()
     {
       buzzer(500);
       autoMode_1 = true;  //Going to platform loop automatically, so set this var to partially drop platform 
-	  	lcd.setCursor (0, 0); lcd.print (F("Grasp bottle; then  "));
+	  	lcd.setCursor (0, 0); lcd.print (F("Grasp bottle;       "));
 	  	lcd.setCursor (0, 1); lcd.print (F("B3 lowers platform. "));
     }
     digitalWrite(light3Pin, LOW);

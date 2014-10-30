@@ -74,7 +74,6 @@ void nullPressureStartup()
 	boolean inPressureNullLoop = false;
 	
 	// NULL PRESSURE LOOP
-	// =====================================================================
 	while (P2 - offsetP2 < pressureNull)
 	{
 		inPressureNullLoop = true;
@@ -108,7 +107,6 @@ void nullPressureStartup()
 		inPressureNullLoop = false;
 	}
 }
-
 // END NULL PRESSURE ROUTINE
 // =======================================================================
 
@@ -120,7 +118,8 @@ void nullPressureStartup()
 
 void idleLoopPressureDrop()
 {	  
-		// If pressure drops, go into this loop and wait for user to fix
+		// PRESSURE DROP LOOP
+		// ===================================================================
 	  while (P2 - offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what constitutes a pressure drop.// 2-18 Changed from 75 to 100
 	  {
 		  inPressureDropLoop = true;
@@ -156,6 +155,8 @@ void idleLoopPressureDrop()
 	  }
 	  buzzedOnce = false;
 	  
+		//PRESSURE DROP LOOP EXIT
+		// =====================================================================
 	  if (inPressureDropLoop)
 	  {
 		  inPressureDropLoop = false;
@@ -173,4 +174,4 @@ void idleLoopPressureDrop()
 	  }
 }
 //END PRESSURE DROP LOOP
-//======================================================================================
+//==========================================================================
