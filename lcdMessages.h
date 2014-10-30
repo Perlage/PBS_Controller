@@ -25,7 +25,7 @@ void messageB2B3Toggles()
 void messageInsertBottle()
 {
   lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
-  lcd.setCursor (0, 1); lcd.print (F("B1 raises platform  "));
+  lcd.setCursor (0, 1); lcd.print (F("B1 raises platform. "));
 }
 
 void messageLcdBlank()

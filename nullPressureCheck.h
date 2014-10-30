@@ -1,105 +1,119 @@
 //============================================================================
-// NULL PRESSURE ROUTINES
-// Check for stuck pressurized bottle or implausibly low gas pressure at start 
+// ANOMOLOUS PRESSURE ROUTINES
+// Check for stuck pressurized bottle, implausibly low gas pressure at start, sagging pressure
 //============================================================================
 
-void nullPressureStartup()
+// PRESSURIZED BOTTLE AT STARTUP
+void pressurizedBottleStartup()
 {	
 	boolean inPressurizedBottleLoop = false;
-	boolean inPressureNullLoop = false;
 
-	// CASE 1: PRESSURIZED BOTTLE (Bottle is already depressurizing because S3 opened above)
+	// PRESSURIZED BOTTLE LOOP
+	// =========================================================================
 	while (P1 - offsetP1 > pressureDeltaDown)
 	{
-	  relayOn (relay3Pin, true);   // Vent bottle immediately
 	  inPressurizedBottleLoop = true;
-  
-	  lcd.setCursor (0, 0); lcd.print (F("Pressurized bottle  "));
+		
+		// Relay3 already opened in variable initialization
+	  
+		lcd.setCursor (0, 0); lcd.print (F("Pressurized bottle  "));
 	  lcd.setCursor (0, 1); lcd.print (F("found. Open exhaust "));
 	  lcd.setCursor (0, 2); lcd.print (F("valve to vent...    "));
 	  pressureOutput(); 
-		printLcd2(3, outputPSI_rb, throttleVal); 
+		printLcd2(3, outputPSI_b, throttleVal); 
 
 	  buzzOnce(1000, light2Pin);
  
-	  //PLATFORM SUPPORT:
-	  //If regulator pressure is higher than bottle pressure, immediately give platform support;
-	  //Else, close cylinder solenoids to conserve gas
+	  //If regulator pressure is LOWER than bottle pressure, close cylinder solenoids to conserve gas; ELSE open S4 to support platform
 	  if (P2 - offsetP2 > P1 - offsetP1) 
 	  {
-		relayOn (relay4Pin, true);    // Support platform by opening S4
-		relayOn (relay5Pin, false);  
+			relayOn (relay4Pin, true);    // Support platform by opening S4
+			relayOn (relay5Pin, false);  
 	  }
 	  else
 	  {
-		relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
-		relayOn (relay5Pin, false);  
+			relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
+			relayOn (relay5Pin, false);  
 	  }  
 	}
 	buzzedOnce = false;
 
-	// CASE 2: GAS OFF OR LOW       
-	while (P2 - offsetP2 < pressureNull) 
+	// PRESSURIZED BOTTLE LOOP EXIT ROUTINES
+	// ========================================================================
+	if (inPressurizedBottleLoop)
 	{
-	  inPressureNullLoop = true;
-	  buzzOnce(1000, light2Pin);
+	  lcd.clear();
+	  lcd.setCursor (0, 0); lcd.print (F("Bottle depressurized"));
+	  lcd.setCursor (0, 1); lcd.print (F("Press B3 to continue"));
+		
+		buzzer (1000);
+		doorOpen();
+  
+		while (!digitalRead(button3Pin) == HIGH)
+	  {
+			digitalWrite(light3Pin, HIGH);
+			delay(500);
+			digitalWrite(light3Pin, LOW);
+			delay(500);
+	  }
 
-	  // Write Null Pressure warning 
-	  messageGasLow();
-	  pressureOutput(); 
-		printLcd2(3, outputPSI_r, throttleVal);  
+		platformStateUp = true; //Need to pass this into function
+	  platformDrop();
+	  
+		inPressurizedBottleLoop = false;
+		button3State = HIGH;   
+	} 
+}
+// END PRESSURIZED BOTTLE ROUTINE
+// =======================================================================
 
-	  while (!digitalRead(button3Pin) == LOW){
+// GAS OFF OR LOW AT STARTUP
+// =======================================================================
+void nullPressureStartup()
+{
+	boolean inPressureNullLoop = false;
+	
+	// NULL PRESSURE LOOP
+	// =====================================================================
+	while (P2 - offsetP2 < pressureNull)
+	{
+		inPressureNullLoop = true;
+		buzzOnce(1000, light2Pin);
+
+		// Write Null Pressure warning
+		messageGasLow();
+		pressureOutput();
+		printLcd2(3, outputPSI_r, throttleVal);
+
+		// Program will loop here until gas pressure fixed. 
+		while (!digitalRead(button3Pin) == LOW){
 			digitalWrite(light3Pin, HIGH);
 			doorOpen();
-			relayOn (relay4Pin, true); 
-			relayOn (relay5Pin, true);		
-	  }  
+			relayOn (relay4Pin, true); //This allows us to be able to manually move platform up and down with no gas connected
+			relayOn (relay5Pin, true);
+		}
 		relayOn (relay4Pin, false);
 		relayOn (relay5Pin, false);
 		digitalWrite(light3Pin, LOW);
 	}
-	buzzedOnce = false;
 
-	// NULL PRESSURE EXIT ROUTINES
-	// No longer closing S3 at end of this to prevent popping in some edge cases of a very foamy bottle
-	// ==================================================================================
-
-	if (inPressurizedBottleLoop || inPressureNullLoop)
+	// NULL PRESSURE LOOP EXIT
+	if (inPressureNullLoop)
 	{
-	  delay(2000); // Delay gives time for getting accurate pressure reading
-	  pressureRegStartUp = analogRead (sensorP2Pin); // Get GOOD start pressure for emergency lock loop
+		lcd.clear();
+		lcd.setCursor (0, 2); lcd.print (F("Problem corrected..."));
+		delay(2000); // Delay gives time for getting accurate pressure reading
+		pressureRegStartUp = analogRead (sensorP2Pin); // Get GOOD start pressure for emergency lock loop
 
-	  buzzer (500);
-	  doorOpen(); 
-
-	  lcd.clear();
-	  lcd.setCursor (0, 0); lcd.print (F("Bottle depressurized"));
-	  lcd.setCursor (0, 1); lcd.print (F("Press B3 to continue"));
-  
-	  platformStateUp = true;
-	  inPressurizedBottleLoop = false;
-	  inPressureNullLoop = false;
-  
-	  button3State = !digitalRead(button3Pin);
-	  while (button3State == HIGH)
-	  {
-		button3State = !digitalRead(button3Pin);    
-	  }
-  
-	  digitalWrite(light3Pin, HIGH);
-	  buzzer(500);
-	  digitalWrite(light3Pin, LOW);
-
-	  platformDrop();
-	  button3State = HIGH;   
-	} 
+		inPressureNullLoop = false;
+	}
 }
+
 // END NULL PRESSURE ROUTINE
 // =======================================================================
 
 //========================================================================
-// PRESSURE SAG ROUTINES IN MAIN LOOP:
+// PRESSURE DROP ROUTINES IN MAIN LOOP:
 // Lock platform if gas pressure drops while bottle pressurized
 // This function takes action if pressure drops in idle loop
 //========================================================================
@@ -113,28 +127,32 @@ void idleLoopPressureDrop()
 
 		  P1 = analogRead(sensorP1Pin);
 		  P2 = analogRead(sensorP2Pin);
-		  
-		  //If bottle is pressurized (along with pressure sagging), also lock the platform
-		  if (P1 - offsetP1 > P2 - offsetP2)
-		  {
-			  inPlatformEmergencyLock = true;
-			  relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
-			  relayOn (relay3Pin, true);    // Vent the bottle to be safe
-
-			  lcd.setCursor (0, 2); lcd.print (F("Platform locked...  "));
-			  buzzOnce(2000, light2Pin);
-		  }
-		  
+			
 		  lcd.setCursor (0, 0); lcd.print (F("Input pressure drop;"));
-		  lcd.setCursor (0, 1); lcd.print (F(""));
-		  lcd.setCursor (0, 2); lcd.print (F("Ready...            "));
+		  lcd.setCursor (0, 1); lcd.print (F("Check CO2 source.   "));
+		  lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));
 		  
 		  // Pressure measurement and output
 		  pressureOutput();
-		  printLcd (3, outputPSI_rb);
-
-		  //Only sound buzzer once
-		  buzzOnce(2000, light2Pin);
+		  printLcd2 (3, outputPSI_rb, 500);
+			
+			//If bottle is pressurized (along with pressure sagging), also lock the platform
+			while (P1 - offsetP1 > pressureDeltaDown)
+			{
+				inPlatformEmergencyLock = true;
+				relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
+				buzzOnce(2000, light2Pin);
+				pressureDump();
+				doorOpen();
+				while (!digitalRead(button3Pin) == HIGH)
+				{
+					lcd.setCursor (0, 2); lcd.print (F("Press B3 to continue"));
+				}
+				platformDrop();
+				//lcd.setCursor (0, 2); lcd.print (F("Platform locked...  ")); //This doesn't really tell user anything
+			}
+			//Only sound buzzer once
+			buzzOnce(2000, light2Pin);
 	  }
 	  buzzedOnce = false;
 	  
@@ -146,16 +164,13 @@ void idleLoopPressureDrop()
 		  // Run this condition if had pressurized bottle
 		  if (inPlatformEmergencyLock == true)
 		  {
-			  relayOn (relay4Pin, true);       // Re-open platform UP solenoid
 			  relayOn (relay3Pin, false);      // Re close vent if opened
 			  inPlatformEmergencyLock = false;
-			  
 			  messageB2B3Toggles();
 		  }
-		  
-		  lcd.setCursor (0, 2); lcd.print (F("Problem corrected..."));
-		  delay(1000);
+		  //lcd.setCursor (0, 2); lcd.print (F("Problem corrected..."));
+		  buzzOnce(2000, light2Pin);
 	  }
 }
-//END EMERGENCY PLATFORM LOCK LOOP
+//END PRESSURE DROP LOOP
 //======================================================================================

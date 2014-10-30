@@ -2,25 +2,10 @@
 // DECLARE FUNCTIONS
 // ======================================================================================
 
-//This throttles the number of times the display updates per second
-//ThrottleInt is in ms. The duration between positive PFlags is given by (throttleInt/1000)/2
-// ======================================================================================
-
-// Currently unused
-void displayThrottle(float throttleInt)
-{
-	Nf1  = int((millis()/throttleInt - int(millis()/throttleInt)) * 2); // For display timing
-	if (Nf1 != Nf2)
-	{
-		PFlag = true;
-		Nf2 = Nf1;
-	}
-}
-
 // FUNCTION printLcd2:
 // This function allows us to throttle the number of times the display updates per second. The larger the number, the less frequent the screen updates
 // The frequency of screen updates is given by (2000/throttleInt)
-// =======================================================================================
+// ======================================================================================
 
 void printLcd2 (int line, String newString, int throttleInt) //Changed throttleInt to integer
 {
@@ -41,9 +26,11 @@ void printLcd2 (int line, String newString, int throttleInt) //Changed throttleI
   }
 }
 
+// FUNCTION printLCD (Jeremy)
+// =====================================================================================
+
 //String currentLcdString[3]; // Jeremy's original
 String currentLcdString;
-
 void printLcd (int line, String newString)
 {
   //if(!currentLcdString[line].equals(newString)) // see Arduino reference, Data types / String object / equals() function
@@ -195,16 +182,19 @@ void pressureDump() //Must close S3 manually
     relayOn(relay3Pin, true); 
     P1 = analogRead (sensorP1Pin);
     pressureOutput();
-    printLcd (3, outputPSI_b);
+    printLcd2 (3, outputPSI_b, 500);
   } 
 }
 
-//FUNCTION: messageRotator() UNDER CONSTRUCTION
+// FUNCTION: messageRotator() 
+// rotateRate is the time taken to cycle through both messages (in ms); 
+// weight is the fraction of time spent on second message
+// timeOffset moves the sample window. This is helpful with startup messages with known first-hit time
 //=======================================================================================
 boolean messageID;
-void messageRotator(int rotateRate, float weight)
+void messageRotator(int rotateRate, float weight, int timeOffset)
 {
-	if ((millis() % rotateRate)/rotateRate > weight)
+	if (((millis() + timeOffset) % rotateRate) > (weight * rotateRate))
 	{
 		messageID = true;
 	}

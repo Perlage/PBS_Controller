@@ -52,7 +52,7 @@ const int buzzerPin                  = 13;     // pin for buzzer
 
 const int sensorP2Pin                = A0;     // pin for pressure sensor 2 // 1-23 NOW REGULATOR PRESSURE. 
 const int sensorP1Pin                = A1;     // pin for pressure sensor 1 // 1-23 NOW BOTTLE PRESSURE
-const int switchModePin              = A2;     // New pin for Mode switch (formerly Clean Switch)
+const int switchModePin              = A2;     // OPEN PIN
 const int light1Pin                  = A3;     // pin for button1 light 
 const int light2Pin                  = A4;     // pin for button2 light
 const int light3Pin                  = A5;     // pin for button3 light
@@ -158,12 +158,11 @@ boolean buzzedOnce                   = false;
 boolean inFillLoopExecuted           = false;    // True of FillLoop is dirty. Used to compute numberCycles
 char buffer[25];                                 // Used in float to string conv // 1-26 Changed from 25 to 20 //CHANGED BACK TO 25!! SEEMS TO BE IMPORTANT!
 
-//For display throttling and rotating messages
+//For display throttling messages
 int Nf1;
 int Nf2 = 0;
 boolean PFlag	= true;			// Print flag
 int throttleVal = 500;		// This is a global value; indidual functions can overwritten. The smaller the number, the higher the frequency of positive PFlags, given by (2000/throttleInt)
-int rotateInt = 8000;     // This value divided by 4 gives the rotation speed in seconds
 
 //======================================================================================
 // PROCESS LOCAL INCLUDES
@@ -253,26 +252,44 @@ void setup()
   P2 = analogRead(sensorP2Pin); // Read the initial regulator pressure and assign to P2
   pressureRegStartUp = P2;      // Read and store initial regulator pressure to test for pressure drop during session
   
-  //Allow user to invoke Manual Mode from bootup before anything else happens
+
+  //Allow user to invoke Manual Mode from bootup before anything else happens (buttons get read in EEPROM include)
   while (button1State == LOW)
   {
     inManualModeLoop = true;
     button1State = !digitalRead(button1Pin); 
     lcd.setCursor (0, 0); lcd.print (F("Entering Manual Mode"));
-    buzzOnce(500, light2Pin);
+    buzzOnce(500, light1Pin);
   }  
   buzzedOnce = false;
 
   if (inManualModeLoop == true){
     manualModeLoop();
   }
-  
+
+	
+	//Allow user to invoke Menu Mode from bootup before anything else happens (buttons get read in EEPROM include)
+  while (button2State == LOW && button3State == LOW)
+  {
+	  inMenuLoop = true;
+	  button2State = !digitalRead(button2Pin);
+		button3State = !digitalRead(button3Pin);
+	  lcd.setCursor (0, 0); lcd.print (F("Entering Menu Mode  "));
+	  buzzOnce(500, light2Pin);
+  }
+  buzzedOnce = false;
+
+  if (inMenuLoop == true){
+	  menuShell(inMenuLoop);
+  }
+    
   //===================================================================================
   //NULL PRESSURE: Check for stuck pressurized bottle or implausibly low gas pressure at start 
   
+	pressurizedBottleStartup();
   nullPressureStartup();
 
-  //Initial user message 
+  //Rewrite initial user message, in case pressure routines above wrote to screen
   messageInitial();
   
   //UNCOMMENT OUT NEXT LINE FOR SHOW
@@ -359,37 +376,30 @@ void loop()
   if (switchDoorState == LOW && platformStateUp == false)
   {
 		lcd.setCursor (0, 0); lcd.print (F("B3 opens door;      "));
-		lcd.setCursor (0, 1); lcd.print (F("Press B2+B3 for Menu"));
+		lcd.setCursor (0, 1); lcd.print (F("B2+B3 invokes Menu. "));
   }
-  if (switchDoorState == HIGH && platformStateUp == false)
+  
+	if (switchDoorState == HIGH && platformStateUp == false)
   {
-		// Rotate messages once every rotateInt/2 ms // number at end "tunes" the percentage of time spent on each message. Small number biases first message
-		if (float(millis())/rotateInt - int(millis()/rotateInt) > .250) 
-		{
+		messageRotator(6000, .25, 1500);
+		if (messageID){
 			messageInsertBottle(); // MESSAGE: Insert Bottle; B1 raises Platform
+		}else{
+			lcd.setCursor (0, 1); lcd.print (F("B2+B1 purges bottle."));
 		}
-		else
-		{
-			lcd.setCursor (0, 1); lcd.print (F("B2+B1 purges bottle "));
-		}
+  }  
 	
-	/* Message rotator in progress
-	if (P1 - offsetP1 > pressureDeltaDown || (platformStateUp ==  true && autoMode_1 == true))
+	if (P1 - offsetP1 > pressureDeltaDown)
 	{
-		messageRotator(2000, .25);
-		if (messageID)
-		{
-			lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust  "));
-		}
-		else
-		{
-			lcd.setCursor (0, 1); lcd.print (F("B1 fixes overfill.  "));
+		messageRotator(10000, .15, 0);
+		if (messageID){
+			lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust; "));
+		}else{
+			lcd.setCursor (0, 1); lcd.print (F("B1 adjusts overfill."));
 		}
 	}
-	*/
-		
-  }  
-  lcd.setCursor (0, 2); lcd.print (F("Ready...            "));  
+  
+	lcd.setCursor (0, 2); lcd.print (F("Ready...            "));  
 	
   // Main Loop idle pressure measurement and LCD output
   //======================================================================
@@ -783,7 +793,7 @@ void loop()
   
 	// Pressure output
 	pressureOutput();
-	printLcd2 (3, outputPSI_rb, throttleVal);
+	printLcd2 (3, outputPSI_b, throttleVal);
   
 	//Allow momentary "burst" foam tamping
   button2State = !digitalRead(button2Pin);
@@ -810,8 +820,8 @@ void loop()
   }   
 	lcd.setCursor (0, 0); lcd.print (F("B3 toggles venting; "));
 
-	// Rotate messages once every 1000 millisec
-	if (float(millis())/rotateInt - int(millis()/rotateInt) > .500){ //number at end "tunes" the percentage of time spent on each message
+	messageRotator(10000, .5, 0);
+	if (messageID){
 		lcd.setCursor (0, 1); lcd.print (F("B2: Burst tamping   "));
 	}
 	else{

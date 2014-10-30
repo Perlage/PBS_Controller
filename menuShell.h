@@ -205,7 +205,7 @@ void menuShell(boolean inMenuLoop)
       menuOption22 = false;
       lcd.setCursor (0, 3); lcd.print (F("Manual Mode *ON*    "));
 
-      while (!digitalRead(button2Pin) == LOW) // This a secret diagnostic mode? B1 + B2
+      while (!digitalRead(button2Pin) == LOW) // This a secret diagnostic mode (B1 + B2) that disables all pressure checks!!!!
       {
         inDiagnosticMode = true;
         buzzer (100);
