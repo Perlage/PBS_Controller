@@ -849,7 +849,6 @@ void loop()
   if(inDepressurizeLoop)
   { 
     printLcd(2, "");
-    //relayOn(relay3Pin, false);     //Used to close S3 here. Try leaving it open when in auto mode until platform drops
     
 		// Turn off Light 1 if on
 		digitalWrite(light1Pin, LOW);
@@ -862,7 +861,7 @@ void loop()
     }
     
     // CASE 2: Foam tripped sensor
-    if (sensorFillState == LOW && !digitalRead(button1Pin) == HIGH) // The second condition is part of fillSensor overide
+    if (sensorFillState == LOW && !digitalRead(button1Pin) == HIGH) // The second condition is part of fillSensor override
     {
       lcd.setCursor (0, 2); lcd.print (F("Foam detected...wait"));
       relayOn(relay3Pin, false);  
@@ -880,7 +879,7 @@ void loop()
       sensorFillState = HIGH; //v1.1 Set the sensorState to HIGH
     }
 
-    //CASE 3: Bottle was properly depressurized. If we reach here, the pressure must have reached threshold. Go to Platform lower loop
+    //CASE 3: Bottle was properly depressurized. If we reach here, the pressure must have reached threshold. Go to Platform lower loop. Note S3 still open
     if (P1 - offsetP1 <= pressureDeltaDown)
     {
       buzzer(500);
@@ -962,7 +961,7 @@ void loop()
     {
       digitalWrite(light3Pin, HIGH);
 			relayOn(relay5Pin, true);
-      delay(autoPlatformDropDuration);  //Can adjust this value to determine how much to drop the platform in full auto mode
+      delay(autoPlatformDropDuration);  
       relayOn(relay5Pin, false);
       button3State = HIGH;
       autoMode_1 = false;
