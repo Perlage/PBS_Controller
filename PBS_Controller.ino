@@ -441,7 +441,7 @@ void loop()
     inMultiButtonLockLoop = true;
     digitalWrite (light2Pin, HIGH);
     
-    //PURGE ROUTINE
+    //PURGE ROUTINE Entrance
     //====================================================================
     while (!digitalRead(button1Pin) == LOW && switchDoorState == HIGH)
     {
@@ -450,14 +450,15 @@ void loop()
       digitalWrite(light1Pin, HIGH); 
       relayOn(relay2Pin, true); //open S2 to purge
     }
-    if(inPurgeLoop)
+    //PURGE ROUTINE Exit
+		if(inPurgeLoop)
     {
       relayOn(relay2Pin, false); //Close relay when B1 and B2 not pushed
       inPurgeLoop = false;
       digitalWrite(light1Pin, LOW); 
     }
  
-    //MENU ROUTINE
+    //MENU ROUTINE Entrance
     //====================================================================
     while (!digitalRead(button3Pin) == LOW)
     {
@@ -466,13 +467,15 @@ void loop()
       buzzOnce(500, light3Pin);
     }
   }  
-  if (inMultiButtonLockLoop)
+  //MULTIBUTTON LOCK LOOP Exit
+	if (inMultiButtonLockLoop)
   {
     inMultiButtonLockLoop = false;
     buzzedOnce = false;
     
     //Enter menuLoop once B3 released
-    if (inMenuLoop){
+    if (inMenuLoop)
+		{
       digitalWrite (light2Pin, LOW);
       menuShell(inMenuLoop);
     }  
@@ -482,9 +485,10 @@ void loop()
     digitalWrite (light2Pin, LOW);
   }
   
-  // v1.1 Door opened while bottle pressurized...emergency dump of pressure  
+  // DOOR OPEN EMERGENCY PRESSURE DUMP (v1.1) 
+	// Can adjust this threshold by adding a value to pressureDeltaDown 
   //========================================================================
-  if (platformStateUp == true && switchDoorState == HIGH && (P1 - offsetP1 >= pressureDeltaDown + 50)) // Can adjust this threshold by adding a value to pressureDeltaDown
+  if (platformStateUp == true && switchDoorState == HIGH && (P1 - offsetP1 >= pressureDeltaDown + 50)) 
   { 
     emergencyDepressurize();
   }  
@@ -611,12 +615,6 @@ void loop()
       timePlatformRising = 0;
       platformStateUp = false;      
     }
-    
-    //Door opened while bottle pressurized...emergency dump of pressure  
-    if (platformStateUp == true && switchDoorState == HIGH)
-    { 
-      emergencyDepressurize();
-    }  
   }
 
   // END PRESSURIZE LOOP
@@ -742,29 +740,25 @@ void loop()
       { 
         relayOn(relay2Pin, false);  
         digitalWrite(light2Pin, LOW);
-        
+        buzzOnce(1000, light2Pin);
         //This is a little trap for B2 button to demand user input; doesn't change button states. Just wants user input.
         while(!digitalRead(button2Pin) == HIGH)
 				{
           digitalWrite(light2Pin, HIGH);
-          buzzer (150);
+          delay (150);
           digitalWrite(light2Pin, LOW);
           delay (350);
         }
-        button2ToggleState = false; // button2State is still LOW, with toggleState true. Setting toggleState to false should be like pressing Fill again
+        buzzedOnce = false;
+				button2ToggleState = false; // button2State is still LOW, with toggleState true. Setting toggleState to false should be like pressing Fill again
         printLcd(2,"");
         inPressurizeLoop = false; 
       } 
       // END FILLING TOO FAST LOOP   
       //=============================================     
     } 
-   
-    //Door opened while bottle filling...emergency dump of pressure  
-    if (platformStateUp == true && switchDoorState == HIGH)
-    { 
-      emergencyDepressurize();
-    }      
-    inFillLoop = false;
+		
+		inFillLoop = false;
 		messageB2B3Toggles();
   }
 
@@ -777,7 +771,7 @@ void loop()
   // DEPRESSURIZE LOOP
   //========================================================================================
   
-  while(button3State == LOW && (sensorFillState == HIGH || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && (P1 - offsetP1 >= pressureDeltaDown)) //v1.1 added sensor override
+  while(button3State == LOW && (sensorFillState == HIGH || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) //v1.1 added sensor override
   {  
     inDepressurizeLoop = true;
     relayOn(relay3Pin, true); //Open Gas Out solenoid
@@ -935,7 +929,6 @@ void loop()
 		lcd.setCursor (0, 0); lcd.print (F("Open Exhaust valve  "));
 		lcd.setCursor (0, 1); lcd.print (F("to prevent spray;   "));
 		lcd.setCursor (0, 2); lcd.print (F("press B3 to resume. "));
-		//button3State = HIGH; // Force button state high and wait for input
 	
 		while(!digitalRead(button3Pin) == HIGH)
 		{

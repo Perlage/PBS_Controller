@@ -14,8 +14,10 @@ int P2Start;                             //Initial regulator reading going into 
 float PSIStart;
 float timerShakeTime;                    //Time of shaking in sec, less the number of 15 second rest periods               
 boolean inShakeState;                    //Whether r not should be shaking in given 15 sec interval
+boolean inShakeStateNEW;                  
+
 String shakeState;                       //REST or SHAKE
-float pressureDipTargetInit  = 12.8 * 8; //Initial pressure slump user is trying to hit at T=0 (12.7 units per psi)
+float pressureDipTargetInit  = 12.8 * 2; //Initial pressure slump user is trying to hit at T=0 (12.7 units per psi)
 float pressureDipTarget;                 //Target pressure dip goes down over time as liquid saturates. dipTarget decreases by factor of 1, 1/2, 1/3, 1/4... 
 
 button1State = !digitalRead(button1Pin); delay(10);
@@ -44,20 +46,28 @@ while (inTimingLoop == true)
   {
     if ((timerTimeSec >=  0 && timerTimeSec < 15) || (timerTimeSec >= 30 && timerTimeSec < 45))
     {
-      inShakeState = false;
+      inShakeStateNEW = false;
       shakeState = "REST...";
     } 
     else
     {
-      inShakeState = true;
+      inShakeStateNEW = true;
       shakeState = "SHAKE..."; 
+			if (inShakeStateNEW != inShakeState)
+			{
+				 P2Start = analogRead(sensorP2Pin); // get a fresh reading every 30 sec
+			}
     }
   }
   else
   {
     shakeState = "DONE.";
+		buzzOnce(1500, light3Pin);
+		inTimingLoop = false;
+		menuOption21 = false;
   }
-    
+  inShakeState = inShakeStateNEW;
+	  
   //Need this IF to account for the fact that seconds 0-9 don't have leading zero
   if (timerTimeSec <= 9){
     printLcd(2, "Timer: " + convTimeMin + ":" + "0" + convTimeSec + " " + shakeState);}
@@ -71,6 +81,7 @@ while (inTimingLoop == true)
   //Get pressure reading
   P2 = analogRead(sensorP2Pin);
   
+	/*
   //Convert current P reading and start pressure to float
   PSI2 = pressureConv2(P2); 
   PSIdiff = PSIStart - PSI2; // This is the key measure of how much the pressure is dipping
@@ -86,8 +97,26 @@ while (inTimingLoop == true)
   float convPressureDipTarget = pressureConv2(pressureDipTarget + offsetP2); //Need to add back offset because function subtracts it
   String convPSItarget = floatToString(buffer, convPressureDipTarget, 1);
   String outputPSI_td  = "Goal:" + convPSItarget + " You:" + convPSIdiff + "psi";
-  printLcd(3, outputPSI_td);  
-
+  printLcd(3, outputPSI_td); 
+	*/
+	
+	//=======================
+	
+	int timerShakeTimeSegment = int ((timerTime) / 30) + 1; //Get the number of the 15sec shake interval
+	int pressureDiff = constrain ((P2Start - P2), 0, 200);
+	
+	float pressureDipTarget = float (pressureDipTargetInit / timerShakeTimeSegment);   //So, dipTarget decreases by factor of 1, 1/2, 1/3, 1/4...
+	float percentEffort =  constrain(((P2Start - P2) / pressureDipTarget) * 100, 0, 200);				 //Just use raw integer readings--don't need to worry about offsets. Constrain keeps above 0
+	
+	String stringPercentEffort = floatToString (buffer, percentEffort, 0);
+	String strPressureDipTarget = floatToString(buffer, pressureDipTarget, 0);
+	String strPressureDip = floatToString(buffer, pressureDiff, 0);
+	
+	String outputPSI_td  = "Trgt: " + strPressureDip + "/" + strPressureDipTarget + " = " + stringPercentEffort +"%";	
+	printLcd2 (3, outputPSI_td, 1000); 
+	 
+	//========================
+	
   //Give user positive feedback by beeping when there is a significant pressure drop while shaking 
   if (P2 < P2Start - pressureDipTarget && inShakeState == true){
     buzzer(50);}  
