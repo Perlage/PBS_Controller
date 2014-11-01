@@ -168,9 +168,9 @@ void pressureOutput()
   (convPSI2)      = floatToString(buffer, PSI2, 1);
   (convPSIdiff)   = floatToString(buffer, PSIdiff, 1);
 
-  (outputPSI_rb)  = "Reg:" + convPSI2 + " Bottle:" + convPSI1;	//was Reg
+  (outputPSI_rb)  = "Keg:" + convPSI2 + " Bottle:" + convPSI1;	//was Reg
   (outputPSI_b)   = "Bottle: " + convPSI1 + " psi"; 
-  (outputPSI_r)   = "Regulator:" + convPSI2 + " psi";									//Was "Regulator"
+  (outputPSI_r)   = "Pressure: " + convPSI2 + " psi";									//Was "Regulator"
 }  
 
 // FUNCTION: pressureDump()
@@ -201,5 +201,21 @@ void messageRotator(int rotateRate, float weight, int timeOffset)
 	else
 	{
 		messageID = false;
+	}
+}
+
+
+//FUNCTION: BUTTON PUSH
+//This automatically handles button pushes. Just use when you want a button to make a sound and light
+// Copy this: buttonPush (button3Pin, light3Pin, 250);
+//========================================================================================
+void buttonPush (byte buttonPin, byte lightPin, byte buzzerDuration)
+{
+	if (!digitalRead (buttonPin) == LOW)
+	{
+		digitalWrite (lightPin, HIGH);
+		buzzer(buzzerDuration);
+		digitalWrite (lightPin, LOW);
+		buzzedOnce = false;
 	}
 }

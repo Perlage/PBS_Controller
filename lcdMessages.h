@@ -28,8 +28,14 @@ void messageInsertBottle()
   lcd.setCursor (0, 1); lcd.print (F("B1 raises platform. "));
 }
 
+// messageLcdBlank(); // MESSAGE: "                    "
 void messageLcdBlank()
 {
   lcd.setCursor (0, 2); lcd.print (F("                    "));
 }
 
+// messageLcdReady(); // MESSAGE: "Ready...           "
+void messageLcdReady()
+{
+	lcd.setCursor (0, 2); lcd.print (F("Ready...           "));
+}

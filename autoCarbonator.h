@@ -7,7 +7,7 @@ while (sensorFillState == LOW)
 readButtons();
 lcd.setCursor (0, 0); lcd.print (F("B1: Manual Siphon  "));
 lcd.setCursor (0, 1); lcd.print (F("B2: Depressurize   "));
-lcd.setCursor (0, 2); lcd.print (F("Ready...           "));
+messageLcdReady(); // MESSAGE: Ready...
 
 // This is manual autosiphon
 while (button1State == LOW)

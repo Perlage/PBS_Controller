@@ -6,6 +6,7 @@
 // PRESSURIZED BOTTLE AT STARTUP
 void pressurizedBottleStartup()
 {	
+	delay (1000); //This gives a chance for initial message to show
 	boolean inPressurizedBottleLoop = false;
 
 	// PRESSURIZED BOTTLE LOOP
@@ -71,6 +72,7 @@ void pressurizedBottleStartup()
 // =======================================================================
 void nullPressureStartup()
 {
+	delay (1000); //This gives a chance for initial message to show
 	boolean inPressureNullLoop = false;
 	
 	// NULL PRESSURE LOOP

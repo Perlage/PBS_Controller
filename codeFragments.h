@@ -2,8 +2,31 @@
 // CODE FRAGMENTS 
 // =============================================================================================
 
+
+//Allow user to invoke Manual Mode from bootup before anything else happens (buttons get read in EEPROM include)
+while (button1State == LOW)
+{
+	inManualModeLoop = true;
+	button1State = !digitalRead(button1Pin);
+	lcd.setCursor (0, 0); lcd.print (F("Entering Manual Mode"));
+	buzzOnce(500, light1Pin);
+}
+buzzedOnce = false;
+
+if (inManualModeLoop == true){
+	manualModeLoop();
+}
+
+/*For testing button push
+while(1==1)
+{
+	buttonPush(button2Pin, light2Pin, 500);
+}
+*/
+	
 // FROM BOOTUP ROUTINE
 //===================================================================================
+
 
 //NOW print lifetime fills and autosiphon duration
 //autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;

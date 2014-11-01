@@ -8,7 +8,7 @@ void menuExit()
   lcd.clear();
   lcd.setCursor (0, 2); lcd.print (F("Exiting menu...     "));
   buzzer(250); 
-  delay(750);  
+  delay(250);  //Why the delay?
 }
 
 void menuShell(boolean inMenuLoop)
@@ -63,13 +63,15 @@ void menuShell(boolean inMenuLoop)
       inMenuLoop2 = true;
       inMenuLoop1 = false;
       button3State = !digitalRead(button3Pin); 
-     
+			buttonPush (button3Pin, light3Pin, 250);
+			
       lcd.setCursor (0, 0); lcd.print (F("   *** MENU 2 ***   "));
       lcd.setCursor (0, 1); lcd.print (F("B1: Carbonation Mode"));
       lcd.setCursor (0, 2); lcd.print (F("B2: Manual Mode     "));
       lcd.setCursor (0, 3); lcd.print (F("B3: Exit...         "));
     }      
-  }
+  }			
+
   
   while (inMenuLoop2 == true)
   {
