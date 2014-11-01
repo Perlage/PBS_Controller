@@ -87,7 +87,7 @@ void menuShell(boolean inMenuLoop)
       lcd.setCursor (0, 1); lcd.print (F("Press B1 to begin.  "));
       //lcd.setCursor (0, 2); lcd.print (F("                    "));
       //lcd.setCursor (0, 3); lcd.print (F("                    "));   
-      buzzOnce(750, light1Pin);
+      buzzOnce(500, light1Pin);
     }  
     buzzedOnce = false;
 
@@ -171,7 +171,7 @@ void menuShell(boolean inMenuLoop)
       button1State = !digitalRead(button1Pin); 
       inCleaningMode = true;
       lcd.setCursor (0, 3); lcd.print (F("Cleaning Mode *ON*  "));
-      delay (1500);
+      delay (1000);
       menuOption12 = false;
     }  
     while (button3State == LOW)
@@ -179,7 +179,7 @@ void menuShell(boolean inMenuLoop)
       button3State = !digitalRead(button3Pin); 
       inCleaningMode = false;
       lcd.setCursor (0, 3); lcd.print (F("Cleaning Mode *OFF* "));
-      delay (1500);
+      delay (1000);
       menuOption12 = false;
     }  
     if (menuOption12 == false){

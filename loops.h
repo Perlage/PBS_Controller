@@ -114,7 +114,7 @@ void emergencyDepressurize()
     inEmergencyDepressurizeLoop = false;
     relayOn(relay3Pin, false);  
     digitalWrite(buzzerPin, LOW); // Now turn off
-    messageLcdBlank();
+    messageLcdBlankLn2();
     button2State = HIGH;  // Pass HIGH state to next routine so filling doesn't automatically resume. Make user think about it!
 		//button3State = HIGH;  // No need to do that on depressurization
   }  

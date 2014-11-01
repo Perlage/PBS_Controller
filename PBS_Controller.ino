@@ -678,7 +678,7 @@ void loop()
       relayOn(relay2Pin, false);
 
       delay (1000); //Added this to create a slight delay to remedy the immediate false foam detection 
-      messageLcdBlank(); // MESSAGE: "                    "
+      messageLcdBlankLn2(); // MESSAGE: "                    "
       
       //v1.1 Clear Sensor routine under development 
       if (digitalRead(sensorFillPin) == LOW)
@@ -952,7 +952,7 @@ void loop()
   if(inPlatformLowerLoop)
   {
 	//close platform release 
-    lcd.setCursor (0, 2); lcd.print (F("                    "));
+    messageLcdBlankLn2(); // MESSAGE: "                    "
     relayOn(relay3Pin, false); 
     relayOn(relay5Pin, false);
     relayOn(relay6Pin, false); //Release door solenoid

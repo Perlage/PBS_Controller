@@ -29,7 +29,7 @@ void messageInsertBottle()
 }
 
 // messageLcdBlank(); // MESSAGE: "                    "
-void messageLcdBlank()
+void messageLcdBlankLn2()
 {
   lcd.setCursor (0, 2); lcd.print (F("                    "));
 }
