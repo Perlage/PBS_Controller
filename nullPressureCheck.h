@@ -83,6 +83,8 @@ void nullPressureStartup()
 
 		// Write Null Pressure warning
 		messageGasLow();
+		messageLcdOpenDoor();
+		
 		pressureOutput();
 		printLcd2(3, outputPSI_r, throttleVal);
 
@@ -122,17 +124,16 @@ void idleLoopPressureDrop()
 {	  
 		// PRESSURE DROP LOOP
 		// ===================================================================
-	  while (P2 - offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what constitutes a pressure drop.// 2-18 Changed from 75 to 100
+	  if (P2 - offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what constitutes a pressure drop.// 2-18 Changed from 75 to 100
 	  {
 		  inPressureDropLoop = true;
 
 		  P1 = analogRead(sensorP1Pin);
 		  P2 = analogRead(sensorP2Pin);
 			
-		  lcd.setCursor (0, 0); lcd.print (F("Input pressure drop;"));
-		  lcd.setCursor (0, 1); lcd.print (F("Check CO2 source.   "));
-		  lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));
-		  
+			messageGasLow();
+		  messageLcdWaiting(); // MESSAGE: "Waiting...          "
+			
 		  // Pressure measurement and output
 		  pressureOutput();
 		  printLcd2 (3, outputPSI_rb, 500);
@@ -153,9 +154,9 @@ void idleLoopPressureDrop()
 				//lcd.setCursor (0, 2); lcd.print (F("Platform locked...  ")); //This doesn't really tell user anything
 			}
 			//Only sound buzzer once
-			buzzOnce(2000, light2Pin);
+			buzzOnce(1500, light2Pin);
 	  }
-	  buzzedOnce = false;
+	  //buzzedOnce = false;
 	  
 		//PRESSURE DROP LOOP EXIT
 		// =====================================================================
@@ -172,7 +173,7 @@ void idleLoopPressureDrop()
 			  messageB2B3Toggles();
 		  }
 		  //lcd.setCursor (0, 2); lcd.print (F("Problem corrected..."));
-		  buzzOnce(2000, light2Pin);
+		  buzzOnce(1500, light2Pin);
 	  }
 }
 //END PRESSURE DROP LOOP

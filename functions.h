@@ -29,15 +29,15 @@ void printLcd2 (int line, String newString, int throttleInt) //Changed throttleI
 // FUNCTION printLCD (Jeremy)
 // =====================================================================================
 
-//String currentLcdString[3]; // Jeremy's original
-String currentLcdString;
+String currentLcdString[3]; // Jeremy's original
+//String currentLcdString;
 void printLcd (int line, String newString)
 {
-  //if(!currentLcdString[line].equals(newString)) // see Arduino reference, Data types / String object / equals() function
-  if(!currentLcdString.equals(newString)) // see Arduino reference, Data types / String object / equals() function
+  if(!currentLcdString[line].equals(newString)) // see Arduino reference, Data types / String object / equals() function
+  //if(!currentLcdString.equals(newString)) // see Arduino reference, Data types / String object / equals() function
 	{
-    //currentLcdString[line] = newString;
-		currentLcdString = newString;
+    currentLcdString[line] = newString;
+		//currentLcdString = newString;
     lcd.setCursor(0,line);
     lcd.print("                    ");
     lcd.setCursor(0,line);
@@ -87,7 +87,7 @@ void doorOpen()
   while (switchDoorState == LOW && (P1 - offsetP1) <= pressureDeltaDown)
   {
     relayOn (relay6Pin, true);  // Open door
-    lcd.setCursor (0, 2); lcd.print (F("Opening door...     "));
+    //lcd.setCursor (0, 2); lcd.print (F("Opening door...     "));
     switchDoorState = digitalRead(switchDoorPin); 
     P1 = analogRead(sensorP1Pin);
   }
@@ -219,3 +219,19 @@ void buttonPush (byte buttonPin, byte lightPin, byte buzzerDuration)
 		buzzedOnce = false;
 	}
 }
+
+/*
+//Template for WhileWend
+
+boolean inLoopLBL = false;
+while (conditions are true)
+{
+	boolean inLoopLBL = true;
+	//Put the do-while-true code here
+}
+if (inloopLBL)
+{
+	//exit routines (wend code)
+	boolean inLoopLBL = false;
+}
+*/

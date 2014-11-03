@@ -10,19 +10,11 @@ Author:
   
 Copyright 2013, 2014  All rights reserved
 
-10-27-2014:
-Release Version
-27,284k 
-Debug w/all breakpoints deactivated
-27,934k 
-
 //===========================================================================  
 */
 
-//Version control variables
-String (versionSoftwareTag)   = "v1.1"   ;     
-// v1.1 includes numerous bug fixes and P1 has been moved AFTER check valve 1. This required no software changes.
-// String (versionHardwareTag) = "v1.0.0.0" ;     
+//Version control variable
+String (versionSoftwareTag)   = "v1.1"   ;       
 
 //Library includes
 #include <Wire.h> 
@@ -110,7 +102,7 @@ int offsetP1;                                   // Zero offset for pressure sens
 int offsetP2;                                   // Zero offset for pressure sensor2 (input regulator). Ditto above.
 const int pressureDeltaUp            =  50;     // Pressure at which, during pressurization, full pressure is considered to have been reached // Tried 10, 38; went back to 50 to prevent repressurizing after fill button cycle
 const int pressureDeltaDown          =  38;     // Pressure at which, during depressurizing, pressure considered to be close enough to zero // 38 works out to 3.0 psi 
-const int pressureDeltaMax           = 100;     // This is max pressure difference allowed on filling (i.e., limits fill speed) //v1.1 Now can reduce this significantly from 250 since have two pressure sensors. 100 is good.
+const int pressureDeltaMax           = 150;     // FILLING TOO FAST criterion //v1.1 Now can reduce this significantly from 250 since have two pressure sensors. 100 is good.
 const int pressureNull               = 200;     // This is the threshold for the controller deciding that no gas source is attached. 
 const int pressureDropAllowed        = 100;     // Max pressure drop allowed in session before alarm sounds
 int pressureRegStartUp;                         // Starting regulator pressure. Will use to detect pressure sag during session; and to find proportional values for key pressure variables (e.g. pressureDeltaMax)
@@ -195,7 +187,7 @@ void setup()
   pinMode(light1Pin, OUTPUT); 
   pinMode(light2Pin, OUTPUT);
   pinMode(light3Pin, OUTPUT);
-  pinMode(sensorFillPin, INPUT_PULLUP); 
+  pinMode(sensorFillPin, INPUT_PULLUP);  //Experimenting with INPUT and external pullup resistor
   pinMode(switchDoorPin, INPUT_PULLUP); 
   pinMode(switchModePin, INPUT_PULLUP);
   pinMode(buzzerPin, OUTPUT);
@@ -243,7 +235,6 @@ void setup()
 
   //Read routine for numberCycles  
   numberCycles = numberCycles10 * 255 + numberCycles01;
-  //numberCycles = nnnn; // Use to set numberCyles to some value for debug
 
   // Read States. Get initial pressure readings from sensor. 
   switchDoorState = digitalRead(switchDoorPin);  
@@ -467,7 +458,7 @@ void loop()
   }  
 
   //  This routine takes action if pressure drops in idle loop.
-  idleLoopPressureDrop();
+  idleLoopPressureDrop(); //v1.1 Better to put this is pressurize loop?
   
   // =====================================================================================  
   // PLATFORM RAISING LOOP
@@ -536,7 +527,7 @@ void loop()
       Serial.println (); 
       */
     }
-    
+		
     //Read sensors
     switchDoorState = digitalRead(switchDoorPin); //Check door switch    
     P1 = analogRead(sensorP1Pin); // Don't really even need to read P2; read it going into loop?
@@ -551,9 +542,20 @@ void loop()
     if (button2StateTEMP == LOW && button2ToggleState == true){    //OFF push
       button2State = HIGH;                                         //exit WHILE loop
     }  
-      
-		messageB2B3Toggles();
-    lcd.setCursor (0, 2); lcd.print (F("Pressurizing...     "));
+    
+		
+		//v1.1 Pressure test. If bottle hasn't reached pressureDeltaUp in 4 sec, something is wrong
+		pressurizeDuration = millis() - pressurizeStartTime;
+		if (pressurizeDuration > 4000 && (P1 - offsetP1 <= P2 - offsetP2 - pressureDeltaUp))
+		{
+			messageGasLow();
+			messageLcdWaiting(); // MESSAGE: "Waiting...          "
+		}		  
+		else
+		{
+			messageB2B3Toggles();
+			lcd.setCursor (0, 2); lcd.print (F("Pressurizing...     "));
+		}
 
     // Pressure output
     pressureOutput();
@@ -573,15 +575,22 @@ void loop()
     //PRESSURE TEST EXIT ROUTINE
     if (PTestFail == true)
     {
-      lcd.setCursor (0, 2); lcd.print (F("No bottle, or leak. "));
-      lcd.setCursor (0, 3); lcd.print (F("Wait...             "));
+      lcd.setCursor (0, 0); lcd.print (F("No bottle, or leak. "));
+      lcd.setCursor (0, 1); lcd.print (F("Wait...             "));
       digitalWrite(light1Pin, LOW); 
-
-      pressureDump();							// Dump any pressure that built up
+      
+			pressureDump();							// Dump any pressure that built up
       doorOpen();									// Open door
-			delay(2000);								// Give time to degas
-			platformDrop();							// Drop platform
-			relayOn(relay3Pin, false);  // Now close S3
+			
+			while (!digitalRead(button3Pin) == HIGH)
+			{
+				lcd.setCursor (0, 1); lcd.print (F("Press B3 to continue"));
+			}
+			
+			//Working on this for v1.1	
+			//delay(2000);								// Give time to degas
+			platformDrop();								// Drop platform
+			//relayOn(relay3Pin, false);  // Now close S3
       
       //Reset variables
       PTestFail = false;      
@@ -607,7 +616,6 @@ void loop()
     relayOn(relay1Pin, true);
     relayOn(relay3Pin, true);
     digitalWrite(light2Pin, HIGH); 
-
 		
     //Check toggle state of B2    
     button2StateTEMP = !digitalRead(button2Pin);
@@ -731,7 +739,6 @@ void loop()
       // END FILLING TOO FAST LOOP   
       //=============================================     
     } 
-		
 		inFillLoop = false;
 		messageB2B3Toggles();
   }

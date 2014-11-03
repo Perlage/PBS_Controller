@@ -13,7 +13,11 @@ void messageGasLow()
 {
   lcd.setCursor (0, 0); lcd.print (F("CO2 pressure low;   "));
   lcd.setCursor (0, 1); lcd.print (F("check tank & hoses. "));
-  lcd.setCursor (0, 2); lcd.print (F("B3 opens door.      "));
+}
+
+void messageLcdOpenDoor()
+{
+	lcd.setCursor (0, 2); lcd.print (F("B3 opens door.      "));
 }
 
 void messageB2B3Toggles()
@@ -28,7 +32,7 @@ void messageInsertBottle()
   lcd.setCursor (0, 1); lcd.print (F("B1 raises platform. "));
 }
 
-// messageLcdBlank(); // MESSAGE: "                    "
+// messageLcdBlankLn2(); // MESSAGE: "                    "
 void messageLcdBlankLn2()
 {
   lcd.setCursor (0, 2); lcd.print (F("                    "));
@@ -38,4 +42,10 @@ void messageLcdBlankLn2()
 void messageLcdReady()
 {
 	lcd.setCursor (0, 2); lcd.print (F("Ready...           "));
+}
+
+// messageLcdWaiting(); // MESSAGE: "Waiting...          "
+void messageLcdWaiting()
+{
+	lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));
 }

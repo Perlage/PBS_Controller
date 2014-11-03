@@ -1,6 +1,6 @@
 ﻿Compiling 'PBS_Controller' for 'Arduino Micro'
-Binary sketch size: 27,158 bytes (used 95% of a 28,672 byte maximum) (0.85 secs)
-Minimum Memory Usage: 796 bytes (31% of a 2560 byte maximum)
+Binary sketch size: 28,572 bytes (used 100% of a 28,672 byte maximum) (0.97 secs)
+Minimum Memory Usage: 881 bytes (34% of a 2560 byte maximum)
 Uploading to I/O board using 'COM6'
 Connecting to programmer: .
 Found programmer: Id = "CATERIN"; type = S
