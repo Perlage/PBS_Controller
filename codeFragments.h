@@ -1,6 +1,62 @@
 // =============================================================================================
 // CODE FRAGMENTS 
 // =============================================================================================
+/*
+void printLcd2 (int line, String newString, int throttleInt) //Changed throttleInt to integer
+{
+	//Nf1  = int((millis()/throttleInt - int(millis()/throttleInt)) * 2); // For display timing
+	Nf1  = int((millis() % throttleInt)/(throttleInt / 2)); //This is better method using Modulo. Doesn't require float for throttleInt
+	if (Nf1 != Nf2)
+	{
+		PFlag = true;
+		Nf2 = Nf1;
+	}
+	if (PFlag == true)
+	{
+    lcd.setCursor(0,line);
+    lcd.print("                    ");
+    lcd.setCursor(0,line);
+    lcd.print(newString);
+		PFlag = false;
+  }
+}
+*/
+// FUNCTION printLCD 
+// =====================================================================================
+
+// see Arduino reference, Data types / String object / equals() function
+// String currentLcdString[3] MAY NOT WORK ANYMORE! PBSFIRM-73
+/*
+// Jeremy'S original
+String currentLcdString[3]; 
+void printLcd (int line, String newString)
+{
+	if(!currentLcdString[line].equals(newString)) 
+	{
+    currentLcdString[line] = newString;
+    lcd.setCursor(0,line);
+    lcd.print("                    ");
+    lcd.setCursor(0,line);
+    lcd.print(newString);
+  }
+}
+*/
+
+/*
+//This seems to work! 
+String oldLcdString;
+void printLcd (int scrLine, String newLcdString)
+{
+	if(oldLcdString != newLcdString)
+	{
+		oldLcdString = newLcdString;
+		lcd.setCursor(0, scrLine);
+		lcd.print("                    ");
+		lcd.setCursor(0, scrLine);
+		lcd.print(newLcdString);
+	}
+}
+*/
 
 /*
 padString(outputPSI_r);

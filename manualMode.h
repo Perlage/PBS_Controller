@@ -17,7 +17,6 @@ void manualModeLoop()
     doorOpen();
   
     // FUNCTION Drop platform if up
-    platformStateUp = true;
     platformDrop();
   }
       
@@ -55,9 +54,16 @@ void manualModeLoop()
 
     if (platformStateUp == true && switchDoorState == LOW && !inDiagnosticMode) //Add a pressure check to this
     {
-      lcd.setCursor (0, 0); lcd.print (F("B1:Gas IN          "));
-      lcd.setCursor (0, 1); lcd.print (F("B2:Liquid IN       "));
-      lcd.setCursor (0, 2); lcd.print (F("B3:Gas OUT/Drop/Opn"));
+      lcd.setCursor (0, 0); lcd.print (F("B1: Gas IN          "));
+      lcd.setCursor (0, 1); lcd.print (F("B2: Liquid IN       "));
+      if (P1 - offsetP1 >= pressureDeltaDown)
+			{
+				lcd.setCursor (0, 2); lcd.print (F("B3: Gas OUT         "));
+			}
+			else
+			{
+				lcd.setCursor (0, 2); lcd.print (F("B3: Door OPEN       "));
+			}
     }
     else
     {
@@ -116,6 +122,7 @@ void manualModeLoop()
 			relayOn (relay3Pin, true);
 			relayOn (relay5Pin, false); 
       platformStateUp = false;
+			EEPROM.write(6, platformStateUp);
     }  
 
     // B2 EXITS if pressure low and platform down

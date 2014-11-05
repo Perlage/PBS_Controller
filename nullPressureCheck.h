@@ -50,7 +50,7 @@ void pressurizedBottleStartup()
 		
 		buzzer (1000);
 		doorOpen();
-		messageLcdReady();
+		messageLcdWaiting();
 
 		while (!digitalRead(button3Pin) == HIGH)
 	  {
@@ -132,7 +132,7 @@ void idleLoopPressureDrop()
 		  inPressureDropLoop = true;
 			
 			messageGasLow();
-		  messageLcdWaiting(); // MESSAGE: "Waiting...          "
+		  messageLcdWaiting(); // MESSAGE: "Waiting..."
 			
 		  // Pressure measurement and output
 		  pressureOutput();

@@ -45,14 +45,12 @@ void messageLcdBlankLn2()
   lcd.setCursor (0, 2); lcd.print (F("                    "));
 }
 
-// messageLcdReady(); // MESSAGE: "Ready...           "
-void messageLcdReady()
+void messageLcdWaiting()
 {
 	lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));
 }
 
-// messageLcdWaiting(); // MESSAGE: "Waiting...          "
-void messageLcdWaiting()
+void messageLcdReady()
 {
-	lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));
+	lcd.setCursor (0, 2); lcd.print (F("Ready...            "));
 }

@@ -49,11 +49,12 @@ void platformUpLoop()
     {
       // PlatformLoop lockin reached
       platformStateUp = true;
+			EEPROM.write(6, platformStateUp);
       platformLockedNew = true; //Pass this to PressureLoop for auto pressurize on door close--better than trying to pass button2State = LOW, which causes problems
 
       lcd.setCursor (0, 0); lcd.print (F("To fill, close door;"));
       lcd.setCursor (0, 1); lcd.print (F("B3 lowers platform. "));
-      messageLcdReady(); // MESSAGE: "Ready...           "
+      messageLcdWaiting(); // MESSAGE: "Ready...           "
 			
 			//beep on platform lockin
       buzzer(500);
@@ -79,6 +80,7 @@ void platformUpLoop()
 
       relayOn(relay5Pin, false);  // Prevents leaving S5 on if this was the last thing user did
       platformStateUp = false;
+			EEPROM.write(6, platformStateUp);
     }
     timePlatformRising = 0;
     inPlatformUpLoop = false;

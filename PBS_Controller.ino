@@ -230,7 +230,8 @@ void setup()
   autoSiphonDuration10s  = EEPROM.read(3);    
   numberCycles01         = EEPROM.read(4);  //Write "ones" digit base 255    
   numberCycles10         = EEPROM.read(5);  //Write "tens" digit base 255
-  
+  platformStateUp				=  EEPROM.read(6);  //Current valve for platformStateUp
+	
   //Read routine for autoSiphon  
   autoSiphonDuration = autoSiphonDuration10s * 100; // Convert 10ths of sec to millisec
 
@@ -276,7 +277,13 @@ void setup()
   digitalWrite(light3Pin, HIGH); 
 
   // Open door if closed. Moved this to make sure door opens before platform drops in case of unpressurized stuck bottle
-	doorOpen(); 
+	// v1.1 only open door if platform state up (because that means there could be a bottle there)
+	if (platformStateUp)
+	{
+		doorOpen(); 
+		platformStateUp = false;
+		EEPROM.write(6, platformStateUp);
+	}
   
   // Drop platform in case it is up, which had been raised before nullpressure checks
   relayOn(relay4Pin, false);  
@@ -358,7 +365,7 @@ void loop()
 	{
 		lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
 		lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
-		messageLcdReady();
+		messageLcdWaiting();
 	}
   	
   // Main Loop idle pressure measurement and LCD output
@@ -541,7 +548,7 @@ void loop()
 		if (pressurizeDuration > 4000 && (P1 - offsetP1 <= P2 - offsetP2 - pressureDeltaUp))
 		{
 			messageGasLow();
-			messageLcdWaiting(); // MESSAGE: "Waiting...          "
+			messageLcdWaiting(); 
 		}		  
 		else
 		{
@@ -587,7 +594,8 @@ void loop()
       //Reset variables
       PTestFail = false;      
       timePlatformRising = 0;
-      platformStateUp = false;      
+      platformStateUp = false; 
+			EEPROM.write(6, platformStateUp);     
     }
   }
 
@@ -889,7 +897,7 @@ void loop()
     inDoorOpenLoop = false;
     digitalWrite(light3Pin, LOW);
     button3State = HIGH; 
-		messageLcdReady();
+		messageLcdWaiting();
   }
 
   // END DOOR OPEN LOOP
@@ -938,9 +946,9 @@ void loop()
     }
     else
     {
-			//relayOn(relay3Pin, true);  // May as well leave this open? YES. Liquid is still outgassing.//TO DO: Don't need this here?? it's already open?
 			digitalWrite(light3Pin, HIGH); 
 			relayOn(relay5Pin, true);  // Open cylinder exhaust
+			delay(1000); // always drop at least a second?
     }
     P1 = analogRead(sensorP1Pin);
     button3State = !digitalRead(button3Pin);
@@ -955,15 +963,15 @@ void loop()
   if(inPlatformLowerLoop)
   {
 		//close platform release 
-    //messageLcdBlankLn2(); // MESSAGE: ""
     relayOn(relay3Pin, false); 
     relayOn(relay5Pin, false);
-    relayOn(relay6Pin, false); //Release door solenoid
+    relayOn(relay6Pin, false); //Release door solenoid // ??? is this still needed?
     digitalWrite(light3Pin, LOW); 
 
     inPlatformLowerLoop = false;   
     platformStateUp = false;
-
+		EEPROM.write(6, platformStateUp);
+					
     //Prepare for next cycle
 		messageInsertBottle();
 
