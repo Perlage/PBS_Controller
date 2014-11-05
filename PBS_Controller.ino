@@ -151,12 +151,6 @@ boolean buzzedOnce                   = false;
 boolean inFillLoopExecuted           = false;    // True of FillLoop is dirty. Used to compute numberCycles
 char buffer[25];                                 // Used in float to string conv // 1-26 Changed from 25 to 20 //CHANGED BACK TO 25!! SEEMS TO BE IMPORTANT!
 
-//For display throttling messages
-int Nf1;
-int Nf2 = 0;
-boolean PFlag	= true;			// Print flag
-int throttleVal = 500;		// This is a global value; indidual functions can overwritten. The smaller the number, the higher the frequency of positive PFlags, given by (2000/throttleInt)
-
 //======================================================================================
 // PROCESS LOCAL INCLUDES
 //======================================================================================
@@ -245,16 +239,15 @@ void setup()
   pressureRegStartUp = P2;      // Read and store initial regulator pressure to test for pressure drop during session
 
 	// MENU MODE: Allow user to invoke Menu Mode from bootup before anything else happens (buttons get read in EEPROM include)
-  while (button2State == LOW && button3State == LOW)
+  while (button1State == LOW)
   {
 	  inMenuLoop = true;
 	  button2State = !digitalRead(button2Pin);
 		button3State = !digitalRead(button3Pin);
-	  lcd.setCursor (0, 0); lcd.print (F("Entering Menu Mode  "));
-	  buzzOnce(500, light2Pin);
+	  lcd.setCursor (0, 0); lcd.print (F("Entering Menu...    "));
+	  buzzOnce(1000, light2Pin);
   }
   buzzedOnce = false;
-
   if (inMenuLoop == true){
 	  menuShell(inMenuLoop);
   }
@@ -264,14 +257,15 @@ void setup()
   
 	//LOW PRESSURE: THEN check for implausibly low gas pressure at start 
 	nullPressureStartup();
-
-  messageInitial(); //Rewrite initial user message, in case pressure routines above wrote to screen
+	
+	//Rewrite initial user message, in case pressure routines above wrote to screen
+  messageInitial(); 
   
   //UNCOMMENT OUT NEXT 2 LINEs FOR SHOW
   //relayOn(relay4Pin, true);  // Now Raise platform
 	//delay (1000);     
   
-  // Leave blink loop and light all lights 
+  //Leave blink loop and light all lights 
   digitalWrite(light1Pin, HIGH); delay(400);
   digitalWrite(light2Pin, HIGH); delay(200);
   digitalWrite(light3Pin, HIGH); 
@@ -712,7 +706,7 @@ void loop()
         P2 = analogRead(sensorP2Pin);    //do sensor read again to check
 
         lcd.setCursor (0, 0); lcd.print (F("Filling too fast... "));
-        lcd.setCursor (0, 1); lcd.print (F("Close exhaust valve,"));
+        lcd.setCursor (0, 1); lcd.print (F("Close exhaust valve;"));
         lcd.setCursor (0, 2); lcd.print (F("Press B2 to resume  "));
         delay (500); // This seems to be necessary
       }

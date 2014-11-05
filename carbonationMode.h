@@ -22,32 +22,56 @@ float pressureDipTargetInit = 6 * OnePsi;		//This sets the initial dip target. i
 int timeShift = 60;													//v1.1 This is used for modified 1/T technique
 
 //This starts Carbonation routine
-button1State = !digitalRead(button1Pin); 
-while (button1State == LOW)
+if (!digitalRead(button1Pin) == LOW)
 {
-  inTimingLoop = true;
-  button1State = !digitalRead(button1Pin);
-  timerStart = millis();
-  P2Start = analogRead(sensorP2Pin);
-	pressureEnter = analogRead(sensorP2Pin);
+	inTimingLoop = true;
 	lcd.setCursor (0, 1); lcd.print (F("Press B3 to exit.   "));
+	buttonPush (button1Pin, light1Pin, 1000);
+	//delay(500); //Give time to see message
+}
+
+if (inTimingLoop)
+{
+	timerStart = millis();
+	P2Start = analogRead(sensorP2Pin);
+	pressureEnter = analogRead(sensorP2Pin); //v1.1 This is start pressure for pressure check at end of routine
 }
 
 while (inTimingLoop == true)
 {
   timerTimeMs = millis() - timerStart;
-  timerTime = float(timerTimeMs) / 1000;       //Get total seconds since start
+  timerTime = float(timerTimeMs / 1000);       //Get total seconds since start (Float)
   timerTimeSec = int(timerTime) % 60;          //Get 0-60 seconds
   timerTimeMin = int(timerTime / 60);          //Get minutes
- 	
+	
+	/*
+	Serial.print(timerTime);
+	Serial.println();
+	timerTime = float(timerTimeMs / 1000);
+	Serial.print(timerTime);
+	Serial.println();
+ 	*/
+	
 	int timerCountdown = 15 - (int(timerTime) % 15); //Countdown clock
  
   String (convTimeMin) = floatToString(buffer, timerTimeMin, 0);
   String (convTimeSec) = floatToString(buffer, timerTimeSec, 0);
   String (strTimerCountDown) = floatToString(buffer, timerCountdown, 0);
-  
 	
-  //Find shakeState and appropriate messages. Rest first and every other 15 second segment
+	//Print out countdown timer and cumulative timer  
+  //Need this IF to account for the fact that seconds 0-9 don't have leading zero
+  if (timerTimeSec <= 9)
+		{if (timerCountdown <= 9)
+			{printLcd2 (1, "[:0" + strTimerCountDown + "]     Time: " + convTimeMin + ":0" + convTimeSec);}
+		else
+			{printLcd2 (1, "[:" + strTimerCountDown + "]     Time: " + convTimeMin + ":0" + convTimeSec);}}
+  else
+		{if (timerCountdown <= 9)
+			{printLcd2 (1, "[:0" + strTimerCountDown + "]     Time: " + convTimeMin + ":" + convTimeSec);}
+		else
+			{printLcd2 (1, "[:" + strTimerCountDown + "]     Time: " + convTimeMin + ":" + convTimeSec);}}
+	
+	//Find shakeState and appropriate messages. Rest first and every other 15 second segment
 	//Write initial message...
 	if (timerTime < 15)
 	{
@@ -59,75 +83,60 @@ while (inTimingLoop == true)
 		{
 			inShakeState = false;
 			shakeStateMessage = "Rest...             ";
-		} 
+		}
 		else
 		{
 			inShakeState = true;
 			if (percentEffort < 100)
-			{shakeStateMessage = "Shake hard...      ";}
+			{shakeStateMessage = "Shake HARD...      ";}
 			else
-			{shakeStateMessage = "GOOD! ***          ";}
+			{shakeStateMessage = "***GOOD!***        ";}
 		}
-  }
-
-	//Print out countdown timer and cumulative timer  
-  //Need this IF to account for the fact that seconds 0-9 don't have leading zero
-  if (timerTimeSec <= 9)
-		{if (timerCountdown <= 9)
-			{printLcd(1, "[:0" + strTimerCountDown + "]     Time: " + convTimeMin + ":" + "0" + convTimeSec);}
-		else
-			{printLcd(1, "[:" + strTimerCountDown + "]     Time: " + convTimeMin + ":" + "0" + convTimeSec);}}
-  else
-		{if (timerCountdown <= 9)
-			{printLcd(1, "[:0" + strTimerCountDown + "]     Time: " + convTimeMin + ":" + convTimeSec);}
-		else
-			{printLcd(1, "[:" + strTimerCountDown + "]     Time: " + convTimeMin + ":" + convTimeSec);}}
+	}
 	
 	//This prints current instruction on line 3
-	printLcd(2, shakeStateMessage);
+	printLcd2 (2, shakeStateMessage);
   
-	// wv1.1 Modified 1/T method with timeShift factor to help determine the slope of curve
+	//v1.1 Modified 1/T method with timeShift factor to help determine the slope of curve
+	//The bigger timeShift, the slower the drop
   pressureDipTarget = pressureDipTargetInit * timeShift/((timerTime-15) + timeShift);
 
 	// get a fresh reading every 30 sec at start of shake cycle, at 15, 45, 75
 	if ( (int(timerTime) - 15) % 30 == 0)
-	{
-		P2Start = analogRead(sensorP2Pin);
-	}
+	{P2Start = analogRead(sensorP2Pin);}
 	
 	//Get current pressure reading
   P2 = analogRead(sensorP2Pin);
 	
-	//v1.1: Extra constriction of check valve means this value will be larger than without, because gas can't flow to keg as fast. Any semipermanent pressure offset due to valve shouldn't matter.
+	//v1.1: Extra constriction of check valve means pressure diff will be larger than without, because gas can't flow to keg as fast. Any semipermanent pressure offset due to valve shouldn't matter.
 	int pressureDiff = (P2Start - P2); 
 	
-	percentEffort =  constrain ((pressureDiff / pressureDipTarget) * 100, 0, 999); //Using raw integer readings--don't need to worry about offsets. Constrain keeps above 0
+	percentEffort =  constrain ((pressureDiff / pressureDipTarget) * 100, 0, 999); //Using raw integer readings--don't need to worry about offsets because of subtraction. Constrain keeps above 0
 	String stringPercentEffort = floatToString (buffer, percentEffort, 0);
 	
-	String strPressureDipTarget = floatToString(buffer, (pressureDipTarget / OnePsi), 1);  //DEBUG CODE
-	String strPressureDip = floatToString(buffer, (pressureDiff / OnePsi), 1);						 //DEBUG CODE
+	//String strPressureDipTarget = floatToString(buffer, (pressureDipTarget / OnePsi), 1);  //DEBUG CODE
+	//String strPressureDip = floatToString(buffer, (pressureDiff / OnePsi), 1);						 //DEBUG CODE
 	
-	//Print out current absorption data
+	//Print out current absorption data //Don't show any output in rest phase. 
 	if (inShakeState)
 	{
 		String outputEffort  = "EFFORT: " + stringPercentEffort + "% ==>100%";// + strPressureDip + "/" + strPressureDipTarget; // Replace end of this line with "(>100%)"
-		printLcd (3, outputEffort);
+		printLcd2 (3, outputEffort);
 	}
 	else
 	{
 		lcd.setCursor (0, 3); lcd.print (F("                    ")); 
-		//Don't show any output in rest phase. Comment above statement out and uncomment below two statements
-		//String outputEffort  = "EFFORT:" + stringPercentEffort + "% " + strPressureDip + "/" + strPressureDipTarget;
-		//printLcd (3, outputEffort);
+		//String outputEffort  = "EFFORT:" + stringPercentEffort + "% " + strPressureDip + "/" + strPressureDipTarget; //DEBUG CODE
+		//printLcd2 (3, outputEffort);																																									 //DEBUG CODE
 	}
 	
-	//Buzz every 15 sec, but not after 240 sec
-	if (timerTimeSec % 15 == 0 && timerTime <= 240){
-	buzzer(1000);}
+	//Buzz every 15 sec, but not on first pas or after 240 sec
+	if (timerTimeSec % 15 == 0 && timerTime > 1 && timerTime <= 240)
+	{buzzer(1000);}
 
   //Give user positive feedback by beeping when there is a significant pressure drop while shaking 
-  if (P2 < P2Start - pressureDipTarget && inShakeState == true){
-    buzzer(50);}  
+  if (P2 < P2Start - pressureDipTarget && inShakeState == true)
+		{buzzer(50);}  
 		 
   //CARBONATION ROUTINE EXIT LOOP
 	//================================================================================================
@@ -154,12 +163,3 @@ while (inTimingLoop == true)
 	}
 	buzzedOnce = false;
 }
-
-//These two lines were for v1.0 method
-//int timerShakeTimeSegment = int ((timerTime) / 30) + 1; //Get the number of the 15sec shake interval
-//float pressureDipTarget = float (pressureDipTargetInit / timerShakeTimeSegment);   //So, dipTarget decreases by factor of 1, 1/2, 1/3, 1/4...
-	
-// v1.1: This gives true exponential decay of absorption (but cost ~1000k!)
-// This is  A * 2 exp -(t-15)/b. Chose base 2 arbitrarily
-//float expFactor = 45;											//v1.1 USED IN EXPONENT APPROACH// 30 gives perfect geometric decay 1, 1/2, 1/4, 1/8. The larger the number, the slower the decay
-//pressureDipTarget = pressureDipTargetInit * pow (2, (-1 * (timerTime - 15) / expFactor));

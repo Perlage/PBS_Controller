@@ -1,7 +1,25 @@
 // =============================================================================================
 // CODE FRAGMENTS 
 // =============================================================================================
+
+//These two lines were for v1.0 method
+//int timerShakeTimeSegment = int ((timerTime) / 30) + 1; //Get the number of the 15sec shake interval
+//float pressureDipTarget = float (pressureDipTargetInit / timerShakeTimeSegment);   //So, dipTarget decreases by factor of 1, 1/2, 1/3, 1/4...
+
+// v1.1: This gives true exponential decay of absorption (but cost ~1000k!)
+// This is  A * 2 exp -(t-15)/b. Chose base 2 arbitrarily
+//float expFactor = 45;											//v1.1 USED IN EXPONENT APPROACH// 30 gives perfect geometric decay 1, 1/2, 1/4, 1/8. The larger the number, the slower the decay
+//pressureDipTarget = pressureDipTargetInit * pow (2, (-1 * (timerTime - 15) / expFactor));
+
+
 /*
+
+//For display throttling messages
+int Nf1;
+int Nf2 = 0;
+boolean PFlag	= true;			// Print flag
+int throttleVal = 500;		// This is a global value; indidual functions can overwritten. The smaller the number, the higher the frequency of positive PFlags, given by (2000/throttleInt)
+
 void printLcd2 (int line, String newString, int throttleInt) //Changed throttleInt to integer
 {
 	//Nf1  = int((millis()/throttleInt - int(millis()/throttleInt)) * 2); // For display timing

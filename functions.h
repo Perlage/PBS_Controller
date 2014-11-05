@@ -7,12 +7,30 @@
 // ======================================================================================
 
 //This only blanks line if length changes
+//String oldLcdString;
 String oldLcdString;
 void printLcd (int scrLine, String newLcdString)
 {
 	if(oldLcdString.length() != newLcdString.length())
 	{
 		oldLcdString = newLcdString;
+		lcd.setCursor(0, scrLine); lcd.print("                    ");
+		lcd.setCursor(0, scrLine); lcd.print(newLcdString);
+	}
+	else
+	{
+		lcd.setCursor(0, scrLine); lcd.print(newLcdString);
+	}
+}
+
+//This only blanks line if length changes
+//String oldLcdString;
+String oldLcdString2[3];
+void printLcd2 (int scrLine, String newLcdString)
+{
+	if(oldLcdString2[scrLine].length() != newLcdString.length())
+	{
+		oldLcdString2[scrLine] = newLcdString;
 		lcd.setCursor(0, scrLine); lcd.print("                    ");
 		lcd.setCursor(0, scrLine); lcd.print(newLcdString);
 	}
@@ -156,7 +174,6 @@ void pressureOutput()
 //====================================================================================
 
 int padding;
-		
 void padString(String paddedString)
 {
 	padding = 20 - paddedString.length();
@@ -201,7 +218,7 @@ void messageRotator(int rotateRate, float weight, int timeOffset)
 //This automatically handles button pushes. Just use when you want a button to make a sound and light
 // Copy this: buttonPush (button3Pin, light3Pin, 250);
 //========================================================================================
-void buttonPush (byte buttonPin, byte lightPin, byte buzzerDuration)
+void buttonPush (byte buttonPin, byte lightPin, int buzzerDuration)
 {
 	if (!digitalRead (buttonPin) == LOW)
 	{
