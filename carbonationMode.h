@@ -151,7 +151,7 @@ while (inTimingLoop == true)
 		pressureExit = analogRead(sensorP2Pin);
 		
 		//Check to see if pressure has dropped during the carbonation process
-		if ((pressureEnter - pressureExit) > 60)
+		if ((pressureEnter - pressureExit) > 75)
 		{
 			messageGasLow();
 			while (!digitalRead(button3Pin) == HIGH)
