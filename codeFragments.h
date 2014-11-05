@@ -2,24 +2,61 @@
 // CODE FRAGMENTS 
 // =============================================================================================
 
-	/*
-  //Convert current P reading and start pressure to float
-  PSI2 = pressureConv2(P2); 
-  PSIdiff = PSIStart - PSI2; // This is the key measure of how much the pressure is dipping
+/*
+padString(outputPSI_r);
+//outputPSI_r.reserve(20);
+Serial.print (outputPSI_r.length());
+Serial.print (" = ");
+Serial.print (padding);
+Serial.print (" =>");
+//Serial.print (paddedString);
+Serial.print ("<=");
+Serial.println ();
+*/
+		
+/*
+messageRotator(10000, .15, 0);
+if (messageID)
+{
+	lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust; "));
+}
+else
+{
+	lcd.setCursor (0, 1); lcd.print (F("B1 adjusts overfill."));
+}
+*/
+
+/* // Not sure I like messageRotator
+messageRotator(6000, .25, 1500);
+if (messageID)
+{
+	messageInsertBottle(); // MESSAGE: Insert Bottle; B1 raises Platform
+}
+else
+{
+	lcd.setCursor (0, 1); lcd.print (F("B2+B1 purges bottle."));
+}
+*/
+
+
+/*
+//Convert current P reading and start pressure to float
+PSI2 = pressureConv2(P2); 
+PSIdiff = PSIStart - PSI2; // This is the key measure of how much the pressure is dipping
   
-  //PSIdiff  = constrain (PSIStart - PSI2, 0, 50);
-  convPSI2 = floatToString(buffer, PSI2, 1);
-  convPSIdiff = floatToString(buffer, PSIdiff, 1);
+//PSIdiff  = constrain (PSIStart - PSI2, 0, 50);
+convPSI2 = floatToString(buffer, PSI2, 1);
+convPSIdiff = floatToString(buffer, PSIdiff, 1);
 
-  //Get the factor to reduce target dip by
-  float timerShakeTimeSegment = int ((timerTime) / 30) + 1; //Get the number of the 15sec shake interval
-  pressureDipTarget = pressureDipTargetInit * (1 / timerShakeTimeSegment); //So, dipTarget decreases by factor of 1, 1/2, 1/3, 1/4... 
+//Get the factor to reduce target dip by
+float timerShakeTimeSegment = int ((timerTime) / 30) + 1; //Get the number of the 15sec shake interval
+pressureDipTarget = pressureDipTargetInit * (1 / timerShakeTimeSegment); //So, dipTarget decreases by factor of 1, 1/2, 1/3, 1/4... 
 
-  float convPressureDipTarget = pressureConv2(pressureDipTarget + offsetP2); //Need to add back offset because function subtracts it
-  String convPSItarget = floatToString(buffer, convPressureDipTarget, 1);
-  String outputPSI_td  = "Goal:" + convPSItarget + " You:" + convPSIdiff + "psi";
-  printLcd(3, outputPSI_td); 
-	*/
+float convPressureDipTarget = pressureConv2(pressureDipTarget + offsetP2); //Need to add back offset because function subtracts it
+String convPSItarget = floatToString(buffer, convPressureDipTarget, 1);
+String outputPSI_td  = "Goal:" + convPSItarget + " You:" + convPSIdiff + "psi";
+printLcd(3, outputPSI_td); 
+*/
 
 //Allow user to invoke Manual Mode from bootup before anything else happens (buttons get read in EEPROM include)
 while (button1State == LOW)

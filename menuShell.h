@@ -8,7 +8,7 @@ void menuExit()
   lcd.clear();
   lcd.setCursor (0, 2); lcd.print (F("Exiting menu...     "));
   buzzer(250); 
-  delay(250);  //Why the delay?
+  delay(500);  //Why the delay?
 }
 
 void menuShell(boolean inMenuLoop)
@@ -37,7 +37,8 @@ void menuShell(boolean inMenuLoop)
     while (button1State == LOW)
     {
       menuOption11 = true;
-      inMenuLoop1 = false;   
+      inMenuLoop1 = false; 
+			buttonPush (button1Pin, light1Pin, 250);  
       button1State = !digitalRead(button1Pin); 
       
       lcd.setCursor (0, 0); lcd.print (F("B1: Incr. by .1 sec "));
@@ -49,7 +50,8 @@ void menuShell(boolean inMenuLoop)
     while (button2State == LOW)
     {
       menuOption12 = true;
-      inMenuLoop1 = false;   
+      inMenuLoop1 = false; 
+			buttonPush (button2Pin, light2Pin, 250);  
       button2State = !digitalRead(button2Pin); 
 
       lcd.setCursor (0, 0); lcd.print (F("***CLEANING MODE*** "));
@@ -63,7 +65,7 @@ void menuShell(boolean inMenuLoop)
       inMenuLoop2 = true;
       inMenuLoop1 = false;
       button3State = !digitalRead(button3Pin); 
-			buttonPush (button3Pin, light3Pin, 250);
+			buttonPush (button3Pin, light3Pin, 250); //v1.1 new function
 			
       lcd.setCursor (0, 0); lcd.print (F("   *** MENU 2 ***   "));
       lcd.setCursor (0, 1); lcd.print (F("B1: Carbonation Mode"));
@@ -71,7 +73,6 @@ void menuShell(boolean inMenuLoop)
       lcd.setCursor (0, 3); lcd.print (F("B3: Exit...         "));
     }      
   }			
-
   
   while (inMenuLoop2 == true)
   {
@@ -109,10 +110,11 @@ void menuShell(boolean inMenuLoop)
     {
       inMenuLoop2 = false;
       menuExit();
-      while (button3State == LOW){
-        button3State = !digitalRead(button3Pin);}  // This catches loop until release 
+      while (button3State == LOW)
+			{
+        button3State = !digitalRead(button3Pin);
+			}  // This catches loop until release 
     }      
-
   }
 
   // ===============================================================================
@@ -121,43 +123,17 @@ void menuShell(boolean inMenuLoop)
 
   // Menu Option 11: AUTOSIPHON SET
   // ===============================================================================
-
-  while (menuOption11 == true)
+	
+	while (menuOption11 == true)
   {
-    readButtons();
-  
-    if (button1State == LOW){
-      autoSiphonDuration10s = autoSiphonDuration10s + 1; //Add .1s
-      buzzOnce(100, light1Pin);
-    }  
-    if (button2State == LOW){
-      autoSiphonDuration10s = autoSiphonDuration10s - 1; //Subtract .1s
-      buzzOnce(100, light2Pin);
-    }  
-    buzzedOnce = false;
-    
-    autoSiphonDuration10s = constrain(autoSiphonDuration10s, 5, 99); //Constrains autoSiphonDuration10s to between 5 and 99 tenths of sec
-    autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;
-    
-    String (convTime) = floatToString(buffer, autoSiphonDurationSec, 1);
-    printLcd (3, "Current value: " + convTime + "s");
-  
-    while (button3State == LOW)
-    {
-      button3State = !digitalRead(button3Pin); 
-      printLcd (3, "New value: " + convTime + " s");
-      buzzOnce(500, light3Pin);
-      delay(1000);
-      
-      EEPROM.write (3, autoSiphonDuration10s);             //Write to EEPROM
-      autoSiphonDuration = autoSiphonDuration10s * 100;    //Convert to ms from 10ths of sec
-      
-      menuOption11 = false;
-      menuExit();
-      while (button3State == LOW){
-      button3State = !digitalRead(button3Pin);}  // This catches loop until release 
-    }
-    buzzedOnce = false;  
+		inMenuOption11Loop = true;	
+		autoSiphonSet();
+			
+		if (!inMenuOption11Loop)
+		{
+			menuOption11 = false;
+			menuExit();
+		}
   }  
 
   // Menu Option 12: CLEANING MODE SET

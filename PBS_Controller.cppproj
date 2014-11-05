@@ -268,6 +268,21 @@ build.arch=AVR
 build.architecture=avr
 vmresolved.compiler.path=C:\Program Files (x86)\Arduino\hardware\tools\avr\bin\
 vmresolved.tools.path=C:\Program Files (x86)\Arduino\hardware\tools\avr
+vm.runtime.compiler.showwarnings=false
+serial.port.file=COM6
+serial.port=COM6
+includes= -I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\cores\arduino"  -I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\variants\micro"  -I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire"  -I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\EEPROM"  -I"C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries\LiquidCrystal_I2C2004V1"  -I"C:\Program Files (x86)\Arduino\libraries"  -I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries"  -I"C:\Program Files (x86)\Visual Micro\Visual Micro for Arduino\Micro Platforms\default\debuggers"  -I"C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries"  -I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\utility"
+build.path=C:\Users\Wallace\AppData\Local\VMicro\Arduino\Builds\PBS_Controller\micro
+build.project_name=PBS_Controller
+build.variant.path=C:\Program Files (x86)\Arduino\hardware\arduino\avr\variants\micro
+archive_file=core.a
+object_file=C:\Users\Wallace\AppData\Local\VMicro\Arduino\Builds\PBS_Controller\micro\LiquidCrystal_I2C2004V1\LiquidCrystal_I2C.cpp.o
+source_file=C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries\LiquidCrystal_I2C2004V1\LiquidCrystal_I2C.cpp
+object_files="C:\Users\Wallace\AppData\Local\VMicro\Arduino\Builds\PBS_Controller\micro\PBS_Controller.cpp.o" "C:\Users\Wallace\AppData\Local\VMicro\Arduino\Builds\PBS_Controller\micro\Wire\Wire.cpp.o" "C:\Users\Wallace\AppData\Local\VMicro\Arduino\Builds\PBS_Controller\micro\Wire\utility\twi.c.o" "C:\Users\Wallace\AppData\Local\VMicro\Arduino\Builds\PBS_Controller\micro\EEPROM\EEPROM.cpp.o" "C:\Users\Wallace\AppData\Local\VMicro\Arduino\Builds\PBS_Controller\micro\LiquidCrystal_I2C2004V1\LiquidCrystal_I2C.cpp.o" 
+upload.verbose=-q -q
+path=C:\Program Files (x86)\Arduino\hardware\tools
+cmd.path={runtime.ide.path}/hardware/tools/avr/bin/avrdude
+config.path={runtime.ide.path}/hardware/tools/avr/etc/avrdude.conf
 </arduino.board.property_bag>
         <arduino.build.mcu>atmega32u4</arduino.build.mcu>
         <arduino.build.f_cpu>16000000L</arduino.build.f_cpu>
@@ -513,6 +528,21 @@ build.arch=AVR
 build.architecture=avr
 vmresolved.compiler.path=C:\Program Files (x86)\Arduino\hardware\tools\avr\bin\
 vmresolved.tools.path=C:\Program Files (x86)\Arduino\hardware\tools\avr
+vm.runtime.compiler.showwarnings=false
+serial.port.file=COM6
+serial.port=COM6
+includes= -I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\cores\arduino"  -I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\variants\micro"  -I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire"  -I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\EEPROM"  -I"C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries\LiquidCrystal_I2C2004V1"  -I"C:\Program Files (x86)\Arduino\libraries"  -I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries"  -I"C:\Program Files (x86)\Visual Micro\Visual Micro for Arduino\Micro Platforms\default\debuggers"  -I"C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries"  -I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\utility"
+build.path=C:\Users\Wallace\AppData\Local\VMicro\Arduino\Builds\PBS_Controller\micro
+build.project_name=PBS_Controller
+build.variant.path=C:\Program Files (x86)\Arduino\hardware\arduino\avr\variants\micro
+archive_file=core.a
+object_file=C:\Users\Wallace\AppData\Local\VMicro\Arduino\Builds\PBS_Controller\micro\LiquidCrystal_I2C2004V1\LiquidCrystal_I2C.cpp.o
+source_file=C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries\LiquidCrystal_I2C2004V1\LiquidCrystal_I2C.cpp
+object_files="C:\Users\Wallace\AppData\Local\VMicro\Arduino\Builds\PBS_Controller\micro\PBS_Controller.cpp.o" "C:\Users\Wallace\AppData\Local\VMicro\Arduino\Builds\PBS_Controller\micro\Wire\Wire.cpp.o" "C:\Users\Wallace\AppData\Local\VMicro\Arduino\Builds\PBS_Controller\micro\Wire\utility\twi.c.o" "C:\Users\Wallace\AppData\Local\VMicro\Arduino\Builds\PBS_Controller\micro\EEPROM\EEPROM.cpp.o" "C:\Users\Wallace\AppData\Local\VMicro\Arduino\Builds\PBS_Controller\micro\LiquidCrystal_I2C2004V1\LiquidCrystal_I2C.cpp.o" 
+upload.verbose=-q -q
+path=C:\Program Files (x86)\Arduino\hardware\tools
+cmd.path={runtime.ide.path}/hardware/tools/avr/bin/avrdude
+config.path={runtime.ide.path}/hardware/tools/avr/etc/avrdude.conf
 </arduino.board.property_bag>
         <arduino.build.mcu>atmega32u4</arduino.build.mcu>
         <arduino.build.f_cpu>16000000L</arduino.build.f_cpu>

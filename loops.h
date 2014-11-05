@@ -27,7 +27,8 @@ void platformUpLoop()
     // Writes a lengthening line of dots
     lcd.setCursor (0, 2); lcd.print (F("Raising             "));
     lcd.setCursor (((nn + 12) % 12) + 7, 2); lcd.print (F("...")); 
-    nn = ++nn; //Had to change this from n++ to ++n. Maybe from the upgrade from v1.0 to v1.5?
+    
+		nn = ++nn; //Had to change this from n++ to ++n. Maybe from the upgrade from v1.0 to v1.5?
     if (nn > 12){nn = 10;} //This keeps dots from overwriting parts of screen
 		delay(100); //This value is chosen to make sure dots get to end of travel by timePlatformLock
     
@@ -54,7 +55,7 @@ void platformUpLoop()
       lcd.setCursor (0, 1); lcd.print (F("B3 lowers platform. "));
       messageLcdReady(); // MESSAGE: "Ready...           "
 			
-			//Three beeps on platform lock-in
+			//beep on platform lockin
       buzzer(500);
 			      
       relayOn(relay4Pin, true);  // Slight leak causes platform to fall over time--so leave open 
@@ -67,8 +68,14 @@ void platformUpLoop()
       relayOn(relay4Pin, false);
       relayOn(relay5Pin, true);
       digitalWrite(light1Pin, LOW);
-      messageLcdBlankLn2(); // MESSAGE: "                   " // Blanks status line
-      delay(2000); 
+			
+			lcd.setCursor (0, 1); lcd.print (F("HOLD B1 UNTIL BEEP! "));
+			lcd.setCursor (0, 2); lcd.print (F("Lowering...         "));
+      delay(1500); 
+			
+			//Beep if lockin not met
+			for (int i = 0; i < 5; ++i)
+			{buzzer(150); delay(25);}
 
       relayOn(relay5Pin, false);  // Prevents leaving S5 on if this was the last thing user did
       platformStateUp = false;
@@ -98,7 +105,7 @@ void emergencyDepressurize()
     digitalWrite(buzzerPin, HIGH); //Leave buzzer on until closed
       
     pressureOutput();
-    printLcd2(3, outputPSI_b, throttleVal);     
+    printLcd (3, outputPSI_b);     
     
     switchDoorState = digitalRead(switchDoorPin); //Check door switch    
     P1 = analogRead(sensorP1Pin);

@@ -20,8 +20,9 @@ void pressurizedBottleStartup()
 		lcd.setCursor (0, 0); lcd.print (F("Pressurized bottle  "));
 	  lcd.setCursor (0, 1); lcd.print (F("found. Open exhaust "));
 	  lcd.setCursor (0, 2); lcd.print (F("valve to vent...    "));
-	  pressureOutput(); 
-		printLcd2(3, outputPSI_b, throttleVal); 
+	  
+		pressureOutput(); 
+		printLcd (3, outputPSI_b);
 
 	  buzzOnce(1000, light2Pin);
  
@@ -43,13 +44,14 @@ void pressurizedBottleStartup()
 	// ========================================================================
 	if (inPressurizedBottleLoop)
 	{
-	  lcd.clear();
+	  //lcd.clear();
 	  lcd.setCursor (0, 0); lcd.print (F("Bottle depressurized"));
 	  lcd.setCursor (0, 1); lcd.print (F("Press B3 to continue"));
 		
 		buzzer (1000);
 		doorOpen();
-  
+		messageLcdReady();
+
 		while (!digitalRead(button3Pin) == HIGH)
 	  {
 			digitalWrite(light3Pin, HIGH);
@@ -86,7 +88,8 @@ void nullPressureStartup()
 		messageLcdOpenDoor();
 		
 		pressureOutput();
-		printLcd2(3, outputPSI_r, throttleVal);
+		printLcd (3, outputPSI_r);
+		//lcd.setCursor (0, 3); lcd.print (outputPSI_r);
 
 		// Program will loop here until gas pressure fixed. 
 		while (!digitalRead(button3Pin) == LOW){
@@ -124,19 +127,21 @@ void idleLoopPressureDrop()
 {	  
 		// PRESSURE DROP LOOP
 		// ===================================================================
-	  if (P2 - offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what constitutes a pressure drop.// 2-18 Changed from 75 to 100
+	  while (P2 - offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what constitutes a pressure drop.// 2-18 Changed from 75 to 100
 	  {
 		  inPressureDropLoop = true;
-
-		  P1 = analogRead(sensorP1Pin);
-		  P2 = analogRead(sensorP2Pin);
 			
 			messageGasLow();
 		  messageLcdWaiting(); // MESSAGE: "Waiting...          "
 			
 		  // Pressure measurement and output
 		  pressureOutput();
-		  printLcd2 (3, outputPSI_rb, 500);
+		  printLcd (3, outputPSI_r);
+			
+			if (!digitalRead(button3Pin) == LOW)
+			{
+				doorOpen();
+			}
 			
 			//If bottle is pressurized (along with pressure sagging), also lock the platform
 			while (P1 - offsetP1 > pressureDeltaDown)
@@ -178,3 +183,17 @@ void idleLoopPressureDrop()
 }
 //END PRESSURE DROP LOOP
 //==========================================================================
+
+/*
+void idleLoopPressureDropSimple()
+{
+	if (P2 - offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what constitutes a pressure drop.// 2-18 Changed from 75 to 100
+	{
+		delay(1000);
+		messageGasLow();
+		messageLcdWaiting(); // MESSAGE: "Waiting...          "
+		//buzzer(50);
+		delay(1000);
+	}	
+}
+*/

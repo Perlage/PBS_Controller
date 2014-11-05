@@ -29,7 +29,7 @@ void manualModeLoop()
     
     // FUNCTION: Read and output pressure
     pressureOutput();
-    printLcd2(3, outputPSI_rb, throttleVal);    
+    printLcd (3, outputPSI_rb);    
   
     if (platformStateUp == false && switchDoorState == HIGH && !inDiagnosticMode)
     {
@@ -55,9 +55,9 @@ void manualModeLoop()
 
     if (platformStateUp == true && switchDoorState == LOW && !inDiagnosticMode) //Add a pressure check to this
     {
-      lcd.setCursor (0, 0); lcd.print (F("B1: Gas IN          "));
-      lcd.setCursor (0, 1); lcd.print (F("B2: Liquid IN       "));
-      lcd.setCursor (0, 2); lcd.print (F("B3: Gas OUT/Open Dr."));
+      lcd.setCursor (0, 0); lcd.print (F("B1:Gas IN          "));
+      lcd.setCursor (0, 1); lcd.print (F("B2:Liquid IN       "));
+      lcd.setCursor (0, 2); lcd.print (F("B3:Gas OUT/Drop/Opn"));
     }
     else
     {
@@ -76,7 +76,7 @@ void manualModeLoop()
       relayOn (relay2Pin, false);}
       
     // B2 LIQUID IN ==============================================================
-    if ((button2State == LOW && platformStateUp == true && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) || (button2State == LOW) && inDiagnosticMode == true){ 
+    if ((button2State == LOW && platformStateUp == true && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) || ((button2State == LOW) && inDiagnosticMode == true)){ 
 			digitalWrite(light2Pin, HIGH);
       relayOn (relay1Pin, true);}  
     else{
@@ -109,12 +109,12 @@ void manualModeLoop()
         button3State = !digitalRead(button3Pin); 
 				digitalWrite(light3Pin, HIGH);        
 				relayOn (relay3Pin, true);
-				relayOn(relay4Pin, false);   
-        relayOn(relay5Pin, true); 
+				relayOn (relay4Pin, false);   
+        relayOn (relay5Pin, true); 
       }  
 			digitalWrite(light3Pin, LOW);      
 			relayOn (relay3Pin, true);
-			relayOn(relay5Pin, false); 
+			relayOn (relay5Pin, false); 
       platformStateUp = false;
     }  
 

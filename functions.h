@@ -26,23 +26,57 @@ void printLcd2 (int line, String newString, int throttleInt) //Changed throttleI
   }
 }
 
-// FUNCTION printLCD (Jeremy)
+// FUNCTION printLCD 
 // =====================================================================================
 
-String currentLcdString[3]; // Jeremy's original
-//String currentLcdString;
+// see Arduino reference, Data types / String object / equals() function
+// String currentLcdString[3] MAY NOT WORK ANYMORE! PBSFIRM-73
+/*
+// Jeremy'S original
+String currentLcdString[3]; 
 void printLcd (int line, String newString)
 {
-  if(!currentLcdString[line].equals(newString)) // see Arduino reference, Data types / String object / equals() function
-  //if(!currentLcdString.equals(newString)) // see Arduino reference, Data types / String object / equals() function
+	if(!currentLcdString[line].equals(newString)) 
 	{
     currentLcdString[line] = newString;
-		//currentLcdString = newString;
     lcd.setCursor(0,line);
     lcd.print("                    ");
     lcd.setCursor(0,line);
     lcd.print(newString);
   }
+}
+*/
+
+/*
+//This seems to work! 
+String oldLcdString;
+void printLcd (int scrLine, String newLcdString)
+{
+	if(oldLcdString != newLcdString)
+	{
+		oldLcdString = newLcdString;
+		lcd.setCursor(0, scrLine);
+		lcd.print("                    ");
+		lcd.setCursor(0, scrLine);
+		lcd.print(newLcdString);
+	}
+}
+*/
+
+//This only blanks line if length changes
+String oldLcdString;
+void printLcd (int scrLine, String newLcdString)
+{
+	if(oldLcdString.length() != newLcdString.length())
+	{
+		oldLcdString = newLcdString;
+		lcd.setCursor(0, scrLine); lcd.print("                    ");
+		lcd.setCursor(0, scrLine); lcd.print(newLcdString);
+	}
+	else
+	{
+		lcd.setCursor(0, scrLine); lcd.print(newLcdString);
+	}
 }
 
 // FUNCTION relayOn
@@ -87,7 +121,7 @@ void doorOpen()
   while (switchDoorState == LOW && (P1 - offsetP1) <= pressureDeltaDown)
   {
     relayOn (relay6Pin, true);  // Open door
-    //lcd.setCursor (0, 2); lcd.print (F("Opening door...     "));
+    lcd.setCursor (0, 2); lcd.print (F("Opening door...     "));
     switchDoorState = digitalRead(switchDoorPin); 
     P1 = analogRead(sensorP1Pin);
   }
@@ -162,16 +196,30 @@ void pressureOutput()
         
   PSI1     = pressureConv1(P1); 
   PSI2     = pressureConv2(P2); 
-  PSIdiff  = PSI2 - PSI1;
+  PSIdiff  = (PSI2 - PSI1);
   
   (convPSI1)      = floatToString(buffer, PSI1, 1);
   (convPSI2)      = floatToString(buffer, PSI2, 1);
   (convPSIdiff)   = floatToString(buffer, PSIdiff, 1);
 
-  (outputPSI_rb)  = "Keg:" + convPSI2 + " Bottle:" + convPSI1;	//was Reg
-  (outputPSI_b)   = "Bottle: " + convPSI1 + " psi"; 
-  (outputPSI_r)   = "Pressure: " + convPSI2 + " psi";									//Was "Regulator"
-}  
+  (outputPSI_rb)  = "Keg:" + convPSI2 + " Bottle:" + convPSI1;
+  (outputPSI_b)   = "Bottle: " + convPSI1 + " psi";
+	(outputPSI_d)   = "Difference: " + convPSIdiff + " psi";
+  (outputPSI_r)   = "Pressure: " + convPSI2 + " psi";
+} 
+
+//FUNCTION: padString
+//====================================================================================
+
+int padding;
+		
+void padString(String paddedString)
+{
+	padding = 20 - paddedString.length();
+	for (int i = 0; i < padding; i++)
+	{paddedString += " ";}
+	Serial.print (paddedString)	;
+}
 
 // FUNCTION: pressureDump()
 // =====================================================================================
@@ -182,7 +230,7 @@ void pressureDump() //Must close S3 manually
     relayOn(relay3Pin, true); 
     P1 = analogRead (sensorP1Pin);
     pressureOutput();
-    printLcd2 (3, outputPSI_b, 500);
+    printLcd (3, outputPSI_b);
   } 
 }
 
@@ -216,12 +264,66 @@ void buttonPush (byte buttonPin, byte lightPin, byte buzzerDuration)
 		digitalWrite (lightPin, HIGH);
 		buzzer(buzzerDuration);
 		digitalWrite (lightPin, LOW);
-		buzzedOnce = false;
 	}
 }
 
+//FUNCTION: AUTOSIPHON SET ROUTINE
+//========================================================================================
+String convTime;
+String outputTime;
+boolean inMenuOption11Loop = false; //v1.1 Have to put this here because Functions include is invoked before MenuShell include???
+
+void autoSiphonSet()
+{
+  readButtons();
+    
+  if (button1State == LOW)
+  {
+	  autoSiphonDuration10s = autoSiphonDuration10s + 1; //Add .1s
+	  buzzOnce(100, light1Pin);
+  }
+  if (button2State == LOW)
+  {
+	  autoSiphonDuration10s = autoSiphonDuration10s - 1; //Subtract .1s
+	  buzzOnce(100, light2Pin);
+  }
+
+  autoSiphonDuration10s = constrain(autoSiphonDuration10s, 5, 99); //Constrains autoSiphonDuration10s to between 5 and 99 tenths of sec
+  autoSiphonDurationSec = float(autoSiphonDuration10s) / 10;
+    
+  convTime = floatToString(buffer, autoSiphonDurationSec, 1);
+  outputTime = "Current value: " + convTime + "s ";
+  //printLcd (3, outputTime);
+	lcd.setCursor(0, 3); lcd.print(outputTime);
+    
+  buzzedOnce = false;
+  if (button3State == LOW)
+  {
+	  outputTime = "New value: " + convTime + "s     ";
+	  //printLcd (3, outputTime);
+		lcd.setCursor(0, 3); lcd.print(outputTime);
+	    
+	  buzzOnce(500, light3Pin);
+	  delay(1000);
+	    
+	  EEPROM.write (3, autoSiphonDuration10s);             // Write to EEPROM
+	  autoSiphonDuration = autoSiphonDuration10s * 100;    //Convert to ms from 10ths of sec
+	    
+	  // This catches loop until release
+	  while (!digitalRead(button3Pin) == LOW)
+	  {
+		  // This just catches B3 push so it doesn't flow through to Idle Loop and open door
+	  }
+	  inMenuOption11Loop = false;	
+		button3State = HIGH;
+  }
+  buzzedOnce = false;
+}
+
+
 /*
 //Template for WhileWend
+//=================================================================================================
 
 boolean inLoopLBL = false;
 while (conditions are true)

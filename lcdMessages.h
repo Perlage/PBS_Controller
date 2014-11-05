@@ -25,11 +25,18 @@ void messageB2B3Toggles()
   lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
   lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
 }
-
+/*
 void messageInsertBottle()
 {
   lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
   lcd.setCursor (0, 1); lcd.print (F("B1 raises platform. "));
+}
+*/
+void messageInsertBottle()
+{
+	lcd.setCursor (0, 0); lcd.print (F("Insert bottle;      "));
+	lcd.setCursor (0, 1); lcd.print (F("B1 raises platform. "));
+	lcd.setCursor (0, 2); lcd.print (F("Hold B1 until beep. "));
 }
 
 // messageLcdBlankLn2(); // MESSAGE: "                    "
@@ -41,7 +48,7 @@ void messageLcdBlankLn2()
 // messageLcdReady(); // MESSAGE: "Ready...           "
 void messageLcdReady()
 {
-	lcd.setCursor (0, 2); lcd.print (F("Ready...           "));
+	lcd.setCursor (0, 2); lcd.print (F("Waiting...          "));
 }
 
 // messageLcdWaiting(); // MESSAGE: "Waiting...          "

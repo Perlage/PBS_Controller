@@ -119,12 +119,13 @@ String (convPSIdiff);
 String (outputPSI_rb);                          // Keg, bottle
 String (outputPSI_b);                           // Bottle
 String (outputPSI_r);                           // Keg
+String (outputPSI_d);                           // Diff between bottle and keg
 
 //Variables for platform function and timing
 int timePlatformInit;                           // Time in ms going into loop
 int timePlatformCurrent;                        // Time in ms currently in loop
 int timePlatformRising               = 0;       // Time difference between Init and Current
-const int timePlatformLock           = 1250;    // Time in ms before platform locks in up position
+const int timePlatformLock           = 1000;    // Time in ms before platform locks in up position
 const int autoPlatformDropDuration   = 1500;    // Duration of platform auto drop in ms
 
 //Key performance parameters
@@ -205,7 +206,7 @@ void setup()
   digitalWrite(button2Pin, HIGH);
   digitalWrite(button3Pin, HIGH);
   
-  //Serial.begin(9600); // TO DO: remove when done
+  Serial.begin(9600); // TO DO: remove when done
   
   // Initialize LCD - Absolutely necessary
   lcd.init();
@@ -257,9 +258,11 @@ void setup()
 	  menuShell(inMenuLoop);
   }
     
-  //NULL PRESSURE: Check for stuck pressurized bottle or implausibly low gas pressure at start 
+  //NULL PRESSURE: Check for stuck pressurized bottle
 	pressurizedBottleStartup();
-  nullPressureStartup();
+  
+	//LOW PRESSURE: THEN check for implausibly low gas pressure at start 
+	nullPressureStartup();
 
   messageInitial(); //Rewrite initial user message, in case pressure routines above wrote to screen
   
@@ -342,42 +345,32 @@ void loop()
   if (switchDoorState == LOW && platformStateUp == false)
   {
 		lcd.setCursor (0, 0); lcd.print (F("B3 opens door;      "));
-		lcd.setCursor (0, 1); lcd.print (F("B2+B3 loads Menu.   "));
-  }
+		lcd.setCursor (0, 1); lcd.print (F("Press B2+B3 for Menu"));
+		messageLcdReady();
+	}
   
 	if (switchDoorState == HIGH && platformStateUp == false)
   {
-		messageRotator(6000, .25, 1500);
-		if (messageID){
-			messageInsertBottle(); // MESSAGE: Insert Bottle; B1 raises Platform
-		}else{
-			lcd.setCursor (0, 1); lcd.print (F("B2+B1 purges bottle."));
-		}
+		messageInsertBottle();
   }  
 	
 	if (P1 - offsetP1 > pressureDeltaDown)
 	{
-		messageRotator(10000, .15, 0);
-		if (messageID){
-			lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust; "));
-		}else{
-			lcd.setCursor (0, 1); lcd.print (F("B1 adjusts overfill."));
-		}
+		lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
+		lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
+		messageLcdReady();
 	}
-  
-	messageLcdReady(); // MESSAGE: "Ready...        "  
-	
+  	
   // Main Loop idle pressure measurement and LCD output
   //======================================================================
-
   pressureOutput();
-  if (P1 - offsetP1 > pressureDeltaDown)
+  if (P1 - offsetP1 > pressureDeltaDown || platformStateUp ==  true)
   {
-	  printLcd2(3, outputPSI_rb, throttleVal); // Print reg and bottle if bottle pressurized
+		printLcd (3, outputPSI_b);
   }
   else
   {
-		printLcd2(3, outputPSI_r, throttleVal); // Print only reg if bottle unpressurized
+		printLcd (3, outputPSI_r);
   }
 	
 	// Autosiphon in Main loop
@@ -458,7 +451,8 @@ void loop()
   }  
 
   //  This routine takes action if pressure drops in idle loop.
-  idleLoopPressureDrop(); //v1.1 Better to put this is pressurize loop?
+  idleLoopPressureDrop(); //This is not needed now that Pressurize loop has a pressure check
+	//idleLoopPressureDropSimple();
   
   // =====================================================================================  
   // PLATFORM RAISING LOOP
@@ -470,11 +464,10 @@ void loop()
 	// PRESSURIZE LOOP
 	//======================================================================================
     
-  int PTest1;
-  int PTest2;
-  int pressurizeStartTime;
+  int PTest1 = 0;
+  int PTest2 = 0;
+  int pressurizeStartTime = 0;
   int pressurizeDuration = 0;
-  int pressurizeCurrentTime = 0;
   boolean PTestFail = false;
 
   // Get fresh pressure readings  
@@ -542,7 +535,6 @@ void loop()
     if (button2StateTEMP == LOW && button2ToggleState == true){    //OFF push
       button2State = HIGH;                                         //exit WHILE loop
     }  
-    
 		
 		//v1.1 Pressure test. If bottle hasn't reached pressureDeltaUp in 4 sec, something is wrong
 		pressurizeDuration = millis() - pressurizeStartTime;
@@ -559,7 +551,7 @@ void loop()
 
     // Pressure output
     pressureOutput();
-    printLcd2(3, outputPSI_b, throttleVal); 
+		printLcd (3, outputPSI_d);
   }
     
   // PRESSURIZE LOOP EXIT ROUTINES
@@ -629,7 +621,7 @@ void loop()
 		
     //Read and output pressure
 		pressureOutput();
-    printLcd2 (3, outputPSI_rb, throttleVal); 
+		printLcd (3, outputPSI_d);
     
     // CLEANING MODE: If in Cleaning Mode, set FillState HIGH to disable sensor
     if (inCleaningMode == true)
@@ -667,8 +659,9 @@ void loop()
       // Anti-drip routine
       relayOn(relay1Pin, true);
       relayOn(relay2Pin, true);
+      lcd.setCursor (0, 2); lcd.print (F("Anti drip...        "));
       
-      delay(antiDripDuration); 
+			delay(antiDripDuration); 
 
       relayOn(relay1Pin, false);
       relayOn(relay2Pin, false);
@@ -686,7 +679,7 @@ void loop()
       relayOn(relay2Pin, false);
 
       delay (1000); //Added this to create a slight delay to remedy the immediate false foam detection 
-      messageLcdBlankLn2(); // MESSAGE: "                    "
+      messageLcdBlankLn2(); // MESSAGE: ""
       
       //v1.1 Clear Sensor routine under development 
       if (digitalRead(sensorFillPin) == LOW)
@@ -733,7 +726,9 @@ void loop()
         }
         buzzedOnce = false;
 				button2ToggleState = false; // button2State is still LOW, with toggleState true. Setting toggleState to false should be like pressing Fill again
-        printLcd(2,"");
+
+				messageLcdBlankLn2(); // MESSAGE: ""
+				
         inPressurizeLoop = false; 
       } 
       // END FILLING TOO FAST LOOP   
@@ -770,7 +765,7 @@ void loop()
   
 	// Pressure output
 	pressureOutput();
-	printLcd2 (3, outputPSI_b, throttleVal);
+	printLcd (3, outputPSI_b);
   
 	//Allow momentary "burst" foam tamping
   button2State = !digitalRead(button2Pin);
@@ -823,7 +818,8 @@ void loop()
   
   if(inDepressurizeLoop)
   { 
-    printLcd(2, "");
+    //printLcd(2, "");
+		//messageLcdBlankLn2(); // MESSAGE: ""
     
 		// Turn off Light 1 if on
 		digitalWrite(light1Pin, LOW);
@@ -858,14 +854,14 @@ void loop()
     if (P1 - offsetP1 <= pressureDeltaDown)
     {
       buzzer(500);
-      autoMode_1 = true;  //Going to platform loop automatically, so set this var to partially drop platform 
+      autoMode_1 = true;  //Going to platform loop manually now, but still set this var to partially drop platform when B3 is pressed
 	  	lcd.setCursor (0, 0); lcd.print (F("Grasp bottle;       "));
 	  	lcd.setCursor (0, 1); lcd.print (F("B3 lowers platform. "));
     }
     digitalWrite(light3Pin, LOW);
     inDepressurizeLoop = false;
-   }
-  
+  }
+
   // END DEPRESSURIZE LOOP
   //============================================================================================
 
@@ -879,7 +875,6 @@ void loop()
     inDoorOpenLoop = true;
     digitalWrite(light3Pin, HIGH);
     doorOpen(); // Run door open function
-    //TO DO: Add timer: if door not open in 2 sec, must be stuck; show error message
   }
 
   // DOOR OPEN LOOP EXIT ROUTINES
@@ -894,6 +889,7 @@ void loop()
     inDoorOpenLoop = false;
     digitalWrite(light3Pin, LOW);
     button3State = HIGH; 
+		messageLcdReady();
   }
 
   // END DOOR OPEN LOOP
@@ -914,7 +910,8 @@ void loop()
 		while(!digitalRead(button3Pin) == HIGH)
 		{
 			pressureOutput();
-			printLcd2(3, outputPSI_b, throttleVal);
+			printLcd (3, outputPSI_b);
+			
 			digitalWrite(light3Pin, HIGH);
 			buzzer (75);
 			digitalWrite(light3Pin, LOW);
@@ -928,8 +925,7 @@ void loop()
     inPlatformLowerLoop = true;
     digitalWrite(light3Pin, HIGH);
 		relayOn(relay4Pin, false); // Finally can close platform up solenoid
-    lcd.setCursor (0, 2); lcd.print (F("Lowering platform..."));
-		lcd.setCursor (0, 3); lcd.print (F("Regulator...        "));
+    lcd.setCursor (0, 2); lcd.print (F("Lowering...         "));
     
     if(autoMode_1 == true)
     {
@@ -958,8 +954,8 @@ void loop()
   
   if(inPlatformLowerLoop)
   {
-	//close platform release 
-    messageLcdBlankLn2(); // MESSAGE: "                    "
+		//close platform release 
+    //messageLcdBlankLn2(); // MESSAGE: ""
     relayOn(relay3Pin, false); 
     relayOn(relay5Pin, false);
     relayOn(relay6Pin, false); //Release door solenoid
