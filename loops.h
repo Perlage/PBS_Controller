@@ -26,10 +26,10 @@ void platformUpLoop()
     
     // Writes a lengthening line of dots
     lcd.setCursor (0, 2); lcd.print (F("Raising             "));
-    lcd.setCursor (((nn + 12) % 12) + 7, 2); lcd.print (F("...")); 
-    
+		lcd.setCursor (((nn + 12) % 12) + 7, 2); lcd.print (F("...")); 
 		nn = ++nn; //Had to change this from n++ to ++n. Maybe from the upgrade from v1.0 to v1.5?
     if (nn > 12){nn = 10;} //This keeps dots from overwriting parts of screen
+		
 		delay(100); //This value is chosen to make sure dots get to end of travel by timePlatformLock
     
     button1State = !digitalRead(button1Pin); 
@@ -70,8 +70,8 @@ void platformUpLoop()
       relayOn(relay5Pin, true);
       digitalWrite(light1Pin, LOW);
 			
-			lcd.setCursor (0, 1); lcd.print (F("HOLD B1 UNTIL BEEP! "));
-			lcd.setCursor (0, 2); lcd.print (F("Lowering...         "));
+			lcd.setCursor (0, 2); lcd.print (F("HOLD B1 UNTIL BEEP! "));
+			//lcd.setCursor (0, 2); lcd.print (F("Lowering...         "));
       delay(1500); 
 			
 			//Beep if lockin not met
@@ -120,7 +120,7 @@ void emergencyDepressurize()
     inEmergencyDepressurizeLoop = false;
     relayOn(relay3Pin, false);  
     digitalWrite(buzzerPin, LOW); // Now turn off
-    messageLcdBlankLn2();
+    messageLcdBlank(2);
     button2State = HIGH;  // Pass HIGH state to next routine so filling doesn't automatically resume. Make user think about it!
 		//button3State = HIGH;  // No need to do that on depressurization
   }  

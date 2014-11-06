@@ -200,7 +200,7 @@ void setup()
   digitalWrite(button2Pin, HIGH);
   digitalWrite(button3Pin, HIGH);
   
-  Serial.begin(9600); // TO DO: remove when done
+  //Serial.begin(9600); // TO DO: remove when done
   
   // Initialize LCD - Absolutely necessary
   lcd.init();
@@ -260,6 +260,13 @@ void setup()
 	
 	//Rewrite initial user message, in case pressure routines above wrote to screen
   messageInitial(); 
+	
+	//Traveling dots
+	for (int n = 12; n < 20; n++)
+	{
+		lcd.setCursor (n, 3); lcd.print (F("."));
+		delay(200);
+	}
   
   //UNCOMMENT OUT NEXT 2 LINEs FOR SHOW
   //relayOn(relay4Pin, true);  // Now Raise platform
@@ -285,7 +292,7 @@ void setup()
   
 	String convInt = floatToString(buffer, numberCycles, 0);
   String outputInt = "Total fills: " + convInt;
-  printLcd (2, outputInt);
+  printLcd (3, outputInt);
 	delay(2000);  // Time to let platform drop
   relayOn(relay5Pin, false); 
   relayOn(relay3Pin, false); // Close this so solenoid doesn't overhead on normal startup
@@ -347,13 +354,11 @@ void loop()
   {
 		lcd.setCursor (0, 0); lcd.print (F("B3 opens door;      "));
 		lcd.setCursor (0, 1); lcd.print (F("Press B2+B3 for Menu"));
-		messageLcdReady();
+		messageLcdReady(2);
 	}
   
 	if (switchDoorState == HIGH && platformStateUp == false)
-  {
-		messageInsertBottle();
-  }  
+  {messageInsertBottle();}  
 	
 	if (P1 - offsetP1 > pressureDeltaDown)
 	{
@@ -366,13 +371,9 @@ void loop()
   //======================================================================
   pressureOutput();
   if (P1 - offsetP1 > pressureDeltaDown || platformStateUp ==  true)
-  {
-		printLcd (3, outputPSI_b);
-  }
+  {printLcd (3, outputPSI_b);}
   else
-  {
-		printLcd (3, outputPSI_r);
-  }
+  {printLcd (3, outputPSI_r);}
 	
 	// Autosiphon in Main loop
 	//=====================================================================
@@ -639,7 +640,7 @@ void loop()
       lcd.setCursor (0, 2); lcd.print (F("Filling...          "));
     }
 		lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
-		lcd.setCursor (0, 1); lcd.print (F("                    "));
+		messageLcdBlank(1);
   }
 
   // FILL LOOP EXIT ROUTINES
@@ -681,13 +682,15 @@ void loop()
       relayOn(relay2Pin, false);
 
       delay (1000); //Added this to create a slight delay to remedy the immediate false foam detection 
-      messageLcdBlankLn2(); // MESSAGE: ""
+      messageLcdBlank(2); // MESSAGE: ""
       
-      //v1.1 Clear Sensor routine under development 
+      //v1.1 Clear Sensor Routine IN DEVELOPMENT
+			//Just send the message over, and let Depressure routine handle
+			//==============================================
       if (digitalRead(sensorFillPin) == LOW)
       {
         lcd.setCursor (0, 2); lcd.print (F("Clearing Fill Sensor"));
-        relayOn(relay3Pin, true); delay (1000); relayOn(relay3Pin, false);
+				relayOn(relay3Pin, true); delay (1000); relayOn(relay3Pin, false);// Instead of a delay, look for a pressure difference
         relayOn(relay2Pin, true); delay (250); relayOn(relay2Pin, false);
       }  
       sensorFillState = HIGH; // v1.1 Changed it back to this
@@ -729,7 +732,7 @@ void loop()
         buzzedOnce = false;
 				button2ToggleState = false; // button2State is still LOW, with toggleState true. Setting toggleState to false should be like pressing Fill again
 
-				messageLcdBlankLn2(); // MESSAGE: ""
+				messageLcdBlank(2); // MESSAGE: ""
 				
         inPressurizeLoop = false; 
       } 
@@ -743,12 +746,15 @@ void loop()
   // END FILL LOOP EXIT ROUTINES
   //========================================================================================
 
-  // #include "autoCarbonator.h"
-
   //========================================================================================
   // DEPRESSURIZE LOOP
   //========================================================================================
-  
+	
+	//pressureOutput(); //v1.1 Do we need to take a fresh reading here? Probably a good idea
+	//float minPressureDiffSensorClear = 10; //v1.1 
+	
+  //while(button3State == LOW && ((sensorFillState == HIGH  || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) //v1.1 added sensor override
+
   while(button3State == LOW && (sensorFillState == HIGH || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) //v1.1 added sensor override
   {  
     inDepressurizeLoop = true;
@@ -819,10 +825,7 @@ void loop()
   //========================================================================
   
   if(inDepressurizeLoop)
-  { 
-    //printLcd(2, "");
-		//messageLcdBlankLn2(); // MESSAGE: ""
-    
+  {     
 		// Turn off Light 1 if on
 		digitalWrite(light1Pin, LOW);
     
@@ -846,9 +849,24 @@ void loop()
       if (digitalRead(sensorFillPin) == LOW)
       {
         lcd.setCursor (0, 2); lcd.print (F("Clearing Foam Sensor"));
-        delay(1000); //Decided to just have a delay instead
+        //delay(1000); //Decided to just have a delay instead
+//=====================
+
+				pressureOutput();
+				float sensorClearPressureDiff = 6; //P2 - P1 in PSI
+				while (PSIdiff < sensorClearPressureDiff)
+				{
+				  relayOn(relay3Pin, true); 
+				}
+				
+				relayOn(relay3Pin, false); // Instead of a delay, look for a pressure difference
+				relayOn(relay2Pin, true);  // Now repressurize
+				delay (500); 
+				relayOn(relay2Pin, false);
+
+//=====================
       }
-      lcd.setCursor (0, 2); lcd.print (F("                    "));
+      messageLcdBlank(2);
       sensorFillState = HIGH; //v1.1 Set the sensorState to HIGH
     }
 

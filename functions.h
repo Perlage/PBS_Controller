@@ -26,7 +26,7 @@ void printLcd (int scrLine, String newLcdString)
 //This only blanks line if length changes
 //String oldLcdString;
 String oldLcdString2[3];
-void printLcd2 (int scrLine, String newLcdString)
+void printLcdArray (int scrLine, String newLcdString)
 {
 	if(oldLcdString2[scrLine].length() != newLcdString.length())
 	{
@@ -164,10 +164,10 @@ void pressureOutput()
   (convPSI2)      = floatToString(buffer, PSI2, 1);
   (convPSIdiff)   = floatToString(buffer, PSIdiff, 1);
 
-  (outputPSI_rb)  = "Keg:" + convPSI2 + " Bottle:" + convPSI1;
-  (outputPSI_b)   = "Bottle: " + convPSI1 + " psi";
-	(outputPSI_d)   = "Difference: " + convPSIdiff + " psi";
-  (outputPSI_r)   = "Pressure: " + convPSI2 + " psi";
+  (outputPSI_rb)  = "Keg:" + convPSI2 + " Bottle:" + convPSI1;	//19-20
+  (outputPSI_r)   = "Pressure:   " + convPSI2 + " psi";					//20-19
+	(outputPSI_b)   = "Bottle:     " + convPSI1 + " psi";					//19-20
+	(outputPSI_d)   = "Difference: " + convPSIdiff + " psi";			//20-19
 } 
 
 //FUNCTION: padString
@@ -197,7 +197,7 @@ void pressureDump() //Must close S3 manually
 
 // FUNCTION: messageRotator() 
 // rotateRate is the time taken to cycle through both messages (in ms); 
-// weight is the fraction of time spent on second message
+// weight is the fraction of time spent on second message (between 0 and 1)
 // timeOffset moves the sample window. This is helpful with startup messages with known first-hit time
 //=======================================================================================
 boolean messageID;
@@ -212,7 +212,6 @@ void messageRotator(int rotateRate, float weight, int timeOffset)
 		messageID = false;
 	}
 }
-
 
 //FUNCTION: BUTTON PUSH
 //This automatically handles button pushes. Just use when you want a button to make a sound and light
@@ -298,3 +297,22 @@ if (inloopLBL)
 	boolean inLoopLBL = false;
 }
 */
+
+//Button Read
+//============================
+//Under construction
+
+byte buttonState[2];
+void readButtonCatch(byte Id, byte buttonPin, byte lightPin) //pass in button1Pin 
+{
+	while (!digitalRead(buttonPin == LOW))
+	{
+			digitalWrite(lightPin, HIGH);
+			buzzer(10);
+	}
+	digitalWrite (lightPin, LOW);
+	buttonState[Id] = LOW;
+}
+
+
+

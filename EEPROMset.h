@@ -48,7 +48,7 @@ if (button1State == LOW && button2State == LOW && button3State == LOW)
   printLcd(3, outputOffset2);
   delay(4000);
 
-  messageLcdBlankLn2();
+  messageLcdBlank(2);
 }    
 
 // END EEPROM SET
