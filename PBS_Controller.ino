@@ -350,7 +350,9 @@ void loop()
    
   // Give relevant instructions in null loop
   //======================================================================
-  if (switchDoorState == LOW && platformStateUp == false)
+  
+	// The third case, platform up and door open, is written to screen and end of plaformUP routine
+	if (switchDoorState == LOW && platformStateUp == false)
   {
 		lcd.setCursor (0, 0); lcd.print (F("B3 opens door;      "));
 		lcd.setCursor (0, 1); lcd.print (F("Press B2+B3 for Menu"));
@@ -640,7 +642,7 @@ void loop()
       lcd.setCursor (0, 2); lcd.print (F("Filling...          "));
     }
 		lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
-		messageLcdBlank(1);
+		lcd.setCursor (0, 1); lcd.print (F("Knob controls flow. "));		
   }
 
   // FILL LOOP EXIT ROUTINES
@@ -680,19 +682,15 @@ void loop()
       delay(autoSiphonDuration); // This setting determines duration of autosiphon 
       relayOn(relay1Pin, false);
       relayOn(relay2Pin, false);
-
-      //delay (1000); //Added this to create a slight delay to remedy the immediate false foam detection //v1.1 this doesn't do anything useful
-      messageLcdBlank(2); // MESSAGE: ""
+      //messageLcdBlank(2); //??? Needed?
       
-      //v1.1 Clear Sensor Routine IN DEVELOPMENT
-			//Send the message over, and let Depressure routine handle
-			//==============================================
+      //v1.1 Clear Sensor Routine
       if (digitalRead(sensorFillPin) == LOW)
       {
         lcd.setCursor (0, 2); lcd.print (F("Clearing Fill Sensor"));
 				delay(1000); //DEBUG? Delay to show above message. 
       }  
-      sensorFillState = HIGH; // v1.1 Changed it back to this
+      sensorFillState = HIGH; // v1.1
       button3State = LOW; // This make AUTO-depressurize after overfill
     }
     else 
@@ -794,14 +792,7 @@ void loop()
   {
     sensorFillState = digitalRead(sensorFillPin); //Check fill sensor
     switchDoorState = digitalRead(switchDoorPin); //Check door switch // Not using this
-    if (sensorFillState == HIGH)
-			{
-				lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
-			}
-			else
-			{
-				lcd.setCursor (0, 2); lcd.print (F("Clearing Foam Sensor"));
-			}
+		lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
   }   
 	
 	lcd.setCursor (0, 0); lcd.print (F("B3 toggles venting; "));
@@ -849,7 +840,13 @@ void loop()
       relayOn(relay2Pin, true);
       delay(foamDetectionDelay);    // Wait a bit before proceeding    
       relayOn(relay2Pin, false);
-      
+
+      //v1.1 Clear Sensor Routine. This merely flashes a message
+      if (digitalRead(sensorFillPin) == LOW)
+      {
+	      lcd.setCursor (0, 2); lcd.print (F("Clearing Foam Sensor"));
+	      delay(1000); //DEBUG? Delay to show above message.
+      }      
       sensorFillState = HIGH; //v1.1 Set the sensorState to HIGH
     }
 
@@ -894,33 +891,37 @@ void loop()
     button3State = HIGH; 
 		messageLcdWaiting();
   }
-
+	
   // END DOOR OPEN LOOP
   //============================================================================================
-    
-  // ===========================================================================================
-  // PLATFORM LOWER LOOP 
-  // Platform will not lower with door closed. This prevents someone from defeating door switch
-  // ===========================================================================================
-  
-  // v1.1 This is a catch routine to remind the user to open the exhaust if there is foam present in the neck of bottle
-  if (digitalRead(sensorFillPin) == LOW && switchDoorState == HIGH && platformStateUp == true && inFillLoopExecuted == true)
-  {
+	
+	//============================================================================================
+	// v1.1 This is a catch routine to remind the user to open the exhaust
+	// if there is foam present in the neck of bottle
+	//============================================================================================
+	
+	if (digitalRead(sensorFillPin) == LOW && switchDoorState == HIGH && platformStateUp == true && inFillLoopExecuted == true)
+	{
 		lcd.setCursor (0, 0); lcd.print (F("Open Exhaust valve  "));
 		lcd.setCursor (0, 1); lcd.print (F("to prevent spray;   "));
 		lcd.setCursor (0, 2); lcd.print (F("press B3 to resume. "));
-	
+			  
 		while(!digitalRead(button3Pin) == HIGH)
 		{
 			pressureOutput();
 			printLcd (3, outputPSI_b);
-			
-			digitalWrite(light3Pin, HIGH);
-			buzzer (75);
-			digitalWrite(light3Pin, LOW);
-			delay (350);
+			//digitalWrite(light3Pin, HIGH);
+			buzzOnce (2000, light3Pin);
+			//digitalWrite(light3Pin, LOW);
+			//delay (350);
 		}
-  }
+		buzzedOnce = false;
+	}
+	
+  // ===========================================================================================
+  // PLATFORM LOWER LOOP 
+  // Platform will not lower with door closed. This prevents someone from defeating door switch
+  // ===========================================================================================
 
 	// v1.1 Removed "|| autoMode_1 == true and  && (digitalRead(sensorFillPin) == HIGH)" so platform no longer drops automatically
   while((!digitalRead(button3Pin) == LOW) && switchDoorState == HIGH && (P1 - offsetP1) <= pressureDeltaDown) 
