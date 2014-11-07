@@ -602,7 +602,7 @@ void loop()
   //========================================================================================
 
   // v1.1 Changed the pressureDeltaMax condition to reflect fact that there are two sensors
-  while(button2State == LOW && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true) && (P1 - offsetP1) > pressureDeltaMax) 
+  while(button2State == LOW && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true)) 
   {     
     inFillLoop = true;
     inFillLoopExecuted = true; //This is an "is dirty" variable for counting lifetime bottles. Reset in platformUpLoop.
@@ -681,17 +681,16 @@ void loop()
       relayOn(relay1Pin, false);
       relayOn(relay2Pin, false);
 
-      delay (1000); //Added this to create a slight delay to remedy the immediate false foam detection 
+      //delay (1000); //Added this to create a slight delay to remedy the immediate false foam detection //v1.1 this doesn't do anything useful
       messageLcdBlank(2); // MESSAGE: ""
       
       //v1.1 Clear Sensor Routine IN DEVELOPMENT
-			//Just send the message over, and let Depressure routine handle
+			//Send the message over, and let Depressure routine handle
 			//==============================================
       if (digitalRead(sensorFillPin) == LOW)
       {
         lcd.setCursor (0, 2); lcd.print (F("Clearing Fill Sensor"));
-				relayOn(relay3Pin, true); delay (1000); relayOn(relay3Pin, false);// Instead of a delay, look for a pressure difference
-        relayOn(relay2Pin, true); delay (250); relayOn(relay2Pin, false);
+				delay(1000); //DEBUG? Delay to show above message. 
       }  
       sensorFillState = HIGH; // v1.1 Changed it back to this
       button3State = LOW; // This make AUTO-depressurize after overfill
@@ -750,12 +749,11 @@ void loop()
   // DEPRESSURIZE LOOP
   //========================================================================================
 	
-	//pressureOutput(); //v1.1 Do we need to take a fresh reading here? Probably a good idea
-	//float minPressureDiffSensorClear = 10; //v1.1 
+	pressureOutput(); //v1.1 Do we need to take a fresh reading here? Probably a good idea
+	float minPressureDiffSensorClear = 10; //v1.1. In psi
 	
-  //while(button3State == LOW && ((sensorFillState == HIGH  || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) //v1.1 added sensor override
-
-  while(button3State == LOW && (sensorFillState == HIGH || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) //v1.1 added sensor override
+	//85: Added condition (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear) to allow depressurization with sensor LOW
+  while(button3State == LOW && ((sensorFillState == HIGH  || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) //v1.1 added sensor override
   {  
     inDepressurizeLoop = true;
     relayOn(relay3Pin, true); //Open Gas Out solenoid
@@ -796,10 +794,17 @@ void loop()
   {
     sensorFillState = digitalRead(sensorFillPin); //Check fill sensor
     switchDoorState = digitalRead(switchDoorPin); //Check door switch // Not using this
-    lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
+    if (sensorFillState == HIGH)
+			{
+				lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
+			}
+			else
+			{
+				lcd.setCursor (0, 2); lcd.print (F("Clearing Foam Sensor"));
+			}
   }   
+	
 	lcd.setCursor (0, 0); lcd.print (F("B3 toggles venting; "));
-
 	messageRotator(10000, .5, 0);
 	if (messageID){
 		lcd.setCursor (0, 1); lcd.print (F("B2: Burst tamping   "));
@@ -846,27 +851,14 @@ void loop()
       relayOn(relay2Pin, false);
       
       //v1.1 Clear Sensor routine under development //I don't think this does anything. Functionally the same as running another cycle.
-      if (digitalRead(sensorFillPin) == LOW)
+      /*
+			if (digitalRead(sensorFillPin) == LOW)
       {
         lcd.setCursor (0, 2); lcd.print (F("Clearing Foam Sensor"));
-        //delay(1000); //Decided to just have a delay instead
-//=====================
-
-				pressureOutput();
-				float sensorClearPressureDiff = 6; //P2 - P1 in PSI
-				while (PSIdiff < sensorClearPressureDiff)
-				{
-				  relayOn(relay3Pin, true); 
-				}
-				
-				relayOn(relay3Pin, false); // Instead of a delay, look for a pressure difference
-				relayOn(relay2Pin, true);  // Now repressurize
-				delay (500); 
-				relayOn(relay2Pin, false);
-
-//=====================
+				delay(1000); //DEBUG
       }
-      messageLcdBlank(2);
+      */
+			//messageLcdBlank(2);
       sensorFillState = HIGH; //v1.1 Set the sensorState to HIGH
     }
 
