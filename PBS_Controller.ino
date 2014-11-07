@@ -364,7 +364,7 @@ void loop()
 	{
 		lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
 		lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
-		messageLcdWaiting();
+		messageLcdReady(2);
 	}
   	
   // Main Loop idle pressure measurement and LCD output
@@ -850,15 +850,6 @@ void loop()
       delay(foamDetectionDelay);    // Wait a bit before proceeding    
       relayOn(relay2Pin, false);
       
-      //v1.1 Clear Sensor routine under development //I don't think this does anything. Functionally the same as running another cycle.
-      /*
-			if (digitalRead(sensorFillPin) == LOW)
-      {
-        lcd.setCursor (0, 2); lcd.print (F("Clearing Foam Sensor"));
-				delay(1000); //DEBUG
-      }
-      */
-			//messageLcdBlank(2);
       sensorFillState = HIGH; //v1.1 Set the sensorState to HIGH
     }
 

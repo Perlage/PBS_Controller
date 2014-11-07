@@ -50,7 +50,7 @@ void pressurizedBottleStartup()
 		
 		buzzer (1000);
 		doorOpen();
-		messageLcdWaiting();
+		messageLcdReady(2);
 
 		while (!digitalRead(button3Pin) == HIGH)
 	  {
@@ -132,7 +132,7 @@ void idleLoopPressureDrop()
 		  inPressureDropLoop = true;
 			
 			messageGasLow();
-		  messageLcdWaiting(); // MESSAGE: "Waiting..."
+		  messageLcdWaiting();
 			
 		  // Pressure measurement and output
 		  pressureOutput();
@@ -149,6 +149,7 @@ void idleLoopPressureDrop()
 				inPlatformEmergencyLock = true;
 				relayOn (relay4Pin, false);   // Lock platform so platform doesn't creep down with pressurized bottle
 				buzzOnce(2000, light2Pin);
+				lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
 				pressureDump();
 				doorOpen();
 				while (!digitalRead(button3Pin) == HIGH)
@@ -183,17 +184,3 @@ void idleLoopPressureDrop()
 }
 //END PRESSURE DROP LOOP
 //==========================================================================
-
-/*
-void idleLoopPressureDropSimple()
-{
-	if (P2 - offsetP2 < pressureRegStartUp - pressureDropAllowed) // Number to determine what constitutes a pressure drop.// 2-18 Changed from 75 to 100
-	{
-		delay(1000);
-		messageGasLow();
-		messageLcdWaiting(); // MESSAGE: "Waiting...          "
-		//buzzer(50);
-		delay(1000);
-	}	
-}
-*/

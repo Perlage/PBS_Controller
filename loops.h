@@ -54,7 +54,7 @@ void platformUpLoop()
 
       lcd.setCursor (0, 0); lcd.print (F("To fill, close door;"));
       lcd.setCursor (0, 1); lcd.print (F("B3 lowers platform. "));
-      messageLcdWaiting(); // MESSAGE: "Ready...           "
+      messageLcdReady(2);
 			
 			//beep on platform lockin
       buzzer(500);
