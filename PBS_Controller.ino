@@ -788,16 +788,6 @@ void loop()
     inDepressurizeLoop = true;
     relayOn(relay3Pin, true); //Open Gas Out solenoid
 		digitalWrite(light3Pin, HIGH);
-	
-	//v1.1 added as part of sensor override
-	if (!digitalRead(button1Pin) == LOW)
-	{
-		digitalWrite(light1Pin, HIGH);
-	}
-	else 
-	{
-		digitalWrite(light1Pin, LOW);
-	}
   
 	// Pressure output
 	pressureOutput();
@@ -813,9 +803,19 @@ void loop()
     relayOn(relay2Pin, false);
     digitalWrite(light2Pin, LOW);
   }
+	
+	//v1.1 added as part of sensor override
+	if (!digitalRead(button1Pin) == LOW)
+	{
+		digitalWrite(light1Pin, HIGH);
+	}
+	else
+	{
+		digitalWrite(light1Pin, LOW);
+	}
     
   // CLEANING MODE: If in cleaning mode, set FillState HIGH
-  if (inCleaningMode == true)
+  if (inCleaningMode == true || !digitalRead(button1Pin) == LOW)
   {
     sensorFillState = HIGH;      
     lcd.setCursor (0, 2); lcd.print (F("Venting--SENSOR OFF"));
