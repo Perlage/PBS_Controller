@@ -13,6 +13,7 @@ Copyright 2013, 2014  All rights reserved
 //===========================================================================  
 */
 
+
 //Version control variable
 String (versionSoftwareTag)   = "v1.1"   ;       
 
@@ -96,6 +97,7 @@ boolean inDiagnosticMode             = false;
 boolean autoMode_1                   = false;   // Variable to help differentiate between states reached automatically vs manually 
 boolean platformLockedNew            = false;   // Variable to be set when platform first locks up. This is for autofill-on-door close function
 boolean platformStateUp              = false;   // true means platform locked in UP; toggled false when S5 opens
+boolean depressurizeLoopExecuted		 = false;		// v1.1 Let's use this to differentiate whether we got to zero pressure via depressurization vs. never being pressurized
 
 //Pressure constants                            // NOTE: 1 psi = 12.71 units. 
 int offsetP1;                                   // Zero offset for pressure sensor1 (bottle). Set through EEPROM in initial factory calibration, and read into pressureOffset during Setup loop
@@ -169,7 +171,9 @@ char buffer[25];                                 // Used in float to string conv
 
 void setup()
 {
-  //Setup pins
+  buzzer(100); delay(50);buzzer(100); delay(50);buzzer(100);
+	
+	//Setup pins
   pinMode(button1Pin, INPUT);  //Changed buttons from INPUT_PULLUP to PULLUP when installed touchbuttons, which use a pulldown resistor. 
   pinMode(button2Pin, INPUT);  //Unpushed state is LOW with buttons 1,2,3
   pinMode(button3Pin, INPUT);  
@@ -213,7 +217,7 @@ void setup()
   //===================================================================================
   // EEPROM factory set-reset routine 
   // For some reason, have to include it here and not above with others
-  
+  buzzer(100); delay(50);buzzer(100); delay(50);buzzer(100);
   messageInitial();
   
   #include "EEPROMset.h"   
@@ -239,17 +243,17 @@ void setup()
   pressureRegStartUp = P2;      // Read and store initial regulator pressure to test for pressure drop during session
 
 	// MENU MODE: Allow user to invoke Menu Mode from bootup before anything else happens (buttons get read in EEPROM include)
-  while (button1State == LOW)
+  while (!digitalRead(button1Pin) == LOW)
   {
 	  inMenuLoop = true;
-	  button2State = !digitalRead(button2Pin);
-		button3State = !digitalRead(button3Pin);
-	  lcd.setCursor (0, 0); lcd.print (F("Entering Menu...    "));
-	  buzzOnce(1000, light2Pin);
+	  lcd.clear();
+		lcd.setCursor (0, 0); lcd.print (F("Entering Menu...    "));
+	  buzzOnce(1000, light1Pin);
   }
-  buzzedOnce = false;
-  if (inMenuLoop == true){
+  if (inMenuLoop == true)
+	{
 	  menuShell(inMenuLoop);
+		buzzedOnce = false;
   }
     
   //NULL PRESSURE: Check for stuck pressurized bottle
@@ -358,18 +362,33 @@ void loop()
 		lcd.setCursor (0, 1); lcd.print (F("Press B2+B3 for Menu"));
 		messageLcdReady(2);
 	}
-  
+	// MessageInsertBottle
 	if (switchDoorState == HIGH && platformStateUp == false)
   {messageInsertBottle();}  
 	
-	if (P1 - offsetP1 > pressureDeltaDown)
+	// Added last condition to differentiate between depressurized vs never pressurized, so this message doesn't get shown in a hard re-foam situation
+	if (P1 - offsetP1 > pressureDeltaDown && platformStateUp == true && depressurizeLoopExecuted == false) 
 	{
 		lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
 		lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
 		messageLcdReady(2);
 	}
-  	
-  // Main Loop idle pressure measurement and LCD output
+  //v1.1 #97: this is to handle pressure buildup if user waits too long to drop platform, and valve is closed
+	if (platformStateUp == true && (P1 - offsetP1) > pressureDeltaDown && depressurizeLoopExecuted == true)
+  {
+	  buzzer(25);
+		lcd.setCursor (0, 0); lcd.print (F("Open exhaust valve  "));
+	  lcd.setCursor (0, 1); lcd.print (F("to relieve pressure."));
+	  messageLcdWaiting();
+  }
+	//v1.1 #97: This write the appropriate message if platform is up and user hasn't lowered platform yet
+	if (platformStateUp == true  && (P1 - offsetP1) <= pressureDeltaDown && depressurizeLoopExecuted == true)
+	{
+		lcd.setCursor (0, 0); lcd.print (F("Grasp bottle;       "));
+		lcd.setCursor (0, 1); lcd.print (F("B3 lowers platform. "));
+	}
+		
+	// Main Loop idle pressure measurement and LCD output
   //======================================================================
   pressureOutput();
   if (P1 - offsetP1 > pressureDeltaDown || platformStateUp ==  true)
@@ -377,6 +396,7 @@ void loop()
   else
   {printLcd (3, outputPSI_r);}
 	
+	//=====================================================================
 	// Autosiphon in Main loop
 	//=====================================================================
 	while (!digitalRead(button1Pin) == LOW && (P1 - offsetP1 > pressureDeltaDown) && platformStateUp ==  true)
@@ -384,6 +404,7 @@ void loop()
 		 relayOn(relay1Pin, true);                            
 		 relayOn(relay2Pin, true);                               
 		 digitalWrite(light1Pin, HIGH);
+		 lcd.setCursor (0, 2); lcd.print (F("Adjusting level...  "));
 	}
 	relayOn(relay1Pin, false);
 	relayOn(relay2Pin, false);
@@ -447,16 +468,15 @@ void loop()
   }
   
   // DOOR OPEN EMERGENCY PRESSURE DUMP (v1.1) 
-	// Can adjust this threshold by adding a value to pressureDeltaDown 
   //========================================================================
-  if (platformStateUp == true && switchDoorState == HIGH && (P1 - offsetP1 >= pressureDeltaDown + 50)) 
-  { 
-    emergencyDepressurize();
-  }  
+	
+	if (depressurizeLoopExecuted == false) //Don't want this kicking in if we've already reached zero pressure and foaming puts you back over threshold
+	{
+		emergencyDepressurize();
+	}
 
-  //  This routine takes action if pressure drops in idle loop.
-  idleLoopPressureDrop(); //This is not needed now that Pressurize loop has a pressure check
-	//idleLoopPressureDropSimple();
+  // This routine takes action if pressure drops in idle loop. //This is probably not needed now that Pressurize loop has a pressure check
+  idleLoopPressureDrop();
   
   // =====================================================================================  
   // PLATFORM RAISING LOOP
@@ -582,11 +602,7 @@ void loop()
 			{
 				lcd.setCursor (0, 1); lcd.print (F("Press B3 to continue"));
 			}
-			
-			//Working on this for v1.1	
-			//delay(2000);								// Give time to degas
 			platformDrop();								// Drop platform
-			//relayOn(relay3Pin, false);  // Now close S3
       
       //Reset variables
       PTestFail = false;      
@@ -604,7 +620,8 @@ void loop()
   //========================================================================================
 
   // v1.1 Changed the pressureDeltaMax condition to reflect fact that there are two sensors
-  while(button2State == LOW && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true)) 
+	// v1.1 #96: Added button3 exit shortcut
+  while(button2State == LOW && button3State == HIGH && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true)) 
   {     
     inFillLoop = true;
     inFillLoopExecuted = true; //This is an "is dirty" variable for counting lifetime bottles. Reset in platformUpLoop.
@@ -623,6 +640,9 @@ void loop()
     if (button2StateTEMP == LOW && button2ToggleState == true){    //OFF push
       button2State = HIGH;                                         //exit WHILE loop
     }
+		
+		//v1.1 Added shortcut to leave fill loop.
+		button3State = !digitalRead(button3Pin);
 		
     //Read and output pressure
 		pressureOutput();
@@ -655,13 +675,18 @@ void loop()
     digitalWrite(light2Pin, LOW);
     relayOn(relay1Pin, false);
     relayOn(relay3Pin, false);
-    printLcd(2,""); 
+    //messageLcdBlank(2); 
     
     // Check which condition caused filling to stop
     // CASE 1: Button2 pressed when filling (B2 low and toggle state true). Run Anti-Drip
-    if (button2State == HIGH && !inCleaningMode == true)
+    if ((button2State == HIGH && !inCleaningMode == true) || button3State == LOW) //#98
     {
-      // Anti-drip routine
+      if (button3State == LOW)
+			{
+				digitalWrite(light3Pin, HIGH);
+			}
+			
+			// Anti-drip routine
       relayOn(relay1Pin, true);
       relayOn(relay2Pin, true);
       lcd.setCursor (0, 2); lcd.print (F("Anti drip...        "));
@@ -670,6 +695,7 @@ void loop()
 
       relayOn(relay1Pin, false);
       relayOn(relay2Pin, false);
+			messageLcdBlank(2); //Need this! Do not remove
     }
 
     // CASE 2: FillSensor tripped--Overfill condition
@@ -682,7 +708,6 @@ void loop()
       delay(autoSiphonDuration); // This setting determines duration of autosiphon 
       relayOn(relay1Pin, false);
       relayOn(relay2Pin, false);
-      //messageLcdBlank(2); //??? Needed?
       
       //v1.1 Clear Sensor Routine
       if (digitalRead(sensorFillPin) == LOW)
@@ -695,46 +720,42 @@ void loop()
     }
     else 
     {
-      // CASE 3: Bottle pressure dropped below Deltatamp threshold; i.e., filling too fast
-      // FILLING TOO FAST LOOP    
-      while (platformStateUp == true && switchDoorState == LOW && (P1 - offsetP1) <= (P2 - offsetP2) - pressureDeltaUp)
-      {
-        inPressurizeLoop = true;
-        digitalWrite(light2Pin, HIGH); 
-        relayOn(relay2Pin, true);        //open S2 to equalize
-        P1 = analogRead(sensorP1Pin);    //do sensor read again to check
-        P2 = analogRead(sensorP2Pin);    //do sensor read again to check
-
-        lcd.setCursor (0, 0); lcd.print (F("Filling too fast... "));
-        lcd.setCursor (0, 1); lcd.print (F("Close exhaust valve;"));
-        lcd.setCursor (0, 2); lcd.print (F("Press B2 to resume  "));
-        delay (500); // This seems to be necessary
-      }
-	  
-      // FILLING TOO FAST LOOP EXIT ROUTINES      
-      if(inPressurizeLoop)
-      { 
-        relayOn(relay2Pin, false);  
-        digitalWrite(light2Pin, LOW);
-        buzzOnce(1000, light2Pin);
-        
-				//This is a little trap for B2 button to demand user input; doesn't change button states. Just wants user input.
-        while(!digitalRead(button2Pin) == HIGH)
+      // CASE 3: Bottle pressure dropped below pressureDeltaMax threshold; i.e., filling too fast
+      if ((P2 - offsetP2) - (P1 - offsetP1) >= pressureDeltaMax)
+			{
+				// FILLING TOO FAST LOOP // Repressurize to proper pressure
+				while (platformStateUp == true && switchDoorState == LOW && (P1 - offsetP1) <= (P2 - offsetP2) - pressureDeltaUp)
 				{
-          digitalWrite(light2Pin, HIGH);
-          delay (150);
-          digitalWrite(light2Pin, LOW);
-          delay (350);
-        }
-        buzzedOnce = false;
-				button2ToggleState = false; // button2State is still LOW, with toggleState true. Setting toggleState to false should be like pressing Fill again
+					inPressurizeLoop = true;
+					digitalWrite(light2Pin, HIGH); 
+					relayOn(relay2Pin, true);        //open S2 to equalize
+					P1 = analogRead(sensorP1Pin);    //do sensor read again to check
+					P2 = analogRead(sensorP2Pin);    //do sensor read again to check
 
-				messageLcdBlank(2); // MESSAGE: ""
-				
-        inPressurizeLoop = false; 
-      } 
-      // END FILLING TOO FAST LOOP   
-      //=============================================     
+					lcd.setCursor (0, 0); lcd.print (F("Filling too fast... "));
+					lcd.setCursor (0, 1); lcd.print (F("Close exhaust valve;"));
+					lcd.setCursor (0, 2); lcd.print (F("Press B2 to resume  "));
+        
+					buzzOnce(750, light2Pin);
+					//delay (500); // This seems to be necessary
+				}
+				// FILLING TOO FAST LOOP EXIT ROUTINES    
+				if(inPressurizeLoop)
+				{
+					relayOn(relay2Pin, false);
+					digitalWrite(light2Pin, LOW);
+	      
+					//This is a little trap for B2 button to demand user input; doesn't change button states. Just wants user input.
+					while(!digitalRead(button2Pin) == HIGH)
+					{
+						//Don't like the flashing lights--slows down button inputs
+					}
+					buzzedOnce = false;
+					button2ToggleState = false; // button2State is still LOW, with toggleState true. Setting toggleState to false should be like pressing Fill again
+					messageLcdBlank(2);
+					inPressurizeLoop = false;
+				}			
+			}
     } 
 		inFillLoop = false;
 		messageB2B3Toggles();
@@ -851,12 +872,13 @@ void loop()
     }
 
     //CASE 3: Bottle was properly depressurized. If we reach here, the pressure must have reached threshold. Go to Platform lower loop. Note S3 still open
-    if (P1 - offsetP1 <= pressureDeltaDown)
+		if (P1 - offsetP1 <= pressureDeltaDown)
     {
-      buzzer(500);
+      depressurizeLoopExecuted = true;
+			buzzer(500);
       autoMode_1 = true;  //Going to platform loop manually now, but still set this var to partially drop platform when B3 is pressed
-	  	lcd.setCursor (0, 0); lcd.print (F("Grasp bottle;       "));
-	  	lcd.setCursor (0, 1); lcd.print (F("B3 lowers platform. "));
+	  	//lcd.setCursor (0, 0); lcd.print (F("Grasp bottle;       "));
+	  	//lcd.setCursor (0, 1); lcd.print (F("B3 lowers platform. "));
     }
     digitalWrite(light3Pin, LOW);
     inDepressurizeLoop = false;
@@ -900,30 +922,40 @@ void loop()
 	// if there is foam present in the neck of bottle
 	//============================================================================================
 	
-	if (digitalRead(sensorFillPin) == LOW && switchDoorState == HIGH && platformStateUp == true && inFillLoopExecuted == true)
+	// #91: added pressure condition, and B3 read; made a while statement
+	boolean inFoamCatchLoop = false;
+	while (!digitalRead (button3Pin) == HIGH && digitalRead(sensorFillPin) == LOW && switchDoorState == HIGH && platformStateUp == true && inFillLoopExecuted == true)
 	{
-		lcd.setCursor (0, 0); lcd.print (F("Open Exhaust valve  "));
-		lcd.setCursor (0, 1); lcd.print (F("to prevent spray;   "));
+		inFoamCatchLoop = true;
+		relayOn(relay3Pin, true); //just to make sure
+			
+		lcd.setCursor (0, 0); lcd.print (F("Foam detected...    "));
+		lcd.setCursor (0, 1); lcd.print (F("Open Exhaust valve; "));
 		lcd.setCursor (0, 2); lcd.print (F("press B3 to resume. "));
-			  
-		while(!digitalRead(button3Pin) == HIGH)
+						  
+		pressureOutput();
+		printLcd (3, outputPSI_b);
+		buzzOnce (500, light3Pin);
+	}
+	if (inFoamCatchLoop)
+	{
+		if (digitalRead(sensorFillPin) == HIGH)
 		{
-			pressureOutput();
-			printLcd (3, outputPSI_b);
-			//digitalWrite(light3Pin, HIGH);
-			buzzOnce (2000, light3Pin);
-			//digitalWrite(light3Pin, LOW);
-			//delay (350);
+			buzzer (500);
+			lcd.setCursor (0, 0); lcd.print (F("Foam cleared;       ")); //If we got out of loop by foam clearing, say so; else just leave
+			messageLcdBlank(1);
 		}
 		buzzedOnce = false;
+		inFoamCatchLoop = false;
 	}
-	
-  // ===========================================================================================
+  
+	// ===========================================================================================
   // PLATFORM LOWER LOOP 
   // Platform will not lower with door closed. This prevents someone from defeating door switch
   // ===========================================================================================
 
-	// v1.1 Removed "|| autoMode_1 == true and  && (digitalRead(sensorFillPin) == HIGH)" so platform no longer drops automatically
+	// v1.1 Removed "|| autoMode_1 == true and  && (digitalRead(sensorFillPin) == HIGH)" so platform no longer drops automatically, 
+	// or fails to drop if their is foam. That is now handled by a foam sensing routine upstream
   while((!digitalRead(button3Pin) == LOW) && switchDoorState == HIGH && (P1 - offsetP1) <= pressureDeltaDown) 
   {
     inPlatformLowerLoop = true;
@@ -964,8 +996,10 @@ void loop()
     relayOn(relay6Pin, false); //Release door solenoid // ??? is this still needed?
     digitalWrite(light3Pin, LOW); 
 
-    inPlatformLowerLoop = false;   
+    inPlatformLowerLoop = false;
     platformStateUp = false;
+		depressurizeLoopExecuted = false;
+
 		EEPROM.write(6, platformStateUp);
 					
     //Prepare for next cycle
@@ -984,7 +1018,6 @@ void loop()
       EEPROM.write(5, numberCycles10);
 
       // Write session/total fills to screen
-      //String (convNumberCycles) = floatToString(buffer, numberCycles, 0);
       String (convNumberCyclesSession) = floatToString(buffer, numberCyclesSession, 0);
       String outputInt = "Session fills: " + convNumberCyclesSession;
       printLcd(2, outputInt); 

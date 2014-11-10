@@ -98,7 +98,7 @@ void emergencyDepressurize()
 {
   boolean inEmergencyDepressurizeLoop = false;
 
-  while (switchDoorState == HIGH && platformStateUp == true && (P1 - offsetP1 > pressureDeltaDown))
+  while (switchDoorState == HIGH && platformStateUp == true && (P1 - offsetP1 > pressureDeltaDown)) //add
   {
     inEmergencyDepressurizeLoop = true;
     relayOn(relay3Pin, true);  
@@ -118,8 +118,8 @@ void emergencyDepressurize()
   if (inEmergencyDepressurizeLoop)
   {
     inEmergencyDepressurizeLoop = false;
-    relayOn(relay3Pin, false);  
-    digitalWrite(buzzerPin, LOW); // Now turn off
+    //relayOn(relay3Pin, false); // v1.1 Never close this! 
+    digitalWrite(buzzerPin, LOW); 
     messageLcdBlank(2);
     button2State = HIGH;  // Pass HIGH state to next routine so filling doesn't automatically resume. Make user think about it!
 		//button3State = HIGH;  // No need to do that on depressurization
