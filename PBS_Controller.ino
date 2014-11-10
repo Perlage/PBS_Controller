@@ -872,6 +872,7 @@ void loop()
     }
 
     //CASE 3: Bottle was properly depressurized. If we reach here, the pressure must have reached threshold. Go to Platform lower loop. Note S3 still open
+		P1 = analogRead(sensorP1Pin); //#100
 		if (P1 - offsetP1 <= pressureDeltaDown)
     {
       depressurizeLoopExecuted = true;
