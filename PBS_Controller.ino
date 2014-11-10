@@ -387,9 +387,12 @@ void loop()
 	{
 		if (digitalRead(sensorFillPin) == LOW)
 		{
-			lcd.setCursor (0, 0); lcd.print (F("Foam detected...    "));
-			lcd.setCursor (0, 1); lcd.print (F("Open Exhaust valve; "));
-			lcd.setCursor (0, 2); lcd.print (F("B3 lowers platform. "));
+			lcd.setCursor (0, 0); lcd.print (F("Foam detected! Open "));
+			lcd.setCursor (0, 1); lcd.print (F("Exhaust valve before"));
+			lcd.setCursor (0, 2); lcd.print (F("lowering platform..."));			
+			digitalWrite(light3Pin, LOW);
+			delay(50);
+			digitalWrite(light3Pin, HIGH);
 		}
 		else
 		{
