@@ -22,10 +22,11 @@ String (versionSoftwareTag)   = "v1.1"   ;
 #include <LiquidCrystal_I2C.h>
 #include "floatToString.h"               
 #include <EEPROM.h>
-//#include <avr/pgmspace.h>                      // 1-26 Added for PROGMEM function // UNUSED now
-//#include <math.h>                              // Unused
+//#include <avr/pgmspace.h>                    // 1-26 Added for PROGMEM function // UNUSED now
+//#include <math.h>                            // Unused
 
-LiquidCrystal_I2C lcd(0x3F,20,4);  
+LiquidCrystal_I2C lcd(0x27,20,4);						 	 //This seems to work for new screens after Dec 12, 2014
+//LiquidCrystal_I2C lcd(0x3F,20,4);						 //This worked for original screens up until Dec, 2014
 
 // Pin assignments
 const int button1Pin                 =  0;     // pin for button1 B1 (Raise platform) RX=0;
