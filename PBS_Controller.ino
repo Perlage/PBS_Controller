@@ -1,7 +1,7 @@
 /*
 //===========================================================================  
 
-FIZZIQ Cocktail Bottling System v1.1
+FIZZIQ Cocktail Bottling System v1.1.1
 
 Author: 
   Evan Wallace
@@ -25,8 +25,8 @@ String (versionSoftwareTag)   = "v1.1"   ;
 //#include <avr/pgmspace.h>                    // 1-26 Added for PROGMEM function // UNUSED now
 //#include <math.h>                            // Unused
 
-LiquidCrystal_I2C lcd(0x27,20,4);						 	 //This seems to work for new screens after Dec 12, 2014
-//LiquidCrystal_I2C lcd(0x3F,20,4);						 //This worked for original screens up until Dec, 2014
+LiquidCrystal_I2C lcd(0x27,20,4);						 //This seems to work for new screens after Dec 12, 2014
+//LiquidCrystal_I2C lcd(0x3F,20,4);						   //This worked for original screens up until Dec, 2014
 
 // Pin assignments
 const int button1Pin                 =  0;     // pin for button1 B1 (Raise platform) RX=0;
@@ -105,7 +105,7 @@ int offsetP1;                                   // Zero offset for pressure sens
 int offsetP2;                                   // Zero offset for pressure sensor2 (input regulator). Ditto above.
 const int pressureDeltaUp            =  50;     // Pressure at which, during pressurization, full pressure is considered to have been reached // Tried 10, 38; went back to 50 to prevent repressurizing after fill button cycle
 const int pressureDeltaDown          =  38;     // Pressure at which, during depressurizing, pressure considered to be close enough to zero // 38 works out to 3.0 psi 
-const int pressureDeltaMax           = 150;     // FILLING TOO FAST criterion //v1.1 Now can reduce this significantly from 250 since have two pressure sensors. 100 is good.
+const int pressureDeltaMax           = 250;     // FILLING TOO FAST criterion //v1.1 Now can reduce this significantly from 250 since have two pressure sensors. 100 is good.
 const int pressureNull               = 200;     // This is the threshold for the controller deciding that no gas source is attached. 
 const int pressureDropAllowed        = 100;     // Max pressure drop allowed in session before alarm sounds
 int pressureRegStartUp;                         // Starting regulator pressure. Will use to detect pressure sag during session; and to find proportional values for key pressure variables (e.g. pressureDeltaMax)
@@ -491,7 +491,7 @@ void loop()
 	}
 
   // This routine takes action if pressure drops in idle loop. //This is probably not needed now that Pressurize loop has a pressure check
-  idleLoopPressureDrop();
+  //idleLoopPressureDrop();
   
   // =====================================================================================  
   // PLATFORM RAISING LOOP
