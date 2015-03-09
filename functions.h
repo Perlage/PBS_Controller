@@ -156,8 +156,8 @@ void pressureOutput()
   P1 = analogRead(sensorP1Pin); 
   P2 = analogRead(sensorP2Pin);
         
-  PSI1     = pressureConv1(P1); 
-  PSI2     = pressureConv2(P2); 
+  PSI1     = abs(pressureConv1(P1)); //Added ABS() function Mar 9 2015 to keep bottle pressure from flickering negative
+  PSI2     = abs(pressureConv2(P2)); //Added ABS() function Mar 9 2015 to keep
   PSIdiff  = (PSI2 - PSI1);
   
   (convPSI1)      = floatToString(buffer, PSI1, 1);
