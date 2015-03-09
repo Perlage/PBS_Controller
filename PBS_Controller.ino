@@ -187,8 +187,8 @@ void setup()
   pinMode(light1Pin, OUTPUT); 
   pinMode(light2Pin, OUTPUT);
   pinMode(light3Pin, OUTPUT);
-  //pinMode(sensorFillPin, INPUT_PULLUP);  //INPUT_PULLUP uses internal Pullup and maybe additionally a larger (~65k) external pullup resistor
-  pinMode(sensorFillPin, INPUT);           //INPUT and external pullup resistor
+  pinMode(sensorFillPin, INPUT_PULLUP);  //INPUT_PULLUP uses internal Pullup and maybe additionally a larger (~65k) external pullup resistor
+  //pinMode(sensorFillPin, INPUT);           //INPUT and external pullup resistor
   pinMode(switchDoorPin, INPUT_PULLUP); 
   pinMode(switchModePin, INPUT_PULLUP);
   pinMode(buzzerPin, OUTPUT);
