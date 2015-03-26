@@ -15,7 +15,7 @@ Copyright 2013, 2014  All rights reserved
 
 
 //Version control variable
-String (versionSoftwareTag)   = "v1.1"   ;       
+String (versionSoftwareTag)   = "v1.2"   ;       
 
 //Library includes
 #include <Wire.h> 
@@ -23,7 +23,19 @@ String (versionSoftwareTag)   = "v1.1"   ;
 #include "floatToString.h"               
 #include <EEPROM.h>
 //#include <avr/pgmspace.h>                    // 1-26 Added for PROGMEM function // UNUSED now
-//#include <math.h>                            // Unused
+//#include <math.h>                            // Unused    
+
+// Temperature routine Includes
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+// Temperature probe data wire is plugged into A2 on Arduino
+#define ONE_WIRE_BUS A2
+// Setup a oneWire instance to communicate with any OneWire devices
+OneWire oneWire(ONE_WIRE_BUS);
+// Pass our oneWire reference to Dallas Temperature.
+DallasTemperature sensors(&oneWire);
+DeviceAddress liquidThermometer = { 0x28, 0x07, 0x74, 0x4E, 0x05, 0x00, 0x00, 0x29 };
 
 LiquidCrystal_I2C lcd(0x27,20,4);						 //This seems to work for new screens after Dec 12, 2014
 //LiquidCrystal_I2C lcd(0x3F,20,4);						   //This worked for original screens up until Dec, 2014
@@ -46,7 +58,7 @@ const int buzzerPin                  = 13;     // pin for buzzer
 
 const int sensorP2Pin                = A0;     // pin for pressure sensor 2 // 1-23 NOW REGULATOR PRESSURE. 
 const int sensorP1Pin                = A1;     // pin for pressure sensor 1 // 1-23 NOW BOTTLE PRESSURE
-const int switchModePin              = A2;     // OPEN PIN
+const int switchModePin              = A2;     // pin for Temperature Sensor
 const int light1Pin                  = A3;     // pin for button1 light 
 const int light2Pin                  = A4;     // pin for button2 light
 const int light3Pin                  = A5;     // pin for button3 light
@@ -173,6 +185,12 @@ char buffer[25];                                 // Used in float to string conv
 void setup()
 {	
 	buzzer(100); delay(50);buzzer(100); delay(50);buzzer(100);
+	
+	// TEMPERATURE ROUTINES
+	// Start up the Temperature library
+	sensors.begin();
+	// set the Temperature resolution to 10 bit (good enough?)
+	sensors.setResolution(liquidThermometer, 10);
 	
 	//Setup pins
   pinMode(button1Pin, INPUT);  //Changed buttons from INPUT_PULLUP to PULLUP when installed touchbuttons, which use a pulldown resistor. 
@@ -318,7 +336,7 @@ void loop()
 {
 	//MAIN LOOP IDLE FUNCTIONS
   //=====================================================================
-			
+				
   // Read the state of buttons and sensors
   // Boolean NOT (!) added for touchbuttons so that HIGH button state (i.e., button pressed) reads as LOW (this was easiest way to change software from physical buttons, where pressed = LOW) 
   button1State				= !digitalRead(button1Pin); 

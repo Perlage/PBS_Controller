@@ -167,7 +167,7 @@ void menuShell(boolean inMenuLoop)
 
   while (menuOption21 == true)
   {
-    #include "CarbonationMode.h"
+    //#include "CarbonationMode.h" //COMMENTED OUT TEMPORARILY TO MAKE ROOM FOR TEMPERATURE ROUTINE
   }  
 
   // Menu Option 22: MANUAL MODE
@@ -196,7 +196,7 @@ void menuShell(boolean inMenuLoop)
     buzzedOnce = false;
     if (menuOption22 == false)
     {
-      manualModeLoop();
+      //manualModeLoop(); //TEMPORARY TO MAKE ROOM FOR TEMPERATURE
       inMenuLoop = false;
     }
   }

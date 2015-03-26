@@ -13,7 +13,10 @@ void pressurizedBottleStartup()
 	// =========================================================================
 	while (P1 - offsetP1 > pressureDeltaDown)
 	{
-	  inPressurizedBottleLoop = true;
+	  //TEMPORARY Temperature measurement in null pressure loop
+	  delay(500);
+	  sensors.requestTemperatures();
+		getTemperature(liquidThermometer);inPressurizedBottleLoop = true;
 		
 		// Relay3 already opened in variable initialization
 	  
@@ -22,7 +25,7 @@ void pressurizedBottleStartup()
 	  lcd.setCursor (0, 2); lcd.print (F("valve to vent...    "));
 	  
 		pressureOutput(); 
-		printLcd (3, outputPSI_b);
+		//printLcd (3, outputPSI_b); //TEMPORARY FOR Temperature
 
 	  buzzOnce(1000, light2Pin);
  
@@ -80,6 +83,12 @@ void nullPressureStartup()
 	// NULL PRESSURE LOOP
 	while (P2 - offsetP2 < pressureNull)
 	{
+		
+		//TEMPORARY Temperature measurement in null pressure loop 
+		delay(500);
+		sensors.requestTemperatures();
+		getTemperature(liquidThermometer);
+		
 		inPressureNullLoop = true;
 		buzzOnce(1000, light2Pin);
 
@@ -88,7 +97,7 @@ void nullPressureStartup()
 		messageLcdOpenDoor();
 		
 		pressureOutput();
-		printLcd (3, outputPSI_r);
+		//printLcd (3, outputPSI_r); //TEMPORARY
 		//lcd.setCursor (0, 3); lcd.print (outputPSI_r);
 
 		// Program will loop here until gas pressure fixed. 

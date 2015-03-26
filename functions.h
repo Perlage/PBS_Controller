@@ -315,4 +315,13 @@ void readButtonCatch(byte Id, byte buttonPin, byte lightPin) //pass in button1Pi
 }
 
 
-
+void getTemperature(DeviceAddress deviceAddress)
+{
+	float tempC = sensors.getTempC(deviceAddress);
+	if (tempC == -127.00) {
+		lcd.setCursor (15, 3); lcd.print ("ERR");
+		} else {
+		lcd.setCursor (15, 3); lcd.print (tempC);
+		//lcd.setCursor (15, 3); lcd.print (DallasTemperature::toFahrenheit(tempC));
+	}
+}
