@@ -1,7 +1,7 @@
 /*
 //===========================================================================  
 
-FIZZIQ Cocktail Bottling System v1.1.1
+FIZZIQ Cocktail Bottling System v1.2
 
 Author: 
   Evan Wallace
@@ -171,8 +171,8 @@ char buffer[25];                                 // Used in float to string conv
 //=====================================================================================
 
 void setup()
-{
-  buzzer(100); delay(50);buzzer(100); delay(50);buzzer(100);
+{	
+	buzzer(100); delay(50);buzzer(100); delay(50);buzzer(100);
 	
 	//Setup pins
   pinMode(button1Pin, INPUT);  //Changed buttons from INPUT_PULLUP to PULLUP when installed touchbuttons, which use a pulldown resistor. 
@@ -217,12 +217,13 @@ void setup()
   //===================================================================================
 
   //===================================================================================
-  // EEPROM factory set-reset routine 
-  // For some reason, have to include it here and not above with others
   buzzer(100); delay(50);buzzer(100); delay(50);buzzer(100);
   messageInitial();
   
-  #include "EEPROMset.h"   
+  // EEPROM factory set-reset routine
+  // For some reason, have to include it here and not above with others
+  
+	//#include "EEPROMset.h" //Commenting this out removes the ability to set EEPROM with production firmware. Must do in QA/Setup firmware
   
   // Read EEPROM
   offsetP1               = EEPROM.read(0);
