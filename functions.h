@@ -321,7 +321,7 @@ void getTemperature(DeviceAddress deviceAddress)
 	if (tempC == -127.00) {
 		lcd.setCursor (15, 3); lcd.print ("ERR");
 		} else {
-		lcd.setCursor (15, 3); lcd.print (tempC);
-		//lcd.setCursor (15, 3); lcd.print (DallasTemperature::toFahrenheit(tempC));
+		//lcd.setCursor (15, 3); lcd.print (tempC);
+		lcd.setCursor (15, 3); lcd.print (DallasTemperature::toFahrenheit(tempC));
 	}
 }
