@@ -15,7 +15,7 @@ Copyright 2013, 2014  All rights reserved
 
 
 //Version control variable
-String (versionSoftwareTag)   = "v1.1"   ;       
+String (versionSoftwareTag)   = "v1.2.1"   ;       
 
 //Library includes
 #include <Wire.h> 
