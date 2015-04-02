@@ -44,8 +44,8 @@ const int sensorFillPin              = 11;     // pin for fill sensor F1 // DO N
 const int switchDoorPin              = 12;     // pin for door switch
 const int buzzerPin                  = 13;     // pin for buzzer
 
-const int sensorP2Pin                = A0;     // pin for pressure sensor 2 // 1-23 NOW REGULATOR PRESSURE. 
-const int sensorP1Pin                = A1;     // pin for pressure sensor 1 // 1-23 NOW BOTTLE PRESSURE
+const int sensorP2Pin                = A0;     // pin for pressure sensor 2 // REGULATOR PRESSURE--BOTTOM sensor on PCB
+const int sensorP1Pin                = A1;     // pin for pressure sensor 1 // BOTTLE PRESSURE--TOP sensor on PCB
 const int switchModePin              = A2;     // OPEN PIN
 const int light1Pin                  = A3;     // pin for button1 light 
 const int light2Pin                  = A4;     // pin for button2 light
@@ -638,7 +638,8 @@ void loop()
 
   // v1.1 Changed the pressureDeltaMax condition to reflect fact that there are two sensors
 	// v1.1 #96: Added button3 exit shortcut
-  while(button2State == LOW && button3State == HIGH && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true)) 
+  int startSolenoidCleaningCycle = millis(); // Get the start time for the solenoid cleaning cycle
+	while(button2State == LOW && button3State == HIGH && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true)) 
   {     
     inFillLoop = true;
     inFillLoopExecuted = true; //This is an "is dirty" variable for counting lifetime bottles. Reset in platformUpLoop.
@@ -670,6 +671,19 @@ void loop()
     {
       sensorFillState = HIGH;      
       lcd.setCursor (0, 2); lcd.print (F("Filling--SENSOR OFF "));
+			
+			// New cleaning routine to help prevent solenoid sticking
+			// IF loop ensure that the fluttering only occurs in bursts, not continuously
+			// In case of flutterCycle =  5000  and flutterDuration = 1000, fluttering would happen for 1 sec in every 5
+			int flutterCycle = 5000;			// Solenoid cleaning cycle in millisec
+			int flutterDuration = 1000;		// Duration that solenoid opens and closes during cycle. 
+			if ((millis() - startSolenoidCleaningCycle) % flutterCycle > (flutterCycle - flutterDuration)){
+				relayOn(relay1Pin, false); delay(100);
+				relayOn(relay1Pin, true);
+				relayOn(relay3Pin, false); delay(100);
+				relayOn(relay3Pin, true);
+			}
+			// End solenoid cleaning routine
     }
     else
     {
