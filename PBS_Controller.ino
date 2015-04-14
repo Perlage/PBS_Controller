@@ -46,7 +46,7 @@ const int buzzerPin                  = 13;     // pin for buzzer
 
 const int sensorP2Pin                = A0;     // pin for pressure sensor 2 // REGULATOR PRESSURE--BOTTOM sensor on PCB
 const int sensorP1Pin                = A1;     // pin for pressure sensor 1 // BOTTLE PRESSURE--TOP sensor on PCB
-const int switchModePin              = A2;     // OPEN PIN
+const int sensorFillPin2             = A2;     // New analog technique
 const int light1Pin                  = A3;     // pin for button1 light 
 const int light2Pin                  = A4;     // pin for button2 light
 const int light3Pin                  = A5;     // pin for button3 light
@@ -73,7 +73,14 @@ boolean relay6State                  = HIGH;
 boolean sensorFillState              = HIGH; 
 boolean sensorFillStateTEMP          = HIGH;
 boolean switchDoorState              = HIGH;
-boolean switchModeState              = HIGH; //LOW is Manual, HIGH (or up) is auto (normal)
+//boolean switchModeState              = HIGH; //LOW is Manual, HIGH (or up) is auto (normal)
+
+//Analog liquid detection
+int cLiquid;
+int cFoam;
+int conductLiquidThreshold	=		750;
+int conductFoamThreshold		=		250;
+ 
 
 //State variables 
 boolean inPressureNullLoop           = false;
@@ -189,8 +196,8 @@ void setup()
   pinMode(light3Pin, OUTPUT);
   //pinMode(sensorFillPin, INPUT_PULLUP);  //INPUT_PULLUP uses internal Pullup and maybe additionally a larger (~65k) external pullup resistor
   pinMode(sensorFillPin, INPUT);           //INPUT and external pullup resistor
-  pinMode(switchDoorPin, INPUT_PULLUP); 
-  pinMode(switchModePin, INPUT_PULLUP);
+  pinMode(sensorFillPin2, INPUT);					 //New Analog technique	
+	pinMode(switchDoorPin, INPUT_PULLUP); 
   pinMode(buzzerPin, OUTPUT);
   
   //set all relay pins to high which is "off" for this relay
@@ -325,7 +332,7 @@ void loop()
   button2StateTEMP		= !digitalRead(button2Pin); 
   button3StateTEMP		= !digitalRead(button3Pin); 
   switchDoorState			=  digitalRead(switchDoorPin);
-  switchModeState			=  digitalRead(switchModePin); 
+  //switchModeState			=  digitalRead(switchModePin); 
   sensorFillStateTEMP =  digitalRead(sensorFillPin); // Maybe we don't need to measure this
 
   sensorFillState		=  HIGH; //v1.1: We now SET the sensorState HIGH.
@@ -638,10 +645,19 @@ void loop()
 
   // v1.1 Changed the pressureDeltaMax condition to reflect fact that there are two sensors
 	// v1.1 #96: Added button3 exit shortcut
+	
+	cLiquid = analogRead(sensorFillPin2);
+			
   int startSolenoidCleaningCycle = millis(); // Get the start time for the solenoid cleaning cycle
 	while(button2State == LOW && button3State == HIGH && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true)) 
   {     
-    inFillLoop = true;
+    
+		cLiquid = analogRead(sensorFillPin2);
+		if(cLiquid < conductLiquidThreshold){
+			sensorFillState == LOW;
+		}
+		
+		inFillLoop = true;
     inFillLoopExecuted = true; //This is an "is dirty" variable for counting lifetime bottles. Reset in platformUpLoop.
 
     //while the button is  pressed, fill the bottle: open S1 and S3

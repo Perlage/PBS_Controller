@@ -145,7 +145,7 @@ void readButtons()
 void readStates()
 {
   switchDoorState = digitalRead(switchDoorPin);
-  switchModeState = digitalRead(switchModePin);
+  //switchModeState = digitalRead(switchModePin);
   sensorFillState = digitalRead(sensorFillPin);
 }
 
