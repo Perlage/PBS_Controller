@@ -809,63 +809,63 @@ void loop()
     relayOn(relay3Pin, true); //Open Gas Out solenoid
 		digitalWrite(light3Pin, HIGH);
   
-	// Pressure output
-	pressureOutput();
-	printLcd (3, outputPSI_b);
+		// Pressure output
+		pressureOutput();
+		printLcd (3, outputPSI_b);
   
-	//Allow momentary "burst" foam tamping
-  button2State = !digitalRead(button2Pin);
-	if(button2State == LOW)
-  {
-    digitalWrite(light2Pin, HIGH); 
-    relayOn(relay2Pin, true);
-    delay(50);  // Burst duration
-    relayOn(relay2Pin, false);
-    digitalWrite(light2Pin, LOW);
-  }
+		//Allow momentary "burst" foam tamping
+		button2State = !digitalRead(button2Pin);
+		if(button2State == LOW)
+		{
+			digitalWrite(light2Pin, HIGH); 
+			relayOn(relay2Pin, true);
+			delay(50);  // Burst duration
+			relayOn(relay2Pin, false);
+			digitalWrite(light2Pin, LOW);
+		}
 	
-	//v1.1 added as part of sensor override
-	if (!digitalRead(button1Pin) == LOW)
-	{
-		digitalWrite(light1Pin, HIGH);
-	}
-	else
-	{
-		digitalWrite(light1Pin, LOW);
-	}
+		//v1.1 added as part of sensor override
+		if (!digitalRead(button1Pin) == LOW)
+		{
+			digitalWrite(light1Pin, HIGH);
+		}
+		else
+		{
+			digitalWrite(light1Pin, LOW);
+		}
     
-  // CLEANING MODE: If in cleaning mode, set FillState HIGH
-  if (inCleaningMode == true || !digitalRead(button1Pin) == LOW)
-  {
-    sensorFillState = HIGH;      
-    lcd.setCursor (0, 2); lcd.print (F("Venting--SENSOR OFF"));
-  }
-  else
-  {
-    sensorFillState = digitalRead(sensorFillPin); //Check fill sensor
-    switchDoorState = digitalRead(switchDoorPin); //Check door switch // Not using this
-		lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
-  }   
+		// CLEANING MODE: If in cleaning mode, set FillState HIGH
+		if (inCleaningMode == true || !digitalRead(button1Pin) == LOW)
+		{
+			sensorFillState = HIGH;      
+			lcd.setCursor (0, 2); lcd.print (F("Venting--SENSOR OFF"));
+		}
+		else
+		{
+			sensorFillState = digitalRead(sensorFillPin); //Check fill sensor
+			switchDoorState = digitalRead(switchDoorPin); //Check door switch // Not using this
+			lcd.setCursor (0, 2); lcd.print (F("Depressurizing...   "));
+		}   
 	
-	lcd.setCursor (0, 0); lcd.print (F("B3 toggles venting; "));
-	messageRotator(10000, .5, 0);
-	if (messageID){
-		lcd.setCursor (0, 1); lcd.print (F("B2: Burst tamping   "));
-	}
-	else{
-		lcd.setCursor (0, 1); lcd.print (F("B1: Overrides sensor"));
-	}
+		lcd.setCursor (0, 0); lcd.print (F("B3 toggles venting; "));
+		messageRotator(10000, .5, 0);
+		if (messageID){
+			lcd.setCursor (0, 1); lcd.print (F("B2: Burst tamping   "));
+		}
+		else{
+			lcd.setCursor (0, 1); lcd.print (F("B1: Overrides sensor"));
+		}
 		
-  //Check toggle state of B3
-  button3StateTEMP = !digitalRead(button3Pin);
-  if (button3StateTEMP == HIGH && button3ToggleState == false){  // ON release
-    button3ToggleState = true;                                   // Leaves buttonState LOW
-    button3State = LOW; 
-  }
-  if (button3StateTEMP == LOW && button3ToggleState == true){    // OFF push
-    button3State = HIGH;                                         // Exit WHILE loop
-  }
-}
+		//Check toggle state of B3
+		button3StateTEMP = !digitalRead(button3Pin);
+		if (button3StateTEMP == HIGH && button3ToggleState == false){  // ON release
+			button3ToggleState = true;                                   // Leaves buttonState LOW
+			button3State = LOW; 
+		}
+		if (button3StateTEMP == LOW && button3ToggleState == true){    // OFF push
+			button3State = HIGH;                                         // Exit WHILE loop
+		}
+	}
 
   // DEPRESSURIZE LOOP EXIT ROUTINES 
   // If in this loop, Button3 was released, or Fill/Foam Sensor tripped, 
