@@ -71,7 +71,7 @@ boolean relay4State                  = HIGH;
 boolean relay5State                  = HIGH;
 boolean relay6State                  = HIGH;
 boolean sensorFillState              = HIGH; 
-boolean sensorFillStateTEMP          = HIGH;
+//boolean sensorFillStateTEMP          = HIGH; //Not using this
 boolean switchDoorState              = HIGH;
 //boolean switchModeState              = HIGH; //LOW is Manual, HIGH (or up) is auto (normal)
 
@@ -332,12 +332,12 @@ void loop()
   button3StateTEMP		= !digitalRead(button3Pin); 
   switchDoorState			=  digitalRead(switchDoorPin);
   //switchModeState			=  digitalRead(switchModePin); 
-  sensorFillStateTEMP =  digitalRead(sensorFillPin); // Maybe we don't need to measure this
+  //sensorFillStateTEMP =  digitalRead(sensorFillPin); // Maybe we don't need to measure this // Not using this
 
   sensorFillState		=  HIGH; //v1.1: We now SET the sensorState HIGH.
 	
 	cLiquid = analogRead(sensorFillPin2);
-	lcd.setCursor (7, 3); 
+	lcd.setCursor (16, 2); 
 	lcd.print (cLiquid);
 	
   Serial.print ("Time = ");
@@ -405,7 +405,10 @@ void loop()
 	//v1.1 #105 Swapped the hard foam catch loop for proper messages
 	if (platformStateUp == true  && (P1 - offsetP1) <= pressureDeltaDown && depressurizeLoopExecuted == true)
 	{
-		if (digitalRead(sensorFillPin) == LOW)
+		//if (digitalRead(sensorFillPin) == LOW)
+		cLiquid = analogRead(sensorFillPin2);
+		if(cLiquid < conductFoamThreshold)
+
 		{
 			lcd.setCursor (0, 0); lcd.print (F("Foam detected! Open "));
 			lcd.setCursor (0, 1); lcd.print (F("Exhaust valve before"));
@@ -663,7 +666,11 @@ void loop()
   {     
     
 		cLiquid = analogRead(sensorFillPin2);
-		if(cLiquid < conductLiquidThreshold){
+		lcd.setCursor (16, 2);
+		lcd.print (cLiquid);
+		
+		if(cLiquid < conductLiquidThreshold)
+		{
 			sensorFillState = LOW;
 		}
 		
@@ -767,7 +774,8 @@ void loop()
       relayOn(relay2Pin, false);
       
       //v1.1 Clear Sensor Routine
-      if (digitalRead(sensorFillPin) == LOW)
+      //if (digitalRead(sensorFillPin) == LOW)
+			if (analogRead(sensorFillPin2) < conductLiquidThreshold)
       {
         lcd.setCursor (0, 2); lcd.print (F("Clearing Fill Sensor"));
 				delay(1000); //DEBUG? Delay to show above message. 
@@ -836,7 +844,10 @@ void loop()
 		digitalWrite(light3Pin, HIGH);
 		
 		// New analog liquid sensor routine
-		cLiquid = analogRead(sensorFillPin2);			
+		cLiquid = analogRead(sensorFillPin2);		
+		lcd.setCursor (16, 2);
+		lcd.print (cLiquid);	
+		
 		if(cLiquid < conductFoamThreshold)
 		{
 			sensorFillState = LOW;
@@ -927,7 +938,8 @@ void loop()
       relayOn(relay2Pin, false);
 
       //v1.1 Clear Sensor Routine. This merely flashes a message
-      if (digitalRead(sensorFillPin) == LOW)
+      //if (digitalRead(sensorFillPin) == LOW) // Commented out for analog
+			if (analogRead(sensorFillPin2) < conductFoamThreshold)
       {
 	      lcd.setCursor (0, 2); lcd.print (F("Clearing Foam Sensor"));
 	      delay(1000); //DEBUG? Delay to show above message.
@@ -1013,7 +1025,7 @@ void loop()
     P1 = analogRead(sensorP1Pin);
     button3State = !digitalRead(button3Pin);
     switchDoorState =  digitalRead(switchDoorPin);
-    sensorFillState =  digitalRead(sensorFillPin);
+    //sensorFillState =  digitalRead(sensorFillPin); // Comment out for analog
 		digitalWrite(light3Pin, LOW);
   }
 
