@@ -266,10 +266,10 @@ void setup()
   }
     
   //NULL PRESSURE: Check for stuck pressurized bottle
-	//pressurizedBottleStartup();
+	pressurizedBottleStartup();
   
 	//LOW PRESSURE: THEN check for implausibly low gas pressure at start 
-	//nullPressureStartup();
+	nullPressureStartup();
 	
 	//Rewrite initial user message, in case pressure routines above wrote to screen
   messageInitial(); 
@@ -836,6 +836,9 @@ void loop()
 	pressureOutput(); //v1.1 Do we need to take a fresh reading here? Probably a good idea
 	float minPressureDiffSensorClear = 10; //v1.1. In psi
 	
+	int cLiquid1; //Variables for sensing foam on the basis of DIFFERENCES
+	int cLiquid2;
+	
 	//85: Added condition (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear) to allow depressurization with sensor LOW
   while(button3State == LOW && ((sensorFillState == HIGH  || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) //v1.1 added sensor override
   {  
@@ -844,11 +847,30 @@ void loop()
 		digitalWrite(light3Pin, HIGH);
 		
 		// New analog liquid sensor routine
-		cLiquid = analogRead(sensorFillPin2);		
+		//cLiquid = analogRead(sensorFillPin2);		
+		cLiquid1 = analogRead(sensorFillPin2);	
 		lcd.setCursor (16, 2);
-		lcd.print (cLiquid);	
+		lcd.print (cLiquid2);	
 		
-		if(cLiquid < conductFoamThreshold)
+		Serial.print ("Time = ");
+		Serial.print (millis());
+		Serial.print (": cLiquid = ");
+		Serial.print (cLiquid);
+		Serial.println ();	
+				
+		delay(50);
+		cLiquid2 = analogRead(sensorFillPin2);			
+		lcd.setCursor (16, 2);
+		lcd.print (cLiquid2);	
+
+		Serial.print ("Time = ");
+		Serial.print (millis());
+		Serial.print (": cLiquid = ");
+		Serial.print (cLiquid);
+		Serial.println ();		
+		
+		//if(cLiquid < conductFoamThreshold)
+		if(cLiquid1 - cLiquid2 > 50)
 		{
 			sensorFillState = LOW;
 		}
