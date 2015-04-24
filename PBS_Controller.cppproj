@@ -72,12 +72,12 @@
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\utility</Value>
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\EEPROM</Value>
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\EEPROM\utility</Value>
-            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries\LiquidCrystal_I2C2004V1</Value>
-            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries\LiquidCrystal_I2C2004V1\utility</Value>
+            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\PBS_Controller\libraries\LiquidCrystal_I2C2004V1</Value>
+            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\PBS_Controller\libraries\LiquidCrystal_I2C2004V1\utility</Value>
             <Value>C:\Program Files (x86)\Arduino\libraries</Value>
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries</Value>
             <Value>C:\Program Files (x86)\Visual Micro\Visual Micro for Arduino\Micro Platforms\default\debuggers</Value>
-            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries</Value>
+            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\PBS_Controller\libraries</Value>
             <Value>c:\program files (x86)\arduino\hardware\tools\avr\avr\include\</Value>
             <Value>c:\program files (x86)\arduino\hardware\tools\avr\avr\include\avr\</Value>
             <Value>c:\program files (x86)\arduino\hardware\tools\avr\avr\</Value>
@@ -116,12 +116,12 @@
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\utility</Value>
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\EEPROM</Value>
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\EEPROM\utility</Value>
-            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries\LiquidCrystal_I2C2004V1</Value>
-            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries\LiquidCrystal_I2C2004V1\utility</Value>
+            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\PBS_Controller\libraries\LiquidCrystal_I2C2004V1</Value>
+            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\PBS_Controller\libraries\LiquidCrystal_I2C2004V1\utility</Value>
             <Value>C:\Program Files (x86)\Arduino\libraries</Value>
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries</Value>
             <Value>C:\Program Files (x86)\Visual Micro\Visual Micro for Arduino\Micro Platforms\default\debuggers</Value>
-            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries</Value>
+            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\PBS_Controller\libraries</Value>
             <Value>c:\program files (x86)\arduino\hardware\tools\avr\avr\include\</Value>
             <Value>c:\program files (x86)\arduino\hardware\tools\avr\avr\include\avr\</Value>
             <Value>c:\program files (x86)\arduino\hardware\tools\avr\avr\</Value>
@@ -332,12 +332,12 @@ config.path={runtime.ide.path}/hardware/tools/avr/etc/avrdude.conf
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\utility</Value>
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\EEPROM</Value>
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\EEPROM\utility</Value>
-            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries\LiquidCrystal_I2C2004V1</Value>
-            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries\LiquidCrystal_I2C2004V1\utility</Value>
+            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\PBS_Controller\libraries\LiquidCrystal_I2C2004V1</Value>
+            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\PBS_Controller\libraries\LiquidCrystal_I2C2004V1\utility</Value>
             <Value>C:\Program Files (x86)\Arduino\libraries</Value>
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries</Value>
             <Value>C:\Program Files (x86)\Visual Micro\Visual Micro for Arduino\Micro Platforms\default\debuggers</Value>
-            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries</Value>
+            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\PBS_Controller\libraries</Value>
             <Value>c:\program files (x86)\arduino\hardware\tools\avr\avr\include\</Value>
             <Value>c:\program files (x86)\arduino\hardware\tools\avr\avr\include\avr\</Value>
             <Value>c:\program files (x86)\arduino\hardware\tools\avr\avr\</Value>
@@ -376,12 +376,12 @@ config.path={runtime.ide.path}/hardware/tools/avr/etc/avrdude.conf
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\utility</Value>
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\EEPROM</Value>
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\EEPROM\utility</Value>
-            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries\LiquidCrystal_I2C2004V1</Value>
-            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries\LiquidCrystal_I2C2004V1\utility</Value>
+            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\PBS_Controller\libraries\LiquidCrystal_I2C2004V1</Value>
+            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\PBS_Controller\libraries\LiquidCrystal_I2C2004V1\utility</Value>
             <Value>C:\Program Files (x86)\Arduino\libraries</Value>
             <Value>C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries</Value>
             <Value>C:\Program Files (x86)\Visual Micro\Visual Micro for Arduino\Micro Platforms\default\debuggers</Value>
-            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\FIZZIQ_Controller\libraries</Value>
+            <Value>C:\Users\Wallace\Dropbox\PBS_MAIN\PBS_controller\_VERSIONS\_CURRENT\PBS_Controller\libraries</Value>
             <Value>c:\program files (x86)\arduino\hardware\tools\avr\avr\include\</Value>
             <Value>c:\program files (x86)\arduino\hardware\tools\avr\avr\include\avr\</Value>
             <Value>c:\program files (x86)\arduino\hardware\tools\avr\avr\</Value>

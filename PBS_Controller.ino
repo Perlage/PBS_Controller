@@ -77,8 +77,8 @@ boolean switchDoorState              = HIGH;
 
 //Analog liquid detection
 int cLiquid;
-int conductLiquidThreshold	=		700;
-int conductFoamThreshold		=		800; //Open circuit = 1023; short = 0
+int conductLiquidThreshold	=		600;
+int conductFoamThreshold		=		600; //Open circuit = 1023; short = 0
  
 
 //State variables 
@@ -342,7 +342,7 @@ void loop()
 	
   Serial.print ("Time = ");
   Serial.print (millis());
-	Serial.print (": cLiquid = ");
+	Serial.print (": cLiquidMain = ");
 	Serial.print (cLiquid);
 	Serial.println (); 
 	
@@ -838,6 +838,14 @@ void loop()
 	
 	int cLiquid1; //Variables for sensing foam on the basis of DIFFERENCES
 	int cLiquid2;
+	int cLiquidInit;
+	cLiquidInit = analogRead(sensorFillPin2);	
+	
+			Serial.print ("Time = ");
+			Serial.print (millis());
+			Serial.print (": cLiquidInit = ");
+			Serial.print (cLiquidInit);
+			Serial.println ();
 	
 	//85: Added condition (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear) to allow depressurization with sensor LOW
   while(button3State == LOW && ((sensorFillState == HIGH  || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) //v1.1 added sensor override
@@ -850,12 +858,12 @@ void loop()
 		//cLiquid = analogRead(sensorFillPin2);		
 		cLiquid1 = analogRead(sensorFillPin2);	
 		lcd.setCursor (16, 2);
-		lcd.print (cLiquid2);	
+		lcd.print (cLiquid1);	
 		
 		Serial.print ("Time = ");
 		Serial.print (millis());
-		Serial.print (": cLiquid = ");
-		Serial.print (cLiquid);
+		Serial.print (": cLiquid1 = ");
+		Serial.print (cLiquid1);
 		Serial.println ();	
 				
 		delay(50);
@@ -865,14 +873,17 @@ void loop()
 
 		Serial.print ("Time = ");
 		Serial.print (millis());
-		Serial.print (": cLiquid = ");
-		Serial.print (cLiquid);
-		Serial.println ();		
+		Serial.print (": cLiquid2 = ");
+		Serial.print (cLiquid2);
+		Serial.println ();
 		
 		//if(cLiquid < conductFoamThreshold)
-		if(cLiquid1 - cLiquid2 > 50)
+		//if(cLiquid1 - cLiquid2 > 30 || cLiquid1 < conductFoamThreshold)
+		if(cLiquid2 < cLiquidInit - 100)		
 		{
 			sensorFillState = LOW;
+					Serial.print ("FOAM!");
+					Serial.println ();
 		}
   
 		// Pressure output
