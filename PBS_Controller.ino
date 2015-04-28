@@ -1,7 +1,7 @@
 /*
 //===========================================================================  
 
-FIZZIQ Cocktail Bottling System v1.2
+FIZZIQ Cocktail Bottling System
 
 Author: 
   Evan Wallace
@@ -15,7 +15,7 @@ Copyright 2013, 2014  All rights reserved
 
 
 //Version control variable
-String (versionSoftwareTag)   = "v1.2.1"   ;       
+String (versionSoftwareTag)   = "v1.2.2";			//Most recent change involved platform timing
 
 //Library includes
 #include <Wire.h> 
