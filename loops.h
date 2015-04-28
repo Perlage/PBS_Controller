@@ -72,10 +72,10 @@ void platformUpLoop()
 			
 			lcd.setCursor (0, 2); lcd.print (F("HOLD B1 UNTIL BEEP! "));
 			//lcd.setCursor (0, 2); lcd.print (F("Lowering...         "));
-      delay(1500); 
+      delay(autoPlatformDropDuration); 
 			
 			//Beep if lockin not met
-			for (int i = 0; i < 5; ++i)
+			for (int i = 0; i < 3; ++i)
 			{buzzer(150); delay(25);}
 
       relayOn(relay5Pin, false);  // Prevents leaving S5 on if this was the last thing user did

@@ -129,7 +129,7 @@ int timePlatformInit;                           // Time in ms going into loop
 int timePlatformCurrent;                        // Time in ms currently in loop
 int timePlatformRising               = 0;       // Time difference between Init and Current
 const int timePlatformLock           = 1000;    // Time in ms before platform locks in up position
-const int autoPlatformDropDuration   = 1500;    // Duration of platform auto drop in ms
+const int autoPlatformDropDuration   = 1250;    // Duration of platform auto drop in ms
 
 //Key performance parameters
 int autoSiphonDuration;                         // Duration of autosiphon function in ms
@@ -967,7 +967,7 @@ void loop()
       digitalWrite(light3Pin, HIGH);
 			relayOn(relay5Pin, true);
       delay(autoPlatformDropDuration);  
-      relayOn(relay5Pin, false);
+      //relayOn(relay5Pin, false);
       button3State = HIGH;
       autoMode_1 = false;
     }
@@ -975,7 +975,7 @@ void loop()
     {
 			digitalWrite(light3Pin, HIGH); 
 			relayOn(relay5Pin, true);  // Open cylinder exhaust
-			delay(1000); // always drop at least a second?
+			delay(autoPlatformDropDuration); // always drop at least a second?
     }
     P1 = analogRead(sensorP1Pin);
     button3State = !digitalRead(button3Pin);
