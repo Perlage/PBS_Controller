@@ -25,8 +25,8 @@ String (versionSoftwareTag)   = "v1.2.2";			//Most recent change involved platfo
 //#include <avr/pgmspace.h>                    // 1-26 Added for PROGMEM function // UNUSED now
 //#include <math.h>                            // Unused
 
-LiquidCrystal_I2C lcd(0x27,20,4);						 //This seems to work for new screens after Dec 12, 2014
-//LiquidCrystal_I2C lcd(0x3F,20,4);						   //This worked for original screens up until Dec, 2014
+//LiquidCrystal_I2C lcd(0x27,20,4);						 //This seems to work for new screens after Dec 12, 2014
+LiquidCrystal_I2C lcd(0x3F,20,4);						   //This worked for original screens up until Dec, 2014
 
 // Pin assignments
 const int button1Pin                 =  0;     // pin for button1 B1 (Raise platform) RX=0;
@@ -187,8 +187,8 @@ void setup()
   pinMode(light1Pin, OUTPUT); 
   pinMode(light2Pin, OUTPUT);
   pinMode(light3Pin, OUTPUT);
-  //pinMode(sensorFillPin, INPUT_PULLUP);  //INPUT_PULLUP uses internal Pullup and maybe additionally a larger (~65k) external pullup resistor
-  pinMode(sensorFillPin, INPUT);           //INPUT and external pullup resistor
+  pinMode(sensorFillPin, INPUT_PULLUP);  //INPUT_PULLUP uses internal Pullup and maybe additionally a larger (~65k) external pullup resistor
+  //pinMode(sensorFillPin, INPUT);           //INPUT and external pullup resistor
   pinMode(switchDoorPin, INPUT_PULLUP); 
   pinMode(switchModePin, INPUT_PULLUP);
   pinMode(buzzerPin, OUTPUT);
