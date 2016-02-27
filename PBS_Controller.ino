@@ -15,7 +15,7 @@ Copyright 2013, 2014  All rights reserved
 
 
 //Version control variable
-String (versionSoftwareTag)   = "v1.2.2";			//Most recent change involved platform timing
+String (versionSoftwareTag)   = "v1.3";			//Changed to 2-digit numbering system so fits on screen. 1.3 = 1.2.2. Most recent change involved platform timing
 
 //Library includes
 #include <Wire.h> 
