@@ -8,7 +8,8 @@ Author:
 	Perlage Systems, Inc.
 	Seattle, WA 98101 USA
 
-Copyright 2013, 2014  All rights reserved
+Copyright 2013-2016  All rights reserved
+Authored using Visual Studio Community after Apr 23, 2016
 
 //===========================================================================
 */
@@ -29,27 +30,27 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);						 //This seems to work for new screens a
 //LiquidCrystal_I2C lcd(0x3F,20,4);						   //This worked for original screens up until Dec, 2014
 
 // Pin assignments
-const int button1Pin = 0;     // pin for button1 B1 (Raise platform) RX=0;
-const int button2Pin = 1;     // pin for button2 B2 (Fill/purge)     TX=1; 
-// 2 SDA for LCD                     =  2;  
-// 3 SDL for LCD                     =  3;
-const int button3Pin = 4;     // pin for button3 B3 (Depressurize and lower) 
-const int relay1Pin = 5;     // pin for relay1 S1 (liquid fill)
-const int relay2Pin = 6;     // pin for relay2 S2 (bottle gas inlet)
-const int relay3Pin = 7;     // pin for relay3 S3 (bottle gas vent)
-const int relay4Pin = 8;     // pin for relay4 S4 (pneumatic lift gas in)
-const int relay5Pin = 9;     // pin for relay5 S5 (pneumatic lift gas out)
-const int relay6Pin = 10;     // pin for relay6 S6 (door lock solenoid)
-const int sensorFillPin = 11;     // pin for fill sensor F1 // DO NOT PUT THIS ON PIN 13!!
-const int switchDoorPin = 12;     // pin for door switch
-const int buzzerPin = 13;     // pin for buzzer
+const int button1Pin		= 0;      // pin for button1 B1 (Raise platform) RX=0;
+const int button2Pin		= 1;      // pin for button2 B2 (Fill/purge)     TX=1; 
+// 2 SDA for LCD			= 2;  
+// 3 SDL for LCD			= 3;
+const int button3Pin		= 4;      // pin for button3 B3 (Depressurize and lower) 
+const int relay1Pin			= 5;      // pin for relay1 S1 (liquid fill)
+const int relay2Pin			= 6;      // pin for relay2 S2 (bottle gas inlet)
+const int relay3Pin			= 7;      // pin for relay3 S3 (bottle gas vent)
+const int relay4Pin			= 8;      // pin for relay4 S4 (pneumatic lift gas in)
+const int relay5Pin			= 9;      // pin for relay5 S5 (pneumatic lift gas out)
+const int relay6Pin			= 10;     // pin for relay6 S6 (door lock solenoid)
+const int sensorFillPin		= 11;     // pin for fill sensor F1 // DO NOT PUT THIS ON PIN 13!!
+const int switchDoorPin		= 12;     // pin for door switch
+const int buzzerPin			= 13;     // pin for buzzer
 
-const int sensorP2Pin = A0;     // pin for pressure sensor 2 // REGULATOR PRESSURE--BOTTOM sensor on PCB
-const int sensorP1Pin = A1;     // pin for pressure sensor 1 // BOTTLE PRESSURE--TOP sensor on PCB
-const int switchModePin = A2;     // OPEN PIN
-const int light1Pin = A3;     // pin for button1 light 
-const int light2Pin = A4;     // pin for button2 light
-const int light3Pin = A5;     // pin for button3 light
+const int sensorP2Pin		= A0;     // pin for pressure sensor 2 // REGULATOR PRESSURE--BOTTOM sensor on PCB
+const int sensorP1Pin		= A1;     // pin for pressure sensor 1 // BOTTLE PRESSURE--TOP sensor on PCB
+const int switchModePin		= A2;     // OPEN PIN
+const int light1Pin			= A3;     // pin for button1 light 
+const int light2Pin			= A4;     // pin for button2 light
+const int light3Pin			= A5;     // pin for button3 light
 
 // A0 formerly was sensor1, which is closest to what we now call bottle pressure, and A1 was unused. 
 // So switched sensor1 to A1 to make code changes easier. All reads of sensor1 will now read bottle pressure
@@ -95,19 +96,19 @@ boolean inPlatformEmergencyLock = false;
 boolean inDiagnosticMode = false;
 
 //Key logical states
-boolean autoMode_1 = false;   // Variable to help differentiate between states reached automatically vs manually 
-boolean platformLockedNew = false;   // Variable to be set when platform first locks up. This is for autofill-on-door close function
-boolean platformStateUp = false;   // true means platform locked in UP; toggled false when S5 opens
+boolean autoMode_1 = false;						// Variable to help differentiate between states reached automatically vs manually 
+boolean platformLockedNew = false;				// Variable to be set when platform first locks up. This is for autofill-on-door close function
+boolean platformStateUp = false;				// true means platform locked in UP; toggled false when S5 opens
 boolean depressurizeLoopExecuted = false;		// v1.1 Let's use this to differentiate whether we got to zero pressure via depressurization vs. never being pressurized
 
 //Pressure constants                            // NOTE: 1 psi = 12.71 units. 
 int offsetP1;                                   // Zero offset for pressure sensor1 (bottle). Set through EEPROM in initial factory calibration, and read into pressureOffset during Setup loop
 int offsetP2;                                   // Zero offset for pressure sensor2 (input regulator). Ditto above.
-const int pressureDeltaUp = 50;     // Pressure at which, during pressurization, full pressure is considered to have been reached // Tried 10, 38; went back to 50 to prevent repressurizing after fill button cycle
-const int pressureDeltaDown = 38;     // Pressure at which, during depressurizing, pressure considered to be close enough to zero // 38 works out to 3.0 psi 
-const int pressureDeltaMax = 250;     // FILLING TOO FAST criterion //v1.1 Now can reduce this significantly from 250 since have two pressure sensors. 100 is good.
-const int pressureNull = 200;     // This is the threshold for the controller deciding that no gas source is attached. 
-const int pressureDropAllowed = 100;     // Max pressure drop allowed in session before alarm sounds
+const int pressureDeltaUp = 50;					// Pressure at which, during pressurization, full pressure is considered to have been reached // Tried 10, 38; went back to 50 to prevent repressurizing after fill button cycle
+const int pressureDeltaDown = 38;				// Pressure at which, during depressurizing, pressure considered to be close enough to zero // 38 works out to 3.0 psi 
+const int pressureDeltaMax = 250;				// FILLING TOO FAST criterion //v1.1 Now can reduce this significantly from 250 since have two pressure sensors. 100 is good.
+const int pressureNull = 200;					// This is the threshold for the controller deciding that no gas source is attached. 
+const int pressureDropAllowed = 100;			// Max pressure drop allowed in session before alarm sounds
 int pressureRegStartUp;                         // Starting regulator pressure. Will use to detect pressure sag during session; and to find proportional values for key pressure variables (e.g. pressureDeltaMax)
 
 //Pressure conversion and output variables
@@ -127,17 +128,17 @@ String(outputPSI_d);                           // Diff between bottle and keg
 //Variables for platform function and timing
 int timePlatformInit;                           // Time in ms going into loop
 int timePlatformCurrent;                        // Time in ms currently in loop
-int timePlatformRising = 0;       // Time difference between Init and Current
-const int timePlatformLock = 1000;    // Time in ms before platform locks in up position
-const int autoPlatformDropDuration = 1250;    // Duration of platform auto drop in ms
+int timePlatformRising = 0;						// Time difference between Init and Current
+const int timePlatformLock = 1000;				// Time in ms before platform locks in up position
+const int autoPlatformDropDuration = 1250;		// Duration of platform auto drop in ms
 
 //Key performance parameters
 int autoSiphonDuration;                         // Duration of autosiphon function in ms
 byte autoSiphonDuration10s;                     // Duration of autosiphon function in 10ths of sec
 float autoSiphonDurationSec;                    // Duration of autosiphon function in sec
-const int antiDripDuration = 500;    // Duration of anti-drip autosiphon
-const int foamDetectionDelay = 2000;    // Amount of time to pause after foam detection
-const int pausePlatformDrop = 1000;    // Pause before platform drops after door automatically opens
+const int antiDripDuration = 500;				// Duration of anti-drip autosiphon
+const int foamDetectionDelay = 2000;			// Amount of time to pause after foam detection
+const int pausePlatformDrop = 1000;				// Pause before platform drops after door automatically opens
 
 //Variables for button toggle states 
 boolean button2StateTEMP = HIGH;
@@ -149,9 +150,9 @@ boolean button3ToggleState = false;
 int numberCycles;                                // Number of cycles since factory reset, measured by number of platform PLUS fill loop being executed
 byte numberCycles01;                             // Ones digit for numberCycles in EEPROM in base 255
 byte numberCycles10;                             // Tens digit for numberCycles in EEPROM in base 255
-int numberCyclesSession = 0;        // Number of session cycles
+int numberCyclesSession = 0;					 // Number of session cycles
 boolean buzzedOnce = false;
-boolean inFillLoopExecuted = false;    // True of FillLoop is dirty. Used to compute numberCycles
+boolean inFillLoopExecuted = false;				 // True of FillLoop is dirty. Used to compute numberCycles
 char buffer[25];                                 // Used in float to string conv // 1-26 Changed from 25 to 20 //CHANGED BACK TO 25!! SEEMS TO BE IMPORTANT!
 
 //======================================================================================
@@ -161,10 +162,10 @@ char buffer[25];                                 // Used in float to string conv
 // Order is important!!!! Must include an include before it is referenced by other includes
 #include "functions.h"					//Functions
 #include "lcdMessages.h"				//User messages
-#include "loops.h"							//Major reused loops
+#include "loops.h"						//Major reused loops
 #include "manualMode.h"					//Manual Mode function
 #include "menuShell.h"					//Menu shell
-#include "nullPressureCheck.h"	//Null Pressure routines
+#include "nullPressureCheck.h"			//Null Pressure routines
 
 //=====================================================================================
 // SETUP LOOP
@@ -321,12 +322,12 @@ void loop()
 
 	// Read the state of buttons and sensors
 	// Boolean NOT (!) added for touchbuttons so that HIGH button state (i.e., button pressed) reads as LOW (this was easiest way to change software from physical buttons, where pressed = LOW) 
-	button1State = !digitalRead(button1Pin);
-	button2StateTEMP = !digitalRead(button2Pin);
-	button3StateTEMP = !digitalRead(button3Pin);
-	switchDoorState = digitalRead(switchDoorPin);
-	switchModeState = digitalRead(switchModePin);
-	sensorFillStateTEMP = digitalRead(sensorFillPin); // Maybe we don't need to measure this
+	button1State        = !digitalRead(button1Pin);
+	button2StateTEMP    = !digitalRead(button2Pin);
+	button3StateTEMP    = !digitalRead(button3Pin);
+	switchDoorState     =  digitalRead(switchDoorPin);
+	switchModeState     =  digitalRead(switchModePin);
+	sensorFillStateTEMP =  digitalRead(sensorFillPin); // Maybe we don't need to measure this
 
 	sensorFillState = HIGH; //v1.1: We now SET the sensorState HIGH.
 
@@ -679,7 +680,7 @@ void loop()
 			if (inCleaningMode == true)
 			{
 				sensorFillState = HIGH;
-				lcd.setCursor(0, 2); lcd.print(F("Filling--SENSOR OFF "));
+				lcd.setCursor(0, 2); lcd.print(F("Filling...Clean Mode"));
 
 				// New cleaning routine to help prevent solenoid sticking
 				// IF loop ensure that the fluttering only occurs in bursts, not continuously

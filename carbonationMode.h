@@ -3,27 +3,27 @@
 // CARBONATION MODE
 // =============================================================================================
 
-boolean inTimingLoop					= false;   
-float timerTime               = 0;					//Timer in sec   
-unsigned long timerStart      = 0;					//Init value of millis() going into loop in ms. MUST BE LONG INT!
-unsigned long timerTimeMs     = 0;					//Timer value in ms
-byte timerTimeMin             = 0;					//Timer value, minutes part
-byte timerTimeSec             = 0;					//Timer value, seconds part
-int P2Start;																//Initial regulator reading going into loop
-float timerShakeTime;												//Time of shaking in sec, less the number of 15 second rest periods               
-boolean inShakeState					= false;			//Whether or not should be shaking in given interval
-String shakeStateMessage;										//REST or SHAKE
-float pressureDipTarget;										//Target pressure dip goes down over time as liquid saturates. dipTarget decreases by factor of 1, 1/2, 1/3, 1/4...
-float percentEffort;												//Shows percent of dip target
-int pressureBegin;													//Pressure entering Carbonation Mode
-int pressureExit;														//Pressure exiting Carbonation Mode. Will be used for pressure check
-float OnePsi									= 12.7084;		//1 psi in raw pressure units
-float pressureDipTargetInit;								//Initial pressure slump user is trying to hit at T=0 in raw units (12.71 units per psi)
+boolean inTimingLoop			= false;   
+float timerTime					= 0;				//Timer in sec   
+unsigned long timerStart		= 0;				//Init value of millis() going into loop in ms. MUST BE LONG INT!
+unsigned long timerTimeMs		= 0;				//Timer value in ms
+byte timerTimeMin				= 0;				//Timer value, minutes part
+byte timerTimeSec				= 0;				//Timer value, seconds part
+int P2Start;										//Initial regulator reading going into loop
+float timerShakeTime;								//Time of shaking in sec, less the number of 15 second rest periods               
+boolean inShakeState			= false;			//Whether or not should be shaking in given interval
+String shakeStateMessage;							//REST or SHAKE
+float pressureDipTarget;							//Target pressure dip goes down over time as liquid saturates. dipTarget decreases by factor of 1, 1/2, 1/3, 1/4...
+float percentEffort;								//Shows percent of dip target
+int pressureBegin;									//Pressure entering Carbonation Mode
+int pressureExit;									//Pressure exiting Carbonation Mode. Will be used for pressure check
+float OnePsi					= 12.7084;			//1 psi in raw pressure units
+float pressureDipTargetInit;						//Initial pressure slump user is trying to hit at T=0 in raw units (12.71 units per psi)
 
 //Settable parameters
-int pressureDropMax						= 75;					//This is the max drop between beginning and and of Carbonation process allowed before flashing warning.
-int pressureDipTargetInitPSI	= 6;					//This sets the initial dip target. in V1.0, multiplier was 2.0. 
-int timeShift									=	60;					//v1.1 This is used for modified 1/T technique
+int pressureDropMax				= 75;				//This is the max drop between beginning and and of Carbonation process allowed before flashing warning.
+int pressureDipTargetInitPSI	= 6;				//This sets the initial dip target. in V1.0, multiplier was 2.0. 
+int timeShift					= 60;				//v1.1 This is used for modified 1/T technique
 
 pressureDipTargetInit = pressureDipTargetInitPSI * OnePsi;
 
