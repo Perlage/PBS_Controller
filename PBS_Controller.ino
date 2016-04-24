@@ -23,11 +23,11 @@ String(versionSoftwareTag) = "v1.3";			//Changed to 2-digit numbering system so 
 #include <LiquidCrystal_I2C.h>
 #include "floatToString.h"               
 #include <EEPROM.h>
-//#include <avr/pgmspace.h>                    // 1-26 Added for PROGMEM function // UNUSED now
-//#include <math.h>                            // Unused
+//#include <avr/pgmspace.h>						// 1-26 Added for PROGMEM function // UNUSED now
+//#include <math.h>								// Unused
 
-LiquidCrystal_I2C lcd(0x27, 20, 4);						 //This seems to work for new screens after Dec 12, 2014
-//LiquidCrystal_I2C lcd(0x3F,20,4);						   //This worked for original screens up until Dec, 2014
+LiquidCrystal_I2C lcd(0x27, 20, 4);				//This seems to work for new screens after Dec 12, 2014
+//LiquidCrystal_I2C lcd(0x3F,20,4);				//This worked for original screens up until Dec, 2014
 
 // Pin assignments
 const int button1Pin		= 0;      // pin for button1 B1 (Raise platform) RX=0;
@@ -870,11 +870,11 @@ void loop()
 		//Check toggle state of B3
 		button3StateTEMP = !digitalRead(button3Pin);
 		if (button3StateTEMP == HIGH && button3ToggleState == false) {  // ON release
-			button3ToggleState = true;                                   // Leaves buttonState LOW
+			button3ToggleState = true;                                  // Leaves buttonState LOW
 			button3State = LOW;
 		}
 		if (button3StateTEMP == LOW && button3ToggleState == true) {    // OFF push
-			button3State = HIGH;                                         // Exit WHILE loop
+			button3State = HIGH;                                        // Exit WHILE loop
 		}
 	}
 
