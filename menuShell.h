@@ -6,9 +6,10 @@ void menuExit()
 {
 	inMenuLoop = false;
 	lcd.clear();
+	printLcd(0, "FIZZIQ " + versionSoftwareTag);
 	lcd.setCursor(0, 2); lcd.print(F("Exiting menu...     "));
 	buzzer(250);
-	delay(500);  //Why the delay?
+	delay(750);  //To show message
 }
 
 void menuShell(boolean inMenuLoop)
@@ -55,8 +56,16 @@ void menuShell(boolean inMenuLoop)
 			button2State = !digitalRead(button2Pin);
 
 			lcd.setCursor(0, 0); lcd.print(F("***CLEANING MODE*** "));
-			lcd.setCursor(0, 1); lcd.print(F("B1: Enter Cleaning  "));
-			lcd.setCursor(0, 2); lcd.print(F("B3: Exit Cleaning   "));
+			
+			if (inCleaningMode == true) //PBSFIRM-136
+			{
+				lcd.setCursor(0, 1); lcd.print(F("B3: Exit Cleaning   "));
+			}
+			else
+			{
+				lcd.setCursor(0, 1); lcd.print(F("B1: Enter Cleaning  "));
+			}
+			messageLcdBlank(2);
 			messageLcdBlank(3);
 		}
 
@@ -64,8 +73,8 @@ void menuShell(boolean inMenuLoop)
 		{
 			inMenuLoop2 = true;
 			inMenuLoop1 = false;
-			button3State = !digitalRead(button3Pin);
 			buttonPush(button3Pin, light3Pin, 250); //v1.1 new function
+			button3State = !digitalRead(button3Pin);
 
 			lcd.setCursor(0, 0); lcd.print(F("   *** MENU 2 ***   "));
 			lcd.setCursor(0, 1); lcd.print(F("B1: Carbonation Mode"));
@@ -102,7 +111,7 @@ void menuShell(boolean inMenuLoop)
 			lcd.setCursor(0, 1); lcd.print(F("Press B1 to begin.  "));
 			//lcd.setCursor (0, 2); lcd.print (F("CAUTION: Fill Sensor"));
 			//lcd.setCursor (0, 3); lcd.print (F("disabled in Manual. "));
-			buzzOnce(750, light2Pin);
+			buzzOnce(500, light2Pin);
 		}
 		buzzedOnce = false;
 		while (button3State == LOW)
@@ -111,8 +120,8 @@ void menuShell(boolean inMenuLoop)
 			menuExit();
 			while (button3State == LOW)
 			{
-				button3State = !digitalRead(button3Pin);
-			}  // This catches loop until release 
+				button3State = !digitalRead(button3Pin); //This catches loop until release 
+			} 
 		}
 	}
 
@@ -141,24 +150,33 @@ void menuShell(boolean inMenuLoop)
 	while (menuOption12 == true)
 	{
 		readButtons();
-		while (button1State == LOW)
+		if (inCleaningMode == false)  //PBSFIRM-136: Only the relevant button should be active
 		{
-			button1State = !digitalRead(button1Pin);
-			inCleaningMode = true;
-			lcd.setCursor(0, 3); lcd.print(F("Cleaning Mode *ON*  "));
-			delay(1000);
-			menuOption12 = false;
+			while (button1State == LOW)
+			{
+				button1State = !digitalRead(button1Pin);
+				inCleaningMode = true;
+				lcd.setCursor(0, 3); lcd.print(F("Cleaning Mode *ON*  "));
+				buzzOnce(500, light1Pin);
+				delay(500);
+				menuOption12 = false;
+			}
 		}
-		while (button3State == LOW)
+		else
 		{
-			button3State = !digitalRead(button3Pin);
-			inCleaningMode = false;
-			lcd.setCursor(0, 3); lcd.print(F("Cleaning Mode *OFF* "));
-			delay(1000);
-			menuOption12 = false;
+			while (button3State == LOW)
+			{
+				button3State = !digitalRead(button3Pin);
+				inCleaningMode = false;
+				lcd.setCursor(0, 3); lcd.print(F("Cleaning Mode *OFF* "));
+				buzzOnce(500, light3Pin);
+				delay(500);
+				menuOption12 = false;
+			}
 		}
 		if (menuOption12 == false) {
 			menuExit();
+			buzzedOnce = false;
 		}
 	}
 
@@ -167,7 +185,8 @@ void menuShell(boolean inMenuLoop)
 
 	while (menuOption21 == true)
 	{
-#include "CarbonationMode.h"
+		//#include "CarbonationMode.h" 
+		//TODO Carbonation Mode has been commented out. FIX BEFORE RELEASE!
 	}
 
 	// Menu Option 22: MANUAL MODE
@@ -176,23 +195,27 @@ void menuShell(boolean inMenuLoop)
 	while (menuOption22 == true)
 	{
 		readButtons();
-		while (button1State == LOW)
+		while (!digitalRead(button1Pin) == LOW)
 		{
 			inManualModeLoop = true;
 			menuOption22 = false;
 			lcd.setCursor(0, 3); lcd.print(F("Manual Mode *ON*    "));
+			buzzOnce(500, light1Pin);
+			digitalWrite(light1Pin, HIGH); //Keeps light on while
+			//delay(500);
 
-			while (!digitalRead(button2Pin) == LOW) // This a secret diagnostic mode (B1 + B2) that disables all pressure checks!!!!
+			// This a secret diagnostic mode (B1 + B2) that disables all pressure checks! DOOR MUST BE OPEN
+			while (!digitalRead(button2Pin) == LOW) 
 			{
 				inDiagnosticMode = true;
-				buzzer(100);
 				digitalWrite(light2Pin, HIGH);
-				lcd.setCursor(0, 3); lcd.print(F("Diagnostic Mode *ON*"));
+				lcd.setCursor(0, 3); lcd.print(F("DIAGNOSTIC MODE *ON*"));
+				buzzer(500); 
+				//delay(500);
 			}
 			digitalWrite(light2Pin, LOW);
-			button1State = !digitalRead(button1Pin);
 		}
-
+		digitalWrite(light1Pin, LOW);
 		buzzedOnce = false;
 		if (menuOption22 == false)
 		{

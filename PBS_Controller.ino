@@ -16,7 +16,8 @@ Authored using Visual Studio Community after Apr 23, 2016
 
 
 //Version control variable
-String(versionSoftwareTag) = "v1.3";			//Changed to 2-digit numbering system so fits on screen. 1.3 = 1.2.2. Most recent change involved platform timing
+//String(versionSoftwareTag) = "v1.2.2";			//Changed to 2-digit numbering system so fits on screen. 1.3 = 1.2.2. Changed back to three.
+String(versionSoftwareTag) = "v b18d6d8";
 
 //Library includes
 #include <Wire.h> 
@@ -173,7 +174,7 @@ char buffer[25];                                 // Used in float to string conv
 
 void setup()
 {
-	buzzer(100); delay(50); buzzer(100); delay(50); buzzer(100);
+	buzzer(100); delay(50); buzzer(100); delay(50); buzzer(100); //Just to give some feedback asap
 
 	//Setup pins
 	pinMode(button1Pin, INPUT);  //Changed buttons from INPUT_PULLUP to PULLUP when installed touchbuttons, which use a pulldown resistor. 
@@ -218,7 +219,7 @@ void setup()
 	//===================================================================================
 
 	//===================================================================================
-	buzzer(100); delay(50); buzzer(100); delay(50); buzzer(100);
+	//buzzer(100); delay(50); buzzer(100); delay(50); buzzer(100);
 	messageInitial();
 
 	// EEPROM factory set-reset routine
@@ -266,9 +267,19 @@ void setup()
 	//LOW PRESSURE: THEN check for implausibly low gas pressure at start 
 	nullPressureStartup();
 
+	// v1.1 Only open door if platform state is UP (because that means there could be a bottle there)
+	if (platformStateUp)
+	{
+		doorOpen();
+		platformStateUp = false;
+		EEPROM.write(6, platformStateUp);
+	}
+
 	//Rewrite initial user message, in case pressure routines above wrote to screen
 	messageInitial();
-
+	
+	/*	//REMOVE "/*" FOR RELEASE==============
+	
 	//Traveling dots
 	for (int n = 12; n < 20; n++)
 	{
@@ -276,7 +287,7 @@ void setup()
 		delay(200);
 	}
 
-	//UNCOMMENT OUT NEXT 2 LINEs FOR SHOW
+	//UNCOMMENT OUT NEXT TWO LINES FOR SHOW
 	//relayOn(relay4Pin, true);  // Now Raise platform
 	//delay (1000);     
 
@@ -284,15 +295,6 @@ void setup()
 	digitalWrite(light1Pin, HIGH); delay(400);
 	digitalWrite(light2Pin, HIGH); delay(200);
 	digitalWrite(light3Pin, HIGH);
-
-	// Open door if closed. Moved this to make sure door opens before platform drops in case of unpressurized stuck bottle
-	// v1.1 only open door if platform state up (because that means there could be a bottle there)
-	if (platformStateUp)
-	{
-		doorOpen();
-		platformStateUp = false;
-		EEPROM.write(6, platformStateUp);
-	}
 
 	// Drop platform in case it is up, which had been raised before nullpressure checks
 	relayOn(relay4Pin, false);
@@ -309,6 +311,8 @@ void setup()
 	delay(200); digitalWrite(light2Pin, LOW);
 	delay(100); digitalWrite(light1Pin, LOW);
 	buzzer(1000);
+
+	*/	//REMOVE "*/" FOR RELEASE=============
 }
 
 //====================================================================================================================================
@@ -327,7 +331,7 @@ void loop()
 	button3StateTEMP    = !digitalRead(button3Pin);
 	switchDoorState     =  digitalRead(switchDoorPin);
 	switchModeState     =  digitalRead(switchModePin);
-	sensorFillStateTEMP =  digitalRead(sensorFillPin); // Maybe we don't need to measure this
+	sensorFillStateTEMP =  digitalRead(sensorFillPin); //TODO Maybe we don't need to measure this. Old variable??
 
 	sensorFillState = HIGH; //v1.1: We now SET the sensorState HIGH.
 
@@ -375,9 +379,10 @@ void loop()
 	// Added last condition to differentiate between depressurized vs never pressurized, so this message doesn't get shown in a hard re-foam situation
 	if (P1 - offsetP1 > pressureDeltaDown && platformStateUp == true && depressurizeLoopExecuted == false)
 	{
-		lcd.setCursor(0, 0); lcd.print(F("B2 toggles filling; "));
-		lcd.setCursor(0, 1); lcd.print(F("B3 toggles exhaust. "));
-		messageLcdReady(2);
+		lcd.setCursor(0, 0); lcd.print(F("B2 toggles filling  "));
+		lcd.setCursor(0, 1); lcd.print(F("B3 toggles exhaust  "));
+		lcd.setCursor(0, 2); lcd.print(F("B1 adjusts overfill "));
+		//messageLcdReady(2);
 	}
 	//v1.1 #97: this is to handle pressure buildup if user waits too long to drop platform, and valve is closed
 	if (platformStateUp == true && (P1 - offsetP1) > pressureDeltaDown && depressurizeLoopExecuted == true)
@@ -529,31 +534,31 @@ void loop()
 		// Only want to run this once per platformUp--not on subsequent repressurizations within a cycle 
 		if (platformLockedNew == true)
 		{
-			//delay(250);                                         //Make a slight delay in starting pressuriztion when door is first closed
-			pressurizeStartTime = millis();                       //startTime for no bottle test below. 
+			//delay(250);                                          //Make a slight delay in starting pressuriztion when door is first closed
+			pressurizeStartTime = millis();                        //startTime for no bottle test below. 
 		}
 
 		//Open gas-in relay, close gas-out
-		relayOn(relay3Pin, false);                              //close S3 if not already 
-		relayOn(relay2Pin, true);                               //open S2 to pressurize
+		relayOn(relay3Pin, false);                                 //close S3 if not already 
+		relayOn(relay2Pin, true);                                  //open S2 to pressurize
 		digitalWrite(light2Pin, HIGH);
 
 		//NO BOTTLE TEST: Check to see if bottle is pressurizing; if PTest not falling, must be no bottle 
-		while (platformLockedNew == true)                       //First time through loop with platform up 
+		while (platformLockedNew == true)                          //First time through loop with platform up 
 		{
-			pressurizeDuration = millis() - pressurizeStartTime;  //Get the duration
+			pressurizeDuration = millis() - pressurizeStartTime;   //Get the duration
 			if (pressurizeDuration < 50) {
-				PTest1 = analogRead(sensorP1Pin);                   //Take a reading at 50ms after pressurization begins. 50 ms gives time for pressure to settle down after S2 opens
+				PTest1 = analogRead(sensorP1Pin);                  //Take a reading at 50ms after pressurization begins. 50 ms gives time for pressure to settle down after S2 opens
 			}
 			if (pressurizeDuration < 200) {
-				PTest2 = analogRead(sensorP1Pin);                   //Take a reading at 100ms after pressurization begins
+				PTest2 = analogRead(sensorP1Pin);                  //Take a reading at 100ms after pressurization begins
 			}
 			if (pressurizeDuration > 200) {                        //After 100ms, test
-				if (PTest2 - PTest1 < 20) {                          //If there is less than a 15 unit difference, must be no bottle in place
+				if (PTest2 - PTest1 < 20) {                        //If there is less than a 15 unit difference, must be no bottle in place
 					button2State = HIGH;
-					relayOn(relay2Pin, false);                        //close S2 immediately
-					button2ToggleState = true;                        //Need this to keep toggle routine below from changing button2state back to LOW 
-					PTestFail = true;                                 //If true, no bottle. EXIT 
+					relayOn(relay2Pin, false);                     //close S2 immediately
+					button2ToggleState = true;                     //Need this to keep toggle routine below from changing button2state back to LOW 
+					PTestFail = true;                              //If true, no bottle. EXIT 
 				}
 				platformLockedNew = false;
 			}
@@ -570,18 +575,18 @@ void loop()
 		}
 
 		//Read sensors
-		switchDoorState = digitalRead(switchDoorPin); //Check door switch    
-		P1 = analogRead(sensorP1Pin); // Don't really even need to read P2; read it going into loop?
+		switchDoorState = digitalRead(switchDoorPin);					//Check door switch    
+		P1 = analogRead(sensorP1Pin);									// Don't really even need to read P2; read it going into loop?
 
 		//Check toggle state of B2
 		button2StateTEMP = !digitalRead(button2Pin);
 
 		if (button2StateTEMP == HIGH && button2ToggleState == false) {  //ON release
-			button2ToggleState = true;                                   //leave button state LOW
-			button2State = LOW;                                          //or make it low if it isn't yet
+			button2ToggleState = true;                                  //leave button state LOW
+			button2State = LOW;                                         //or make it low if it isn't yet
 		}
 		if (button2StateTEMP == LOW && button2ToggleState == true) {    //OFF push
-			button2State = HIGH;                                         //exit WHILE loop
+			button2State = HIGH;                                        //exit WHILE loop
 		}
 
 		//v1.1 Pressure test. If bottle hasn't reached pressureDeltaUp in 4 sec, something is wrong
@@ -620,7 +625,7 @@ void loop()
 			digitalWrite(light1Pin, LOW);
 
 			pressureDump();							// Dump any pressure that built up
-			doorOpen();									// Open door
+			doorOpen();								// Open door
 
 			while (!digitalRead(button3Pin) == HIGH)
 			{
@@ -646,65 +651,63 @@ void loop()
 	// v1.1 Changed the pressureDeltaMax condition to reflect fact that there are two sensors
 	// v1.1 #96: Added button3 exit shortcut
 	int startSolenoidCleaningCycle = millis(); // Get the start time for the solenoid cleaning cycle
-
-	if ((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) // #135 Absolutely ensures that cant fill without bottle, even in cleaning mode
+											   
+	// PBSFIRM-135: Last pressure condition in while statement absolutely ensures that there can be no filling without bottle, even in cleaning mode
+	while (button2State == LOW && button3State == HIGH && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true) && (P1 - offsetP1 >= pressureDeltaDown)) 
 	{
-		while (button2State == LOW && button3State == HIGH && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true))
-		{
-			inFillLoop = true;
-			inFillLoopExecuted = true; //This is an "is dirty" variable for counting lifetime bottles. Reset in platformUpLoop.
+		inFillLoop = true;
+		inFillLoopExecuted = true; //This is an "is dirty" variable for counting lifetime bottles. Reset in platformUpLoop.
 
-			//while the button is  pressed, fill the bottle: open S1 and S3
-			relayOn(relay1Pin, true);
-			relayOn(relay3Pin, true);
-			digitalWrite(light2Pin, HIGH);
+		//while the button is  pressed, fill the bottle: open S1 and S3
+		relayOn(relay1Pin, true);
+		relayOn(relay3Pin, true);
+		digitalWrite(light2Pin, HIGH);
 
-			//Check toggle state of B2    
-			button2StateTEMP = !digitalRead(button2Pin);
-			if (button2StateTEMP == HIGH && button2ToggleState == false) {  //ON release
-				button2ToggleState = true;                                   //Leaves buttonState LOW
-				button2State = LOW;                                          //Or makes it low
-			}
-			if (button2StateTEMP == LOW && button2ToggleState == true) {    //OFF push
-				button2State = HIGH;                                         //exit WHILE loop
-			}
-
-			//v1.1 Added shortcut to leave fill loop.
-			button3State = !digitalRead(button3Pin);
-
-			//Read and output pressure
-			pressureOutput();
-			printLcd(3, outputPSI_d);
-
-			// CLEANING MODE: If in Cleaning Mode, set FillState HIGH to disable sensor
-			if (inCleaningMode == true)
-			{
-				sensorFillState = HIGH;
-				lcd.setCursor(0, 2); lcd.print(F("Filling...Clean Mode"));
-
-				// New cleaning routine to help prevent solenoid sticking
-				// IF loop ensure that the fluttering only occurs in bursts, not continuously
-				// In case of flutterCycle =  5000  and flutterDuration = 1000, fluttering would happen for 1 sec in every 5
-				int flutterCycle = 5000;			// Solenoid cleaning cycle in millisec
-				int flutterDuration = 1000;		// Duration that solenoid opens and closes during cycle. 
-				if ((millis() - startSolenoidCleaningCycle) % flutterCycle > (flutterCycle - flutterDuration)) {
-					relayOn(relay1Pin, false); delay(100);
-					relayOn(relay1Pin, true);
-					relayOn(relay3Pin, false); delay(100);
-					relayOn(relay3Pin, true);
-				}
-				// End solenoid cleaning routine
-			}
-			else
-			{
-				//Read sensors
-				sensorFillState = digitalRead(sensorFillPin); //Check fill sensor
-				switchDoorState = digitalRead(switchDoorPin); //Check door switch 
-				lcd.setCursor(0, 2); lcd.print(F("Filling...          "));
-			}
-			lcd.setCursor(0, 0); lcd.print(F("B2 toggles filling; "));
-			lcd.setCursor(0, 1); lcd.print(F("Knob controls flow. "));
+		//Check toggle state of B2    
+		button2StateTEMP = !digitalRead(button2Pin);
+		if (button2StateTEMP == HIGH && button2ToggleState == false) {   //ON release
+			button2ToggleState = true;                                   //Leaves buttonState LOW
+			button2State = LOW;                                          //Or makes it low
 		}
+		if (button2StateTEMP == LOW && button2ToggleState == true) {     //OFF push
+			button2State = HIGH;                                         //exit WHILE loop
+		}
+
+		//v1.1 Added shortcut to leave fill loop.
+		button3State = !digitalRead(button3Pin);
+
+		//Read and output pressure
+		pressureOutput();
+		printLcd(3, outputPSI_d);
+
+		// CLEANING MODE: If in Cleaning Mode, set FillState HIGH to disable sensor
+		if (inCleaningMode == true)
+		{
+			sensorFillState = HIGH;
+			lcd.setCursor(0, 2); lcd.print(F("Filling...Clean Mode"));
+
+			// New cleaning routine to help prevent solenoid sticking
+			// IF loop ensure that the fluttering only occurs in bursts, not continuously
+			// In case of flutterCycle =  5000  and flutterDuration = 1000, fluttering would happen for 1 sec in every 5
+			int flutterCycle = 5000;			// Solenoid cleaning cycle in millisec
+			int flutterDuration = 1000;		// Duration that solenoid opens and closes during cycle. 
+			if ((millis() - startSolenoidCleaningCycle) % flutterCycle > (flutterCycle - flutterDuration)) {
+				relayOn(relay1Pin, false); delay(100);
+				relayOn(relay1Pin, true);
+				relayOn(relay3Pin, false); delay(100);
+				relayOn(relay3Pin, true);
+			}
+			// End solenoid cleaning routine
+		}
+		else
+		{
+			//Read sensors
+			sensorFillState = digitalRead(sensorFillPin); //Check fill sensor
+			switchDoorState = digitalRead(switchDoorPin); //Check door switch 
+			lcd.setCursor(0, 2); lcd.print(F("Filling...          "));
+		}
+		lcd.setCursor(0, 0); lcd.print(F("B2 toggles filling; "));
+		lcd.setCursor(0, 1); lcd.print(F("Knob controls flow. "));
 	}
 
 	// FILL LOOP EXIT ROUTINES
@@ -813,6 +816,14 @@ void loop()
 	pressureOutput(); //v1.1 Do we need to take a fresh reading here? Probably a good idea
 	float minPressureDiffSensorClear = 10; //v1.1. In psi
 
+	//PBSFIRM-134
+	pressurizeStartTime = millis();		//Get the start time of depressurization
+	unsigned long depressurizeDuration = 0;
+	unsigned long timeStamp1 = 0;
+	int  timeStamp2 = 0;
+	int checkInterval = 2500;			//Check pressure every 2500 ms
+	PTest1 = analogRead(sensorP1Pin);	//Take the first pressure reading for future comparison
+
 	//85: Added condition (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear) to allow depressurization with sensor LOW
 	while (button3State == LOW && ((sensorFillState == HIGH || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) //v1.1 added sensor override
 	{
@@ -875,6 +886,23 @@ void loop()
 		}
 		if (button3StateTEMP == LOW && button3ToggleState == true) {    // OFF push
 			button3State = HIGH;                                        // Exit WHILE loop
+		}
+
+		//PBSFIRM-134: Notify user to open exhaust knob if pressure not falling fast enough
+		depressurizeDuration = millis() - pressurizeStartTime;			//Get the duration since depressure loop entered
+		PTest2 = analogRead(sensorP1Pin);
+		timeStamp2 = depressurizeDuration - timeStamp1;					//Get timestamp of Ptest2 reading since last reading
+
+		if (timeStamp2 > checkInterval && timeStamp2 <120000)			//Check pressure each n checkIntervals after depressurization starts; quit at two min
+		{
+			timeStamp1 = timeStamp1 + checkInterval;					//Update reference time stamp each checkInterval
+			while (PTest1 - PTest2 <= 1)								//Test to see if the pressure if falling each checkInterval
+			{
+				lcd.setCursor(0, 2); lcd.print(F("Open Exhaust knob?  "));
+				buzzer(10); delay(100);
+				PTest2 = analogRead(sensorP1Pin);
+			}
+			PTest1 = PTest2;											//Update reference pressure variable each checkInterval
 		}
 	}
 

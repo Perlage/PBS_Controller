@@ -191,6 +191,7 @@ void pressureDump() //Must close S3 manually
 {
 	while (P1 - offsetP1 > pressureDeltaDown)
 	{
+		lcd.setCursor(0, 2); lcd.print(F("Ensure exhaust open.")); // PBSFIRM-132
 		relayOn(relay3Pin, true);
 		P1 = analogRead(sensorP1Pin);
 		pressureOutput();
