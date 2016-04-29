@@ -89,6 +89,7 @@ void doorOpen()
 	}
 	delay(250); // Added delay to prevent door from catching on latch
 	relayOn(relay6Pin, false);
+	delay(250); //PBSFIRM-143: Added to keep door opening message on screen longer
 	lcd.setCursor(0, 2); lcd.print(F("                    "));
 }
 

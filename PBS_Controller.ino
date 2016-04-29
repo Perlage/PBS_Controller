@@ -17,7 +17,7 @@ Authored using Visual Studio Community after Apr 23, 2016
 
 //Version control variable
 //String(versionSoftwareTag) = "v1.2.2";			//Changed to 2-digit numbering system so fits on screen. 1.3 = 1.2.2. Changed back to three.
-String(versionSoftwareTag) = "v b18d6d8";
+String(versionSoftwareTag) = "v 9f73395";
 
 //Library includes
 #include <Wire.h> 
@@ -278,7 +278,7 @@ void setup()
 	//Rewrite initial user message, in case pressure routines above wrote to screen
 	messageInitial();
 	
-	/*	//REMOVE "/*" FOR RELEASE==============
+	/*	//UNCOMMENT "/*" FOR RELEASE==============
 	
 	//Traveling dots
 	for (int n = 12; n < 20; n++)
@@ -312,7 +312,7 @@ void setup()
 	delay(100); digitalWrite(light1Pin, LOW);
 	buzzer(1000);
 
-	*/	//REMOVE "*/" FOR RELEASE=============
+	*/	//UNCOMMENT "*/" FOR RELEASE=============
 }
 
 //====================================================================================================================================
@@ -338,26 +338,26 @@ void loop()
 	//Check Button2 toggle state
 	//======================================================================
 
-	if (button2StateTEMP == LOW && button2ToggleState == false) {  //ON push
-		button2State = LOW;         //goto while loop
+	if (button2StateTEMP == LOW && button2ToggleState == false) {	//ON push
+		button2State = LOW;											//goto while loop
 	}
-	if (button2StateTEMP == LOW && button2ToggleState == true) {   //button still being held down after OFF push in while loop. 
-		button2State = HIGH;        //nothing happens--buttonState remains HIGH
+	if (button2StateTEMP == LOW && button2ToggleState == true) {	//button still being held down after OFF push in while loop. 
+		button2State = HIGH;										//nothing happens--buttonState remains HIGH
 	}
-	if (button2StateTEMP == HIGH && button2ToggleState == true) {  //OFF release
-		button2ToggleState = false; //buttonState remains HIGH
+	if (button2StateTEMP == HIGH && button2ToggleState == true) {	//OFF release
+		button2ToggleState = false;									//buttonState remains HIGH
 	}
 
 	//Check Button3 toggle state
 	//======================================================================
-	if (button3StateTEMP == LOW && button3ToggleState == false) {  //ON push
-		button3State = LOW;         //goto while loop
+	if (button3StateTEMP == LOW && button3ToggleState == false) {	//ON push
+		button3State = LOW;											//goto while loop
 	}
-	if (button3StateTEMP == LOW && button3ToggleState == true) {   //button still being held down after OFF push in while loop. 
-		button3State = HIGH;        //nothing happens--buttonState remains HIGH
+	if (button3StateTEMP == LOW && button3ToggleState == true) {	//button still being held down after OFF push in while loop. 
+		button3State = HIGH;										//nothing happens--buttonState remains HIGH
 	}
-	if (button3StateTEMP == HIGH && button3ToggleState == true) {  //OFF release
-		button3ToggleState = false; //buttonState remains HIGH
+	if (button3StateTEMP == HIGH && button3ToggleState == true) {	//OFF release
+		button3ToggleState = false;									//buttonState remains HIGH
 	}
 
 	// Give relevant instructions in null loop
@@ -366,8 +366,8 @@ void loop()
 	// The third case, platform up and door open, is written to screen and end of plaformUP routine
 	if (switchDoorState == LOW && platformStateUp == false)
 	{
-		lcd.setCursor(0, 0); lcd.print(F("B3 opens door;      "));
-		lcd.setCursor(0, 1); lcd.print(F("Press B2+B3 for Menu"));
+		lcd.setCursor(0, 0); lcd.print(F("B3 opens door       "));
+		lcd.setCursor(0, 1); lcd.print(F("B2+B3 opens Menu    "));
 		messageLcdReady(2);
 	}
 	// MessageInsertBottle
@@ -379,10 +379,8 @@ void loop()
 	// Added last condition to differentiate between depressurized vs never pressurized, so this message doesn't get shown in a hard re-foam situation
 	if (P1 - offsetP1 > pressureDeltaDown && platformStateUp == true && depressurizeLoopExecuted == false)
 	{
-		lcd.setCursor(0, 0); lcd.print(F("B2 toggles filling  "));
-		lcd.setCursor(0, 1); lcd.print(F("B3 toggles exhaust  "));
+		messageB2B3Toggles();
 		lcd.setCursor(0, 2); lcd.print(F("B1 adjusts overfill "));
-		//messageLcdReady(2);
 	}
 	//v1.1 #97: this is to handle pressure buildup if user waits too long to drop platform, and valve is closed
 	if (platformStateUp == true && (P1 - offsetP1) > pressureDeltaDown && depressurizeLoopExecuted == true)
@@ -440,7 +438,7 @@ void loop()
 	digitalWrite(light1Pin, LOW);
 
 	//======================================================================
-	//MULTI BUTTON COMBO ROUTINES
+	// MULTI BUTTON COMBO ROUTINES
 	//======================================================================
 
 	boolean inMenuLoop = false;
@@ -492,7 +490,6 @@ void loop()
 		}
 
 		lcd.setCursor(0, 2); lcd.print(F("Wait...             "));
-		//delay(750);  //This is to prevent nullPressure loop from kicking in
 		digitalWrite(light2Pin, LOW);
 	}
 
@@ -505,7 +502,7 @@ void loop()
 	}
 
 	// This routine takes action if pressure drops in idle loop. //This is probably not needed now that Pressurize loop has a pressure check
-	//idleLoopPressureDrop();
+	// idleLoopPressureDrop();
 
 	// =====================================================================================  
 	// PLATFORM RAISING LOOP
@@ -534,35 +531,34 @@ void loop()
 		// Only want to run this once per platformUp--not on subsequent repressurizations within a cycle 
 		if (platformLockedNew == true)
 		{
-			//delay(250);                                          //Make a slight delay in starting pressuriztion when door is first closed
-			pressurizeStartTime = millis();                        //startTime for no bottle test below. 
+			pressurizeStartTime = millis();							//startTime for no bottle test below. 
 		}
 
 		//Open gas-in relay, close gas-out
-		relayOn(relay3Pin, false);                                 //close S3 if not already 
-		relayOn(relay2Pin, true);                                  //open S2 to pressurize
+		relayOn(relay3Pin, false);									//close S3 if not already 
+		relayOn(relay2Pin, true);									//open S2 to pressurize
 		digitalWrite(light2Pin, HIGH);
 
 		//NO BOTTLE TEST: Check to see if bottle is pressurizing; if PTest not falling, must be no bottle 
-		while (platformLockedNew == true)                          //First time through loop with platform up 
+		while (platformLockedNew == true)							//First time through loop with platform up 
 		{
-			pressurizeDuration = millis() - pressurizeStartTime;   //Get the duration
+			pressurizeDuration = millis() - pressurizeStartTime;	//Get the duration
 			if (pressurizeDuration < 50) {
-				PTest1 = analogRead(sensorP1Pin);                  //Take a reading at 50ms after pressurization begins. 50 ms gives time for pressure to settle down after S2 opens
+				PTest1 = analogRead(sensorP1Pin);					//Take a reading at 50ms after pressurization begins. 50 ms gives time for pressure to settle down after S2 opens
 			}
-			if (pressurizeDuration < 200) {
-				PTest2 = analogRead(sensorP1Pin);                  //Take a reading at 100ms after pressurization begins
+			if (pressurizeDuration < 250) {
+				PTest2 = analogRead(sensorP1Pin);					//Take a reading at 100ms after pressurization begins
 			}
-			if (pressurizeDuration > 200) {                        //After 100ms, test
-				if (PTest2 - PTest1 < 20) {                        //If there is less than a 15 unit difference, must be no bottle in place
+			if (pressurizeDuration > 250) {							//After 100ms, test
+				if (PTest2 - PTest1 < 20) {							//If there is less than a 15 unit difference, must be no bottle in place
 					button2State = HIGH;
-					relayOn(relay2Pin, false);                     //close S2 immediately
-					button2ToggleState = true;                     //Need this to keep toggle routine below from changing button2state back to LOW 
-					PTestFail = true;                              //If true, no bottle. EXIT 
+					relayOn(relay2Pin, false);						//close S2 immediately
+					button2ToggleState = true;						//Need this to keep toggle routine below from changing button2state back to LOW 
+					PTestFail = true;								//If true, no bottle. EXIT 
 				}
 				platformLockedNew = false;
 			}
-			/*
+			///*
 			//This code works better than breakpoint. BP can't process messages fast enough
 			Serial.print ("T= ");
 			Serial.print (pressurizeDuration);
@@ -571,7 +567,7 @@ void loop()
 			Serial.print (" P2= ");
 			Serial.print (PTest2);
 			Serial.println ();
-			*/
+			//*/
 		}
 
 		//Read sensors
@@ -860,7 +856,7 @@ void loop()
 		if (inCleaningMode == true || !digitalRead(button1Pin) == LOW)
 		{
 			sensorFillState = HIGH;
-			lcd.setCursor(0, 2); lcd.print(F("Venting--SENSOR OFF"));
+			lcd.setCursor(0, 2); lcd.print(F("Venting--Clean Mode"));
 		}
 		else
 		{
@@ -869,13 +865,13 @@ void loop()
 			lcd.setCursor(0, 2); lcd.print(F("Depressurizing...   "));
 		}
 
-		lcd.setCursor(0, 0); lcd.print(F("B3 toggles venting; "));
+		lcd.setCursor(0, 0); lcd.print(F("B3 toggles venting  "));
 		messageRotator(10000, .5, 0);
 		if (messageID) {
-			lcd.setCursor(0, 1); lcd.print(F("B2: Burst tamping   "));
+			lcd.setCursor(0, 1); lcd.print(F("B2 burst tamping    "));
 		}
 		else {
-			lcd.setCursor(0, 1); lcd.print(F("B1: Overrides sensor"));
+			lcd.setCursor(0, 1); lcd.print(F("B1 overrides sensor "));
 		}
 
 		//Check toggle state of B3
@@ -896,9 +892,10 @@ void loop()
 		if (timeStamp2 > checkInterval && timeStamp2 <120000)			//Check pressure each n checkIntervals after depressurization starts; quit at two min
 		{
 			timeStamp1 = timeStamp1 + checkInterval;					//Update reference time stamp each checkInterval
-			while (PTest1 - PTest2 <= 1)								//Test to see if the pressure if falling each checkInterval
+			//Test to see if the pressure if falling each checkInterval. Second condition allows you a way out of loop.
+			while (PTest1 - PTest2 <= 1 && !digitalRead(button3Pin) == HIGH)
 			{
-				lcd.setCursor(0, 2); lcd.print(F("Open Exhaust knob?  "));
+				lcd.setCursor(0, 2); lcd.print(F("Open Exhaust knob..."));
 				buzzer(10); delay(100);
 				PTest2 = analogRead(sensorP1Pin);
 			}
@@ -982,7 +979,7 @@ void loop()
 		inDoorOpenLoop = false;
 		digitalWrite(light3Pin, LOW);
 		button3State = HIGH;
-		messageLcdWaiting();
+		//messageLcdWaiting(); //PBSFIRM-143
 	}
 
 	// END DOOR OPEN LOOP

@@ -185,7 +185,7 @@ void menuShell(boolean inMenuLoop)
 
 	while (menuOption21 == true)
 	{
-		//#include "CarbonationMode.h" 
+		#include "CarbonationMode.h" 
 		//TODO Carbonation Mode has been commented out. FIX BEFORE RELEASE!
 	}
 

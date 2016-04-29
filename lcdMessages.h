@@ -30,8 +30,8 @@ void messageLcdOpenDoor()
 
 void messageB2B3Toggles()
 {
-	lcd.setCursor(0, 0); lcd.print(F("B2 toggles filling; "));
-	lcd.setCursor(0, 1); lcd.print(F("B3 toggles exhaust. "));
+	lcd.setCursor(0, 0); lcd.print(F("B2 toggles filling  "));
+	lcd.setCursor(0, 1); lcd.print(F("B3 toggles exhaust  "));
 }
 
 /*
@@ -45,15 +45,15 @@ void messageInsertBottle()
 void messageInsertBottle()
 {
 
-	lcd.setCursor(0, 0); lcd.print(F("Insert bottle...    "));
-	lcd.setCursor(0, 1); lcd.print(F("B1 raises platform; "));
+	lcd.setCursor(0, 0); lcd.print(F("Insert bottle;      "));
+	lcd.setCursor(0, 1); lcd.print(F("B1 raises platform. "));
 	if (inCleaningMode == true)
 	{
 		lcd.setCursor(0, 2); lcd.print(F("In Cleaning Mode... "));
 	}
 	else
 	{
-		lcd.setCursor(0, 2); lcd.print(F("Watch fingers!      "));
+		lcd.setCursor(0, 2); lcd.print(F("Watch fingers...    "));
 	}
 }
 
