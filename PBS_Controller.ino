@@ -75,11 +75,6 @@ boolean sensorFillState              = HIGH;
 boolean switchDoorState              = HIGH;
 //boolean switchModeState              = HIGH; //LOW is Manual, HIGH (or up) is auto (normal)
 
-//Analog liquid detection
-int cLiquid;
-int conductLiquidThreshold	=		600;
-int conductFoamThreshold		=		600; //Open circuit = 1023; short = 0
- 
 
 //State variables 
 boolean inPressureNullLoop           = false;
@@ -160,6 +155,17 @@ boolean buzzedOnce                   = false;
 boolean inFillLoopExecuted           = false;    // True of FillLoop is dirty. Used to compute numberCycles
 char buffer[25];                                 // Used in float to string conv // 1-26 Changed from 25 to 20 //CHANGED BACK TO 25!! SEEMS TO BE IMPORTANT!
 
+
+//Analog liquid detection
+//Open circuit = 1023; short = 0
+int cLiquidInitFill;
+int cLiquidInitDepres;
+int cLiquid;
+int conductLiquidThreshold = 600;
+int conductFoamThreshold = 900;
+
+
+
 //======================================================================================
 // PROCESS LOCAL INCLUDES
 //======================================================================================
@@ -193,10 +199,9 @@ void setup()
   pinMode(light1Pin, OUTPUT); 
   pinMode(light2Pin, OUTPUT);
   pinMode(light3Pin, OUTPUT);
-  //pinMode(sensorFillPin, INPUT_PULLUP);  //INPUT_PULLUP uses internal Pullup and maybe additionally a larger (~65k) external pullup resistor
   pinMode(sensorFillPin, INPUT);           //INPUT and external pullup resistor
   pinMode(sensorFillPin2, INPUT);					 //New Analog technique	
-	pinMode(switchDoorPin, INPUT_PULLUP); 
+  pinMode(switchDoorPin, INPUT_PULLUP); 
   pinMode(buzzerPin, OUTPUT);
   
   //set all relay pins to high which is "off" for this relay
@@ -237,7 +242,7 @@ void setup()
   autoSiphonDuration10s  = EEPROM.read(3);    
   numberCycles01         = EEPROM.read(4);  //Write "ones" digit base 255    
   numberCycles10         = EEPROM.read(5);  //Write "tens" digit base 255
-  platformStateUp				=  EEPROM.read(6);  //Current valve for platformStateUp
+  platformStateUp		=  EEPROM.read(6);  //Current valve for platformStateUp
 	
   //Read routine for autoSiphon  
   autoSiphonDuration = autoSiphonDuration10s * 100; // Convert 10ths of sec to millisec
@@ -274,6 +279,7 @@ void setup()
 	//Rewrite initial user message, in case pressure routines above wrote to screen
   messageInitial(); 
 	
+  /*
 	//Traveling dots
 	for (int n = 12; n < 20; n++)
 	{
@@ -314,6 +320,7 @@ void setup()
   delay(200); digitalWrite(light2Pin, LOW);
   delay(100); digitalWrite(light1Pin, LOW);
   buzzer (1000);
+  */
 }
     
 //====================================================================================================================================
@@ -331,21 +338,27 @@ void loop()
   button2StateTEMP		= !digitalRead(button2Pin); 
   button3StateTEMP		= !digitalRead(button3Pin); 
   switchDoorState			=  digitalRead(switchDoorPin);
-  //switchModeState			=  digitalRead(switchModePin); 
-  //sensorFillStateTEMP =  digitalRead(sensorFillPin); // Maybe we don't need to measure this // Not using this
+  sensorFillState =			digitalRead(sensorFillPin); 
 
   sensorFillState		=  HIGH; //v1.1: We now SET the sensorState HIGH.
 	
+	//ANALOG SENSOR READ
 	cLiquid = analogRead(sensorFillPin2);
-	lcd.setCursor (16, 2); 
-	lcd.print (cLiquid);
 	
-  Serial.print ("Time = ");
-  Serial.print (millis());
+	//lcd.setCursor (16, 2); 
+	//lcd.print (cLiquid);
+
+	String convInt = floatToString(buffer, cLiquid, 0);
+	String outputInt = "Sensor: " + convInt;
+	printLcd(2, outputInt);
+
+	/*
+	Serial.print ("Time = ");
+	Serial.print (millis());
 	Serial.print (": cLiquidMain = ");
 	Serial.print (cLiquid);
 	Serial.println (); 
-	
+	*/
 
   //Check Button2 toggle state
   //======================================================================
@@ -380,7 +393,7 @@ void loop()
   {
 		lcd.setCursor (0, 0); lcd.print (F("B3 opens door;      "));
 		lcd.setCursor (0, 1); lcd.print (F("Press B2+B3 for Menu"));
-		messageLcdReady(2);
+		//messageLcdReady(2);
 	}
 	// MessageInsertBottle
 	if (switchDoorState == HIGH && platformStateUp == false)
@@ -391,7 +404,7 @@ void loop()
 	{
 		lcd.setCursor (0, 0); lcd.print (F("B2 toggles filling; "));
 		lcd.setCursor (0, 1); lcd.print (F("B3 toggles exhaust. "));
-		messageLcdReady(2);
+		//messageLcdReady(2);
 	}
   //v1.1 #97: this is to handle pressure buildup if user waits too long to drop platform, and valve is closed
 	if (platformStateUp == true && (P1 - offsetP1) > pressureDeltaDown && depressurizeLoopExecuted == true)
@@ -659,21 +672,30 @@ void loop()
   // v1.1 Changed the pressureDeltaMax condition to reflect fact that there are two sensors
 	// v1.1 #96: Added button3 exit shortcut
 	
-	cLiquid = analogRead(sensorFillPin2);
+	cLiquidInitFill = analogRead(sensorFillPin2);
 			
   int startSolenoidCleaningCycle = millis(); // Get the start time for the solenoid cleaning cycle
 	while(button2State == LOW && button3State == HIGH && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true)) 
   {     
-    
+		
+	  //ANALOG SENSOR READING
 		cLiquid = analogRead(sensorFillPin2);
+		
 		lcd.setCursor (16, 2);
 		lcd.print (cLiquid);
+
+		Serial.print("TimeFill = ");
+		Serial.print(millis());
+		Serial.print(": cLiquidFill = ");
+		Serial.print(cLiquid);
+		Serial.println();
 		
 		if(cLiquid < conductLiquidThreshold)
 		{
 			sensorFillState = LOW;
 		}
 		
+
 		inFillLoop = true;
     inFillLoopExecuted = true; //This is an "is dirty" variable for counting lifetime bottles. Reset in platformUpLoop.
 
@@ -768,17 +790,19 @@ void loop()
       relayOn(relay1Pin, true);
       relayOn(relay2Pin, true);
       
-      lcd.setCursor (0, 2); lcd.print (F("Adjusting level...  "));
+      lcd.setCursor (0, 2); lcd.print (F("Adjusting level"));
+
       delay(autoSiphonDuration); // This setting determines duration of autosiphon 
       relayOn(relay1Pin, false);
       relayOn(relay2Pin, false);
       
       //v1.1 Clear Sensor Routine
       //if (digitalRead(sensorFillPin) == LOW)
-			if (analogRead(sensorFillPin2) < conductLiquidThreshold)
+	  //Analog
+	  if (analogRead(sensorFillPin2) < conductLiquidThreshold)
       {
         lcd.setCursor (0, 2); lcd.print (F("Clearing Fill Sensor"));
-				delay(1000); //DEBUG? Delay to show above message. 
+		delay(1000); //DEBUG? Delay to show above message. 
       }  
       sensorFillState = HIGH; // v1.1
       button3State = LOW; // This make AUTO-depressurize after overfill
@@ -839,13 +863,13 @@ void loop()
 	int cLiquid1; //Variables for sensing foam on the basis of DIFFERENCES
 	int cLiquid2;
 	int cLiquidInit;
-	cLiquidInit = analogRead(sensorFillPin2);	
+	cLiquidInitDepres = analogRead(sensorFillPin2);	
 	
-			Serial.print ("Time = ");
-			Serial.print (millis());
-			Serial.print (": cLiquidInit = ");
-			Serial.print (cLiquidInit);
-			Serial.println ();
+	Serial.print ("TimeIdle = ");
+	Serial.print (millis());
+	Serial.print (": cLiquidInitDepress = ");
+	Serial.print (cLiquidInitDepres);
+	Serial.println ();
 	
 	//85: Added condition (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear) to allow depressurization with sensor LOW
   while(button3State == LOW && ((sensorFillState == HIGH  || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) //v1.1 added sensor override
@@ -855,12 +879,11 @@ void loop()
 		digitalWrite(light3Pin, HIGH);
 		
 		// New analog liquid sensor routine
-		//cLiquid = analogRead(sensorFillPin2);		
 		cLiquid1 = analogRead(sensorFillPin2);	
 		lcd.setCursor (16, 2);
 		lcd.print (cLiquid1);	
 		
-		Serial.print ("Time = ");
+		Serial.print ("Time1 = ");
 		Serial.print (millis());
 		Serial.print (": cLiquid1 = ");
 		Serial.print (cLiquid1);
@@ -871,19 +894,19 @@ void loop()
 		lcd.setCursor (16, 2);
 		lcd.print (cLiquid2);	
 
-		Serial.print ("Time = ");
+		Serial.print ("Time2 = ");
 		Serial.print (millis());
 		Serial.print (": cLiquid2 = ");
 		Serial.print (cLiquid2);
 		Serial.println ();
 		
-		//if(cLiquid < conductFoamThreshold)
+		if(cLiquid1 < conductFoamThreshold)
 		//if(cLiquid1 - cLiquid2 > 30 || cLiquid1 < conductFoamThreshold)
-		if(cLiquid2 < cLiquidInit - 100)		
+		//if(cLiquid2 < cLiquidInitDepres - 100)		
 		{
 			sensorFillState = LOW;
-					Serial.print ("FOAM!");
-					Serial.println ();
+			Serial.print ("FOAM!");
+			Serial.println ();
 		}
   
 		// Pressure output
