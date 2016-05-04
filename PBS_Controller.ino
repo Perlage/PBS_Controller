@@ -995,12 +995,17 @@ void loop()
 
       //v1.1 Clear Sensor Routine. This merely flashes a message
       //if (digitalRead(sensorFillPin) == LOW) // Commented out for analog
-			if (analogRead(sensorFillPin2) < conductFoamThreshold)
-      {
-	      lcd.setCursor (0, 2); lcd.print (F("Clearing Foam Sensor"));
-	      delay(1000); //DEBUG? Delay to show above message.
-      }      
-      sensorFillState = HIGH; //v1.1 Set the sensorState to HIGH
+		while (analogRead(sensorFillPin2) < conductFoamThreshold)
+		{
+			lcd.setCursor (0, 2); lcd.print (F("Clearing Foam Sensor"));
+			relayOn(relay3Pin, false);
+			relayOn(relay2Pin, true);
+			delay(100);    // Wait a bit before proceeding    
+			relayOn(relay2Pin, false);
+			relayOn(relay3Pin, true);
+			delay(250);
+		}      
+	sensorFillState = HIGH; //v1.1 Set the sensorState to HIGH
     }
 
     //CASE 3: Bottle was properly depressurized. If we reach here, the pressure must have reached threshold. Go to Platform lower loop. Note S3 still open
