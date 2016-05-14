@@ -42,6 +42,11 @@ void messageInsertBottle()
 }
 */
 
+void messageCleanMode(byte line)
+{
+	lcd.setCursor(0, line); lcd.print(F("In Cleaning Mode... "));
+}
+
 void messageInsertBottle()
 {
 
@@ -49,7 +54,7 @@ void messageInsertBottle()
 	lcd.setCursor(0, 1); lcd.print(F("B1 raises platform. "));
 	if (inCleaningMode == true)
 	{
-		lcd.setCursor(0, 2); lcd.print(F("In Cleaning Mode... "));
+		messageCleanMode(2);
 	}
 	else
 	{

@@ -16,8 +16,7 @@ Authored using Visual Studio Community after Apr 23, 2016
 
 
 //Version control variable
-//String(versionSoftwareTag) = "v1.2.2";			//Changed to 2-digit numbering system so fits on screen. 1.3 = 1.2.2. Changed back to three.
-String(versionSoftwareTag) = "v 9f73395";
+String(versionSoftwareTag) = "v1.4.0";			//Changed to 2-digit numbering system so fits on screen. 1.3 = 1.2.2. Changed back to three.
 
 //Library includes
 #include <Wire.h> 
@@ -278,7 +277,7 @@ void setup()
 	//Rewrite initial user message, in case pressure routines above wrote to screen
 	messageInitial();
 	
-	/*	//UNCOMMENT "/*" FOR RELEASE==============
+	//UNCOMMENT "/*" FOR RELEASE==============
 	
 	//Traveling dots
 	for (int n = 12; n < 20; n++)
@@ -312,7 +311,7 @@ void setup()
 	delay(100); digitalWrite(light1Pin, LOW);
 	buzzer(1000);
 
-	*/	//UNCOMMENT "*/" FOR RELEASE=============
+	//UNCOMMENT "*/" FOR RELEASE=============
 }
 
 //====================================================================================================================================
@@ -368,7 +367,14 @@ void loop()
 	{
 		lcd.setCursor(0, 0); lcd.print(F("B3 opens door       "));
 		lcd.setCursor(0, 1); lcd.print(F("B2+B3 opens Menu    "));
-		messageLcdReady(2);
+		if (inCleaningMode == true)
+		{
+			messageCleanMode(2);	//PBS-FIRM 145
+		}
+		else
+		{
+			messageLcdReady(2);
+		}
 	}
 	// MessageInsertBottle
 	if (switchDoorState == HIGH && platformStateUp == false)
@@ -558,7 +564,7 @@ void loop()
 				}
 				platformLockedNew = false;
 			}
-			///*
+			/*
 			//This code works better than breakpoint. BP can't process messages fast enough
 			Serial.print ("T= ");
 			Serial.print (pressurizeDuration);
@@ -567,7 +573,7 @@ void loop()
 			Serial.print (" P2= ");
 			Serial.print (PTest2);
 			Serial.println ();
-			//*/
+			*/
 		}
 
 		//Read sensors
@@ -686,7 +692,7 @@ void loop()
 			// IF loop ensure that the fluttering only occurs in bursts, not continuously
 			// In case of flutterCycle =  5000  and flutterDuration = 1000, fluttering would happen for 1 sec in every 5
 			int flutterCycle = 5000;			// Solenoid cleaning cycle in millisec
-			int flutterDuration = 1000;		// Duration that solenoid opens and closes during cycle. 
+			int flutterDuration = 1000;			// Duration that solenoid opens and closes during cycle. 
 			if ((millis() - startSolenoidCleaningCycle) % flutterCycle > (flutterCycle - flutterDuration)) {
 				relayOn(relay1Pin, false); delay(100);
 				relayOn(relay1Pin, true);
@@ -856,7 +862,7 @@ void loop()
 		if (inCleaningMode == true || !digitalRead(button1Pin) == LOW)
 		{
 			sensorFillState = HIGH;
-			lcd.setCursor(0, 2); lcd.print(F("Venting--Clean Mode"));
+			lcd.setCursor(0, 2); lcd.print(F("Foam sensor OFF... "));
 		}
 		else
 		{
@@ -960,6 +966,9 @@ void loop()
 	// ===========================================================================================
 
 	// Only activate door solenoid if door is already closed
+	
+	//PBSFIRM-146: By taking out automode condition, can close door and resume filling after depressurizing. This is problematic--WON'T FIX IN V1.4
+	//while (button3State == LOW && switchDoorState == LOW && (P1 - offsetP1) <= pressureDeltaDown)
 	while ((button3State == LOW || autoMode_1 == true) && switchDoorState == LOW && (P1 - offsetP1) <= pressureDeltaDown)
 	{
 		inDoorOpenLoop = true;
@@ -975,7 +984,7 @@ void loop()
 		{
 			button3State = !digitalRead(button3Pin); //This is a little trap for B3 button push so platform lower loop doesn't kick in
 		}
-		delay(500); // This gives a pause so platform lower loop doesn't kick in
+		delay(500); // TODO This gives a pause so platform lower loop doesn't kick in. Is this necessary?
 		inDoorOpenLoop = false;
 		digitalWrite(light3Pin, LOW);
 		button3State = HIGH;
@@ -1028,7 +1037,7 @@ void loop()
 		//close platform release 
 		relayOn(relay3Pin, false);
 		relayOn(relay5Pin, false);
-		relayOn(relay6Pin, false); //Release door solenoid // ??? is this still needed?
+		relayOn(relay6Pin, false); //TODO Release door solenoid // ??? is this still needed?
 		digitalWrite(light3Pin, LOW);
 
 		inPlatformLowerLoop = false;
