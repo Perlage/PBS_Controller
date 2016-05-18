@@ -1,6 +1,8 @@
 Debug/
 Visual Micro/
 Release/
+_vm/
+.vs/
 Output-MicroDebugTrace.txt
 PBS_Controller.atsuo
 Output-MicroBuild.txt
