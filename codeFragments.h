@@ -2,6 +2,46 @@
 // CODE FRAGMENTS 
 // =============================================================================================
 
+	//============================================================================================
+	// v1.1 This is a catch routine to remind the user to open the exhaust
+	// if there is foam present in the neck of bottle
+	//============================================================================================
+	
+	/*
+	// #91: added pressure condition, and B3 read; made a while statement
+	boolean inFoamCatchLoop = false;
+	while (!digitalRead (button3Pin) == HIGH && digitalRead(sensorFillPin) == LOW && switchDoorState == HIGH && platformStateUp == true && inFillLoopExecuted == true)
+	{
+		inFoamCatchLoop = true;
+		relayOn(relay3Pin, true); //just to make sure
+			
+		lcd.setCursor (0, 0); lcd.print (F("Foam detected...    "));
+		lcd.setCursor (0, 1); lcd.print (F("Open Exhaust valve, "));
+		lcd.setCursor (0, 2); lcd.print (F("press B3 to resume. "));
+						  
+		pressureOutput();
+		printLcd (3, outputPSI_b);
+		buzzOnce (500, light3Pin);
+		
+		if ((P1 - offsetP1) > pressureDeltaDown)
+		{
+			buzzer(50);
+			delay(50);
+		}
+	}
+	if (inFoamCatchLoop)
+	{
+		if (digitalRead(sensorFillPin) == HIGH)
+		{
+			buzzer (500);
+			lcd.setCursor (0, 0); lcd.print (F("Foam cleared;       ")); //If we got out of loop by foam clearing, say so; else just leave
+			messageLcdBlank(1);
+		}
+		buzzedOnce = false;
+		inFoamCatchLoop = false;
+	}
+  */
+
 //These two lines were for v1.0 method
 //int timerShakeTimeSegment = int ((timerTime) / 30) + 1; //Get the number of the 15sec shake interval
 //float pressureDipTarget = float (pressureDipTargetInit / timerShakeTimeSegment);   //So, dipTarget decreases by factor of 1, 1/2, 1/3, 1/4...
@@ -10,7 +50,6 @@
 // This is  A * 2 exp -(t-15)/b. Chose base 2 arbitrarily
 //float expFactor = 45;											//v1.1 USED IN EXPONENT APPROACH// 30 gives perfect geometric decay 1, 1/2, 1/4, 1/8. The larger the number, the slower the decay
 //pressureDipTarget = pressureDipTargetInit * pow (2, (-1 * (timerTime - 15) / expFactor));
-
 
 /*
 
