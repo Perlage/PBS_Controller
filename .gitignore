@@ -4,6 +4,6 @@ Release/
 _vm/
 .vs/
 PBS_Controller.vcxproj
-Output-MicroDebugTrace.txt
-PBS_Controller.atsuo
-Output-MicroBuild.txt
+.vs/PBS_Controller/v14/.suo
+
+__vm/
