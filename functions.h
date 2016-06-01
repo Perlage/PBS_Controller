@@ -166,10 +166,10 @@ void pressureOutput()
 	(convPSI2) = floatToString(buffer, PSI2, 1);
 	(convPSIdiff) = floatToString(buffer, PSIdiff, 1);
 
-	(outputPSI_rb) = "Keg:" + convPSI2 + " Bottle:" + convPSI1;	//19-20
+	(outputPSI_rb) = "Keg:" + convPSI2 + " Bottle:" + convPSI1;			//19-20
 	(outputPSI_r) = "Pressure:   " + convPSI2 + " psi";					//20-19
 	(outputPSI_b) = "Bottle:     " + convPSI1 + " psi";					//19-20
-	(outputPSI_d) = "Difference: " + convPSIdiff + " psi";			//20-19
+	(outputPSI_d) = "Difference: " + convPSIdiff + " psi";				//20-19
 }
 
 //FUNCTION: padString

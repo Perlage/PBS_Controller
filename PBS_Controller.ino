@@ -680,7 +680,8 @@ void loop()
 
 		//Read and output pressure
 		pressureOutput();
-		printLcd(3, outputPSI_d);
+		printLcd(3, outputPSI_rb); //Added for Autocarbonation
+		//printLcd(3, outputPSI_d);
 
 		// CLEANING MODE: If in Cleaning Mode, set FillState HIGH to disable sensor
 		if (inCleaningMode == true)
@@ -750,6 +751,9 @@ void loop()
 		{
 			relayOn(relay1Pin, true);
 			relayOn(relay2Pin, true);
+
+			pressureOutput();			//Added for Autocarbonation
+			printLcd(3, outputPSI_rb);	//Added for Autocarbonation
 
 			lcd.setCursor(0, 2); lcd.print(F("Adjusting level...  "));
 			delay(autoSiphonDuration); // This setting determines duration of autosiphon 
