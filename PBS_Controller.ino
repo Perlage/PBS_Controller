@@ -27,7 +27,7 @@ String(versionSoftwareTag) = "v1.4.0";		//Changed to 2-digit numbering system so
 //#include <math.h>							// Unused
 
 LiquidCrystal_I2C lcd(0x27, 20, 4);		//This seems to work for new screens after Dec 12, 2014
-//LiquidCrystal_I2C lcd(0x3F, 20, 4);			//This worked for original screens up until Dec, 2014 //This works again as of SN033, May 2016, and SN034.
+//LiquidCrystal_I2C lcd(0x3F, 20, 4);			//This worked for original screens up until Dec, 2014 //This works again for SN033, May 2016
 
 // Pin assignments
 const int button1Pin		= 0;      // pin for button1 B1 (Raise platform) RX=0;
