@@ -46,8 +46,8 @@ void printLcdArray(int scrLine, String newLcdString)
 
 void relayOn(int pinNum, boolean on) {
 	if (on) {
-		digitalWrite(pinNum, LOW);
-	} //turn relay on
+		digitalWrite(pinNum, LOW);  //turn relay on
+	} 
 	else {
 		digitalWrite(pinNum, HIGH); //turn relay off
 	}
@@ -95,6 +95,7 @@ void doorOpen()
 
 // FUNCTION: buzzer()
 // =======================================================================================
+
 void buzzer(int buzzDuration)
 {
 	digitalWrite(buzzerPin, HIGH);
@@ -147,7 +148,7 @@ void readButtons()
 void readStates()
 {
 	switchDoorState = digitalRead(switchDoorPin);
-	switchModeState = digitalRead(switchModePin);
+	//switchModeState = digitalRead(switchModePin);
 	sensorFillState = digitalRead(sensorFillPin);
 }
 

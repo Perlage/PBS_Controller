@@ -43,12 +43,17 @@ const int relay5Pin			= 9;      // pin for relay5 S5 (pneumatic lift gas out)
 const int relay6Pin			= 10;     // pin for relay6 S6 (door lock solenoid)
 const int sensorFillPin		= 11;     // pin for fill sensor F1 // DO NOT PUT THIS ON PIN 13!!
 const int switchDoorPin		= 12;     // pin for door switch
-const int buzzerPin			= 13;     // pin for buzzer
+
+const int buzzerPin			= 13;    // pin for buzzer
+const int relay8Pin			= A3;     // V2 pin for relay 8 (DEPRESSURIZE KEG)
 
 const int sensorP2Pin		= A0;     // pin for pressure sensor 2 // REGULATOR PRESSURE--BOTTOM sensor on PCB
 const int sensorP1Pin		= A1;     // pin for pressure sensor 1 // BOTTLE PRESSURE--TOP sensor on PCB
-const int switchModePin		= A2;     // OPEN PIN
-const int light1Pin			= A3;     // pin for button1 light 
+
+//const int switchModePin		= 101;    // V2 assign to nonexistent pin
+const int relay7Pin			= A2;     // V2 REPLACEMENT OF SECONDARY REG
+
+const int light1Pin			= 100;     // pin for button1 light 
 const int light2Pin			= A4;     // pin for button2 light
 const int light3Pin			= A5;     // pin for button3 light
 
@@ -71,10 +76,12 @@ boolean relay3State = HIGH;
 boolean relay4State = HIGH;
 boolean relay5State = HIGH;
 boolean relay6State = HIGH;
+boolean relay7State = HIGH; //v2
+boolean relay8State = HIGH; //v2
 boolean sensorFillState = HIGH;
 boolean sensorFillStateTEMP = HIGH;
 boolean switchDoorState = HIGH;
-boolean switchModeState = HIGH; //LOW is Manual, HIGH (or up) is auto (normal)
+//boolean switchModeState = HIGH; //LOW is Manual, HIGH (or up) is auto (normal)
 
 //State variables 
 boolean inPressureNullLoop = false;
@@ -191,8 +198,10 @@ void setup()
 	//pinMode(sensorFillPin, INPUT_PULLUP);  //INPUT_PULLUP uses internal Pullup and maybe additionally a larger (~65k) external pullup resistor
 	pinMode(sensorFillPin, INPUT);           //INPUT and external pullup resistor
 	pinMode(switchDoorPin, INPUT_PULLUP);
-	pinMode(switchModePin, INPUT_PULLUP);
+	//pinMode(switchModePin, INPUT_PULLUP);
 	pinMode(buzzerPin, OUTPUT);
+	pinMode(relay7Pin, OUTPUT); //V2 AUTOCARBONATION 2NDARY REG
+	pinMode(relay8Pin, OUTPUT); //V2 AUTOCARBONATION
 
 	//set all relay pins to high which is "off" for this relay
 	digitalWrite(relay1Pin, HIGH);
@@ -201,6 +210,8 @@ void setup()
 	digitalWrite(relay4Pin, HIGH);
 	digitalWrite(relay5Pin, HIGH);
 	digitalWrite(relay6Pin, HIGH);
+	digitalWrite(relay7Pin, HIGH); //v2 (Regulator)
+	digitalWrite(relay8Pin, HIGH); //v2
 
 	//set to HIGH which open (off) for touchbuttons 
 	digitalWrite(button1Pin, HIGH);
@@ -264,7 +275,7 @@ void setup()
 	pressurizedBottleStartup();
 
 	//LOW PRESSURE: THEN check for implausibly low gas pressure at start 
-	nullPressureStartup();
+	//nullPressureStartup(); //v2 COMMENTED OUT FOR AUTOCARBONATION
 
 	// v1.1 Only open door if platform state is UP (because that means there could be a bottle there)
 	if (platformStateUp)
@@ -278,7 +289,7 @@ void setup()
 	messageInitial();
 	
 	//UNCOMMENT "/*" FOR RELEASE==============
-	
+	/*
 	//Traveling dots
 	for (int n = 12; n < 20; n++)
 	{
@@ -310,7 +321,7 @@ void setup()
 	delay(200); digitalWrite(light2Pin, LOW);
 	delay(100); digitalWrite(light1Pin, LOW);
 	buzzer(1000);
-
+	*/
 	//UNCOMMENT "*/" FOR RELEASE=============
 }
 
@@ -320,6 +331,18 @@ void setup()
 
 void loop()
 {
+	relayOn(relay7Pin, true);
+	delay(500);
+	relayOn(relay7Pin, false);
+	delay(1000);
+
+	relayOn(relay8Pin, true);
+	delay(500);
+	relayOn(relay8Pin, false);
+	//digitalWrite(relay8Pin, LOW);
+	delay(2000);
+	
+	
 	//MAIN LOOP IDLE FUNCTIONS
 	//=====================================================================
 
@@ -329,7 +352,7 @@ void loop()
 	button2StateTEMP    = !digitalRead(button2Pin);
 	button3StateTEMP    = !digitalRead(button3Pin);
 	switchDoorState     =  digitalRead(switchDoorPin);
-	switchModeState     =  digitalRead(switchModePin);
+	//switchModeState     =  digitalRead(switchModePin);
 	sensorFillStateTEMP =  digitalRead(sensorFillPin); //TODO Maybe we don't need to measure this. Old variable??
 
 	sensorFillState = HIGH; //v1.1: We now SET the sensorState HIGH.
