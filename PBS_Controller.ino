@@ -7,6 +7,7 @@ Author:
 	Evan Wallace
 	Perlage Systems, Inc.
 	Seattle, WA 98101 USA
+	evan@perlagesystems.com
 
 Copyright 2013-2016  All rights reserved
 Authored using Visual Studio Community after Apr 23, 2016
