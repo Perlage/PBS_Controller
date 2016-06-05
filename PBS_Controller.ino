@@ -273,6 +273,7 @@ void setup()
 
 	//NULL PRESSURE: Check for stuck pressurized bottle
 	pressurizedBottleStartup();
+	digitalWrite(relay3Pin, HIGH); //v2 Now close
 
 	//LOW PRESSURE: THEN check for implausibly low gas pressure at start 
 	//nullPressureStartup(); //v2 COMMENTED OUT FOR AUTOCARBONATION
@@ -331,17 +332,30 @@ void setup()
 
 void loop()
 {
-	relayOn(relay7Pin, true);
-	delay(500);
+	int pressureReg = 40 * 12.71;
+
+
+	while(P2 - offsetP2 < pressureReg)
+	{
+		relayOn(relay7Pin, true);
+		pressureOutput();
+		printLcd(3, outputPSI_rb);
+	}
 	relayOn(relay7Pin, false);
-	delay(1000);
+	
+	/*
+	relayOn(relay7Pin, true);
+	delay(2500);
+	relayOn(relay7Pin, false);
+	delay(2500);
 
 	relayOn(relay8Pin, true);
-	delay(500);
+	delay(2500);
 	relayOn(relay8Pin, false);
 	//digitalWrite(relay8Pin, LOW);
-	delay(2000);
-	
+	//delay(2000);
+	*/
+
 	
 	//MAIN LOOP IDLE FUNCTIONS
 	//=====================================================================
@@ -445,11 +459,11 @@ void loop()
 	pressureOutput();
 	if (P1 - offsetP1 > pressureDeltaDown || platformStateUp == true)
 	{
-		printLcd(3, outputPSI_b);
+		printLcd(3, outputPSI_rb);
 	}
 	else
 	{
-		printLcd(3, outputPSI_r);
+		printLcd(3, outputPSI_rb);
 	}
 
 	//=====================================================================
