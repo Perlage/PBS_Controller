@@ -14,6 +14,8 @@ void pressurizedBottleStartup()
 	while (P1 - offsetP1 > pressureDeltaDown)
 	{
 		inPressurizedBottleLoop = true;
+		
+		analogWrite(propSolPin, 255); //V2 
 
 		// Relay3 already opened in variable initialization
 
