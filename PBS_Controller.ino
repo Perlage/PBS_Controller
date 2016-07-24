@@ -16,7 +16,7 @@ Authored using Visual Studio Community after Apr 23, 2016
 
 
 //Version control variable
-String(versionSoftwareTag) = "v1.4.0";		//Changed to 2-digit numbering system so fits on screen. 1.3 = 1.2.2. Changed back to three.
+String(versionSoftwareTag) = "AutoCarb";		//Changed to 2-digit numbering system so fits on screen. 1.3 = 1.2.2. Changed back to three.
 
 //Library includes
 #include <Wire.h> 
