@@ -4,7 +4,7 @@
 FIZZIQ Cocktail Bottling System
 
 Author:
-	Evan Wallace
+	R. Evan Wallace
 	Perlage Systems, Inc.
 	Seattle, WA 98101 USA
 	evan@perlagesystems.com
