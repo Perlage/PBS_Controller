@@ -27,8 +27,8 @@ String(versionSoftwareTag) = "v1.4.0";		//Changed to 2-digit numbering system so
 //#include <avr/pgmspace.h>					// 1-26 Added for PROGMEM function // UNUSED now
 //#include <math.h>							// Unused
 
-LiquidCrystal_I2C lcd(0x27, 20, 4);		//This seems to work for new screens after Dec 12, 2014
-//LiquidCrystal_I2C lcd(0x3F, 20, 4);			//This worked for original screens up until Dec, 2014 //This works again for SN033, May 2016
+LiquidCrystal_I2C lcd(0x27, 20, 4);			//This seems to work for new screens after Dec 12, 2014
+//LiquidCrystal_I2C lcd(0x3F, 20, 4);		//This worked for original screens up until Dec, 2014 //This works again for SN033, May 2016
 
 // Pin assignments
 const int button1Pin		= 0;      // pin for button1 B1 (Raise platform) RX=0;
@@ -190,7 +190,7 @@ void setup()
 	pinMode(light2Pin, OUTPUT);
 	pinMode(light3Pin, OUTPUT);
 	//pinMode(sensorFillPin, INPUT_PULLUP);  //INPUT_PULLUP uses internal Pullup and maybe additionally a larger (~65k) external pullup resistor
-	pinMode(sensorFillPin, INPUT);           //INPUT and external pullup resistor
+	pinMode(sensorFillPin, INPUT);           //INPUT and external pullup resistor. 1st 10 units used INPUT_PULLUP
 	pinMode(switchDoorPin, INPUT_PULLUP);
 	pinMode(switchModePin, INPUT_PULLUP);
 	pinMode(buzzerPin, OUTPUT);
@@ -323,6 +323,8 @@ void loop()
 {
 	//MAIN LOOP IDLE FUNCTIONS
 	//=====================================================================
+
+	platformBoost(); //To prevent platform slump over time
 
 	// Read the state of buttons and sensors
 	// Boolean NOT (!) added for touchbuttons so that HIGH button state (i.e., button pressed) reads as LOW (this was easiest way to change software from physical buttons, where pressed = LOW) 
@@ -661,6 +663,8 @@ void loop()
 		inFillLoop = true;
 		inFillLoopExecuted = true; //This is an "is dirty" variable for counting lifetime bottles. Reset in platformUpLoop.
 
+		platformBoost();	//Boost platform pressure periodically
+
 		//while the button is  pressed, fill the bottle: open S1 and S3
 		relayOn(relay1Pin, true);
 		relayOn(relay3Pin, true);
@@ -829,7 +833,9 @@ void loop()
 
 	//85: Added condition (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear) to allow depressurization with sensor LOW
 	while (button3State == LOW && ((sensorFillState == HIGH || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) //v1.1 added sensor override
-	{
+	{		
+		platformBoost();	//Boost platform pressure periodically
+		
 		inDepressurizeLoop = true;
 		relayOn(relay3Pin, true); //Open Gas Out solenoid
 		digitalWrite(light3Pin, HIGH);

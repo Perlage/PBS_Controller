@@ -205,6 +205,7 @@ void menuShell(boolean inMenuLoop)
 			//delay(500);
 
 			// This a secret diagnostic mode (B1 + B2) that disables all pressure checks! DOOR MUST BE OPEN
+			// A 187ml bottle will fill in 4 seconds in this mode
 			while (!digitalRead(button2Pin) == LOW) 
 			{
 				inDiagnosticMode = true;

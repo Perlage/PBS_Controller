@@ -319,5 +319,17 @@ void readButtonCatch(byte Id, byte buttonPin, byte lightPin) //pass in button1Pi
 	buttonState[Id] = LOW;
 }
 
-
-
+//FUNCTION: PlatformBoost 
+//This periodically boosts the pressure in the pnuematic cylinder
+//========================================================================================
+void platformBoost()
+{
+	if ((millis() % 10000) > 9500 && platformStateUp == true && (P1 - offsetP1 > pressureDeltaDown))
+		//If modulo 10000 of the total time the sketch has been running, millis(), is over 9500, 
+		//and platform up, and bottle has some pressure, then open R4/S4
+	{
+		relayOn(relay4Pin, true);	//Open S4
+		delay(500);					//Leave S4 open for 500 ms
+		relayOn(relay4Pin, false);	//Close S4  
+	}
+}

@@ -82,6 +82,8 @@ void manualModeLoop()
 			platformUpLoop();
 		}
 
+		platformBoost(); //To make sure platform doesn't slump
+
 		// B1: GAS IN ================================================================
 		if ((button1State == LOW && platformStateUp == true && switchDoorState == LOW) || (button1State == LOW && inDiagnosticMode == true)) //PBSFIRM-132: Allows S2 to be opened independently in Diagnostic Mode
 		{

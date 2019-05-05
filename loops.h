@@ -59,7 +59,7 @@ void platformUpLoop()
 			//beep on platform lockin
 			buzzer(500);
 
-			relayOn(relay4Pin, true);  // Slight leak causes platform to fall over time--so leave open 
+			relayOn(relay4Pin, false);  // Slight leak causes platform to fall over time--so leave open 5/4/2019 NOW CLOSING SO S4/R4 DON'T OVERHEAT
 			relayOn(relay5Pin, false);
 			digitalWrite(light1Pin, LOW); //Decided to turn this off. Lights should be lit only if pressing button or releasing it can change a state. 
 		}
