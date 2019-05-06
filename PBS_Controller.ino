@@ -17,7 +17,7 @@ Authored using Visual Studio Community after Apr 23, 2016
 
 
 //Version control variable
-String(versionSoftwareTag) = "v1.4.0";		//Changed to 2-digit numbering system so fits on screen. 1.3 = 1.2.2. Changed back to three.
+String(versionSoftwareTag) = "v1.4.1";		//Changed to 2-digit numbering system so fits on screen. 1.3 = 1.2.2. Changed back to three.
 
 //Library includes
 #include <Wire.h> 
@@ -618,6 +618,17 @@ void loop()
 	if (inPressurizeLoop)
 	{
 		inPressurizeLoop = false;
+
+		//This routine "exercises" Relay2, which may open only once/cycle in normal operation
+		relayOn(relay2Pin, false);
+		delay(100);
+		relayOn(relay2Pin, true);
+		delay(100);
+		relayOn(relay2Pin, false);
+		delay(100);
+		relayOn(relay2Pin, true);
+		delay(100);
+		//End R2 exercise routine
 
 		relayOn(relay2Pin, false);       // close S2 because we left PressureLoop
 		digitalWrite(light2Pin, LOW);    // Turn off B2 light
