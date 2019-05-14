@@ -812,6 +812,7 @@ void loop()
 					while (!digitalRead(button2Pin) == HIGH)
 					{
 						//Don't like the flashing lights--slows down button inputs
+						platformBoost();	//In case user gets stuck here, boost platform
 					}
 					buzzedOnce = false;
 					button2ToggleState = false; // button2State is still LOW, with toggleState true. Setting toggleState to false should be like pressing Fill again
