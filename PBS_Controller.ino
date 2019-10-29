@@ -838,17 +838,18 @@ void loop()
 	float minPressureDiffSensorClear = 10; //v1.1. In psi
 
 	//PBSFIRM-134
+	//FZQFIRM-2
 	unsigned long depressurizeStartTime = millis();	//Get the start time of depressurization
 	unsigned long depressurizeDuration = 0;
 	unsigned long timeStamp1 = 0;
 	unsigned long timeStamp2 = 0;		//Changed from int to unsigned long 10/28/2019
-	long int maxTimeS3 = 120000;		//Maximum time we allow S3 to be open (prevents overheating)
+	long int maxTimeS3 = 120000;		//Maximum time we allow S3 to be open in milli sec (prevents overheating)
 	int checkInterval = 2500;			//Check pressure every 2500 ms
 	PTest1 = analogRead(sensorP1Pin);	//Take the first pressure reading for future comparison
 
 	//85: Added condition (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear) to allow depressurization with sensor LOW
 	//v1.1 added sensor override; 
-	//Added depressurizeDuration condition 10/28/2019
+	//FZQFIRM-2: Added depressurizeDuration condition (10/28/2019)
 	while (button3State == LOW  && depressurizeDuration < maxTimeS3 && ((sensorFillState == HIGH || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown))
 	{		
 		platformBoost();	//Boost platform pressure periodically
@@ -919,7 +920,7 @@ void loop()
 		PTest2 = analogRead(sensorP1Pin);
 		timeStamp2 = depressurizeDuration - timeStamp1;					//Get timestamp of Ptest2 reading since last reading
 
-		if (timeStamp2 > checkInterval)					//Check pressure each n checkIntervals after depressurization starts
+		if (timeStamp2 > checkInterval)									//Check pressure each n checkIntervals after depressurization starts
 		{
 			timeStamp1 = timeStamp1 + checkInterval;					//Update reference time stamp each checkInterval
 			//Test to see if the pressure if falling each checkInterval. depressurizeDuration ensures S3 doesn't stay on too long and get hot
@@ -944,12 +945,13 @@ void loop()
 		// Turn off Light 1 if on
 		digitalWrite(light1Pin, LOW);
 
-		// CASE 1: Button3 released, OR S3 has been open too long
+		// CASE 1: Button3 released, OR S3 has been open too long (10/28/2019)
 		if (button3State == HIGH || depressurizeDuration > maxTimeS3)
 		{
-			relayOn(relay3Pin, false);		//Used to repressurize here; now we don't  
+			relayOn(relay3Pin, false);	
 			lcd.setCursor(0, 1); lcd.print(F("B2 toggles filling. "));	//Overwrites second line on exit
-			button3State = HIGH;			//Turn B3 off in case that depressurizeDuration was reached (10/28/2019)
+			button3State = HIGH;										
+			//Turn B3 off in case that depressurizeDuration limit was reached as opposed to B3 push. This puts machine in idle loop just as if B3 stopped depressurization (10/28/2019)
 		}
 
 		// CASE 2: Foam tripped sensor
