@@ -17,7 +17,9 @@ Authored using Visual Studio Community after Apr 23, 2016
 
 
 //Version control variable
-String(versionSoftwareTag) = "v1.4.1";		//Changed to 2-digit numbering system so fits on screen. 1.3 = 1.2.2. Changed back to three.
+String(versionSoftwareTag) = "v1.4.2";
+//v1.4.1 includes changes to flutter S4 to prevent it from being open too long and overheating
+//v1.4.2 includes changes to prevent S3 from being open for too long and overheating
 
 //Library includes
 #include <Wire.h> 
@@ -836,15 +838,18 @@ void loop()
 	float minPressureDiffSensorClear = 10; //v1.1. In psi
 
 	//PBSFIRM-134
-	pressurizeStartTime = millis();		//Get the start time of depressurization
+	unsigned long depressurizeStartTime = millis();	//Get the start time of depressurization
 	unsigned long depressurizeDuration = 0;
 	unsigned long timeStamp1 = 0;
-	int  timeStamp2 = 0;
+	unsigned long timeStamp2 = 0;		//Changed from int to unsigned long 10/28/2019
+	long int maxTimeS3 = 120000;		//Maximum time we allow S3 to be open (prevents overheating)
 	int checkInterval = 2500;			//Check pressure every 2500 ms
 	PTest1 = analogRead(sensorP1Pin);	//Take the first pressure reading for future comparison
 
 	//85: Added condition (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear) to allow depressurization with sensor LOW
-	while (button3State == LOW && ((sensorFillState == HIGH || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown)) //v1.1 added sensor override
+	//v1.1 added sensor override; 
+	//Added depressurizeDuration condition 10/28/2019
+	while (button3State == LOW  && depressurizeDuration < maxTimeS3 && ((sensorFillState == HIGH || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown))
 	{		
 		platformBoost();	//Boost platform pressure periodically
 		
@@ -910,19 +915,20 @@ void loop()
 		}
 
 		//PBSFIRM-134: Notify user to open exhaust knob if pressure not falling fast enough
-		depressurizeDuration = millis() - pressurizeStartTime;			//Get the duration since depressure loop entered
+		depressurizeDuration = millis() - depressurizeStartTime;		//Get the duration since depressure loop entered
 		PTest2 = analogRead(sensorP1Pin);
 		timeStamp2 = depressurizeDuration - timeStamp1;					//Get timestamp of Ptest2 reading since last reading
 
-		if (timeStamp2 > checkInterval && timeStamp2 <120000)			//Check pressure each n checkIntervals after depressurization starts; quit at two min
+		if (timeStamp2 > checkInterval)					//Check pressure each n checkIntervals after depressurization starts
 		{
 			timeStamp1 = timeStamp1 + checkInterval;					//Update reference time stamp each checkInterval
-			//Test to see if the pressure if falling each checkInterval. Second condition allows you a way out of loop.
-			while (PTest1 - PTest2 <= 1 && !digitalRead(button3Pin) == HIGH)
+			//Test to see if the pressure if falling each checkInterval. depressurizeDuration ensures S3 doesn't stay on too long and get hot
+			while (PTest1 - PTest2 <= 1 && !digitalRead(button3Pin) == HIGH && depressurizeDuration < maxTimeS3)
 			{
 				lcd.setCursor(0, 2); lcd.print(F("Open Exhaust knob..."));
 				buzzer(10); delay(100);
 				PTest2 = analogRead(sensorP1Pin);
+				depressurizeDuration = millis() - depressurizeStartTime;//Update depressurizeDuration
 			}
 			PTest1 = PTest2;											//Update reference pressure variable each checkInterval
 		}
@@ -938,11 +944,12 @@ void loop()
 		// Turn off Light 1 if on
 		digitalWrite(light1Pin, LOW);
 
-		// CASE 1: Button3 released
-		if (button3State == HIGH)
+		// CASE 1: Button3 released, OR S3 has been open too long
+		if (button3State == HIGH || depressurizeDuration > maxTimeS3)
 		{
-			relayOn(relay3Pin, false);     //Used to repressurize here; now we don't  
-			lcd.setCursor(0, 1); lcd.print(F("B2 toggles filling. ")); //Overwrites second line on exit
+			relayOn(relay3Pin, false);		//Used to repressurize here; now we don't  
+			lcd.setCursor(0, 1); lcd.print(F("B2 toggles filling. "));	//Overwrites second line on exit
+			button3State = HIGH;			//Turn B3 off in case that depressurizeDuration was reached (10/28/2019)
 		}
 
 		// CASE 2: Foam tripped sensor
