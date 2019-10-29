@@ -843,7 +843,7 @@ void loop()
 	unsigned long depressurizeDuration = 0;
 	unsigned long timeStamp1 = 0;
 	unsigned long timeStamp2 = 0;		//Changed from int to unsigned long 10/28/2019
-	long int maxTimeS3 = 120000;		//Maximum time we allow S3 to be open in milli sec (prevents overheating)
+	long int maxTimeS3 = 120000;		//FZQFIRM-2: Maximum time we allow S3 to be open in milli sec (prevents overheating)
 	int checkInterval = 2500;			//Check pressure every 2500 ms
 	PTest1 = analogRead(sensorP1Pin);	//Take the first pressure reading for future comparison
 
@@ -923,10 +923,12 @@ void loop()
 		if (timeStamp2 > checkInterval)									//Check pressure each n checkIntervals after depressurization starts
 		{
 			timeStamp1 = timeStamp1 + checkInterval;					//Update reference time stamp each checkInterval
-			//Test to see if the pressure if falling each checkInterval. depressurizeDuration ensures S3 doesn't stay on too long and get hot
+
+			//Test to see if the pressure if falling each checkInterval. 2nd condition allows you to get out of loop by looking for B3 press. depressurizeDuration ensures S3 doesn't stay on too long and get hot
 			while (PTest1 - PTest2 <= 1 && !digitalRead(button3Pin) == HIGH && depressurizeDuration < maxTimeS3)
 			{
 				lcd.setCursor(0, 2); lcd.print(F("Open Exhaust knob..."));
+				messageLcdBlank(1);										//FZQFIRM-4: Blanks irrelevant B1, B2 instructions
 				buzzer(10); delay(100);
 				PTest2 = analogRead(sensorP1Pin);
 				depressurizeDuration = millis() - depressurizeStartTime;//Update depressurizeDuration
