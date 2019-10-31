@@ -19,7 +19,7 @@ Authored using Visual Studio Community after Apr 23, 2016
 //Version control variable
 String(versionSoftwareTag) = "v1.4.2";
 //v1.4.1 includes changes to flutter S4 to prevent it from being open too long and overheating
-//v1.4.2 includes changes to prevent S3 from being open for too long and overheating
+//v1.4.2 includes changes to prevent S3 from being open for too long and overheating, both in Fill and Depressurize loops
 
 //Library includes
 #include <Wire.h> 
@@ -304,10 +304,13 @@ void setup()
 
 	String convInt = floatToString(buffer, numberCycles, 0);
 	String outputInt = "Total fills: " + convInt;
-	printLcd(3, outputInt);
-	delay(2000);  // Time to let platform drop
+
+	printLcd(2, "Firmware " + versionSoftwareTag);	// FIZFIRM-9: Print software version number
+	printLcd(3, outputInt);							// Print total fills (odometer reading)
+	delay(2000);									// Time to let platform drop
+
 	relayOn(relay5Pin, false);
-	relayOn(relay3Pin, false); // Close this so solenoid doesn't overhead on normal startup
+	relayOn(relay3Pin, false);						// Close this so solenoid doesn't overheat on normal startup
 
 	digitalWrite(light3Pin, LOW);
 	delay(200); digitalWrite(light2Pin, LOW);
