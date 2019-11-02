@@ -1,5 +1,5 @@
 /*
-//===========================================================================
+===========================================================================
 
 FIZZIQ Cocktail Bottling System
 
@@ -9,17 +9,20 @@ Author:
 	Seattle, WA 98101 USA
 	evan@perlagesystems.com
 
-Copyright 2013-2016  All rights reserved
+Copyright 2013-2020  All rights reserved
 Authored using Visual Studio Community after Apr 23, 2016
 
-//===========================================================================
+RECENT VERSION HISTORY
+======================
+
+v1.4.1 includes changes to flutter S4 to prevent it from being open too long and overheating
+v1.4.2 includes changes to prevent S3 from being open for too long and overheating, both in Fill and Depressurize loops; adding firmware tag to splash screen; changing company name to Perlage Systems
+
+===========================================================================
 */
 
-
 //Version control variable
-String(versionSoftwareTag) = "v1.4.2";
-//v1.4.1 includes changes to flutter S4 to prevent it from being open too long and overheating
-//v1.4.2 includes changes to prevent S3 from being open for too long and overheating, both in Fill and Depressurize loops
+String(versionSoftwareTag) = "v1.4.2";		//Commit 6982aeb, 10/31/2019
 
 //Library includes
 #include <Wire.h> 
@@ -235,7 +238,7 @@ void setup()
 	autoSiphonDuration10s = EEPROM.read(3);
 	numberCycles01 = EEPROM.read(4);  //Write "ones" digit base 255    
 	numberCycles10 = EEPROM.read(5);  //Write "tens" digit base 255
-	platformStateUp = EEPROM.read(6);  //Current valve for platformStateUp
+	platformStateUp = EEPROM.read(6); //Current valve for platformStateUp
 
 	//Read routine for autoSiphon  
 	autoSiphonDuration = autoSiphonDuration10s * 100; // Convert 10ths of sec to millisec
@@ -333,12 +336,12 @@ void loop()
 
 	// Read the state of buttons and sensors
 	// Boolean NOT (!) added for touchbuttons so that HIGH button state (i.e., button pressed) reads as LOW (this was easiest way to change software from physical buttons, where pressed = LOW) 
-	button1State        = !digitalRead(button1Pin);
-	button2StateTEMP    = !digitalRead(button2Pin);
-	button3StateTEMP    = !digitalRead(button3Pin);
-	switchDoorState     =  digitalRead(switchDoorPin);
-	switchModeState     =  digitalRead(switchModePin);
-	sensorFillStateTEMP =  digitalRead(sensorFillPin); //TODO Maybe we don't need to measure this. Old variable??
+	button1State		= !digitalRead(button1Pin);
+	button2StateTEMP	= !digitalRead(button2Pin);
+	button3StateTEMP	= !digitalRead(button3Pin);
+	switchDoorState		=  digitalRead(switchDoorPin);
+	switchModeState		=  digitalRead(switchModePin);
+	sensorFillStateTEMP	=  digitalRead(sensorFillPin); //TODO Maybe we don't need to measure this. Old variable??
 
 	sensorFillState = HIGH; //v1.1: We now SET the sensorState HIGH.
 
@@ -652,7 +655,7 @@ void loop()
 			{
 				lcd.setCursor(0, 1); lcd.print(F("Press B3 to continue"));
 			}
-			platformDrop();								// Drop platform
+			platformDrop();							// Drop platform
 
 			//Reset variables
 			PTestFail = false;
@@ -671,8 +674,16 @@ void loop()
 
 	unsigned long loopStartTime = millis();			//FZQFIRM-2,8: Get the start time of Filling or Depressurization loop
 	unsigned long loopDuration = 0;					//FZQFIRM-2,8: Duration of Filling or Depressurization loop
+	long int maxTimeFill;
 
-	long int maxTimeFill = 1800000;					//FZQFIRM-8: Maximum time we allow S3 to be open during filling (30 min)
+	if (inCleaningMode == true)
+	{
+		maxTimeFill = 1800000;						//FZQFIRM-10: Maximum time we allow S3 to be open during Cleaning (1800000 ms, 30 min)
+	}
+	else
+	{
+		maxTimeFill = 120000;						//FZQFIRM-10: Maximum time we allow S3 to be open during filling (120000 ms, 2 min)
+	}
 
 	// v1.1 Changed the pressureDeltaMax condition to reflect fact that there are two sensors
 	// v1.1 #96: Added button3 exit shortcut
@@ -681,12 +692,12 @@ void loop()
 	// PBSFIRM-135: Last pressure condition in while statement absolutely ensures that there can be no filling without bottle, even in cleaning mode
 	while (loopDuration < maxTimeFill && button2State == LOW && button3State == HIGH && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true) && (P1 - offsetP1 >= pressureDeltaDown))
 	{
-		loopDuration = millis() - loopStartTime;		//Get the duration since depressure loop entered
+		loopDuration = millis() - loopStartTime;	//Get the duration since depressure loop entered
 
 		inFillLoop = true;
-		inFillLoopExecuted = true; //This is an "is dirty" variable for counting lifetime bottles. Reset in platformUpLoop.
+		inFillLoopExecuted = true;	//This is an "is dirty" variable for counting lifetime bottles. Reset in platformUpLoop.
 
-		platformBoost();	//Boost platform pressure periodically
+		platformBoost();			//Boost platform pressure periodically
 
 		//while the button is  pressed, fill the bottle: open S1 and S3
 		relayOn(relay1Pin, true);
@@ -938,7 +949,7 @@ void loop()
 			{
 				lcd.setCursor(0, 2); lcd.print(F("Open Exhaust knob..."));
 				messageLcdBlank(1);										//FZQFIRM-4: Blanks irrelevant B1, B2 instructions
-				buzzer(10); delay(100);
+				buzzer(10); delay(100);									//Sound alarm if pressure not dropping
 				PTest2 = analogRead(sensorP1Pin);
 				loopDuration = millis() - loopStartTime;				//Update loopDuration
 			}
@@ -1043,7 +1054,7 @@ void loop()
 	{
 		inPlatformLowerLoop = true;
 		digitalWrite(light3Pin, HIGH);
-		relayOn(relay4Pin, false); // Finally can close platform up solenoid
+		relayOn(relay4Pin, false);				// Finally can close platform up solenoid
 		lcd.setCursor(0, 2); lcd.print(F("Lowering...         "));
 
 		if (autoMode_1 == true)
@@ -1058,8 +1069,8 @@ void loop()
 		else
 		{
 			digitalWrite(light3Pin, HIGH);
-			relayOn(relay5Pin, true);  // Open cylinder exhaust
-			delay(autoPlatformDropDuration); // always drop at least a second?
+			relayOn(relay5Pin, true);			// Open cylinder exhaust
+			delay(autoPlatformDropDuration);	// always drop at least a second?
 		}
 		P1 = analogRead(sensorP1Pin);
 		button3State = !digitalRead(button3Pin);
