@@ -22,7 +22,7 @@ v1.4.2 includes changes to prevent S3 from being open for too long and overheati
 */
 
 //Version control variable
-String(versionSoftwareTag) = "v1.4.2";		//Commit 6982aeb, 10/31/2019
+String(versionSoftwareTag) = "v1.4.2";		//Commit 96bebaf, 11/02/2019
 
 //Library includes
 #include <Wire.h> 
@@ -674,23 +674,19 @@ void loop()
 
 	unsigned long loopStartTime = millis();			//FZQFIRM-2,8: Get the start time of Filling or Depressurization loop
 	unsigned long loopDuration = 0;					//FZQFIRM-2,8: Duration of Filling or Depressurization loop
-	long int maxTimeFill;
-
+	
+	long int maxTimeLoop = 120000;					//FZQFIRM-10: Maximum time we allow S3 to be open in filling loop (120000 ms, 2 min)
 	if (inCleaningMode == true)
 	{
-		maxTimeFill = 1800000;						//FZQFIRM-10: Maximum time we allow S3 to be open during Cleaning (1800000 ms, 30 min)
-	}
-	else
-	{
-		maxTimeFill = 120000;						//FZQFIRM-10: Maximum time we allow S3 to be open during filling (120000 ms, 2 min)
-	}
+		maxTimeLoop = 1800000;						//FZQFIRM-10: Maximum time we allow S3 to be open in Cleaning loop (1800000 ms, 30 min)
+	}	
 
 	// v1.1 Changed the pressureDeltaMax condition to reflect fact that there are two sensors
 	// v1.1 #96: Added button3 exit shortcut
 	int startSolenoidCleaningCycle = millis();		// Get the start time for the solenoid cleaning cycle
 											   
 	// PBSFIRM-135: Last pressure condition in while statement absolutely ensures that there can be no filling without bottle, even in cleaning mode
-	while (loopDuration < maxTimeFill && button2State == LOW && button3State == HIGH && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true) && (P1 - offsetP1 >= pressureDeltaDown))
+	while (loopDuration < maxTimeLoop && button2State == LOW && button3State == HIGH && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true) && (P1 - offsetP1 >= pressureDeltaDown))
 	{
 		loopDuration = millis() - loopStartTime;	//Get the duration since depressure loop entered
 
@@ -765,7 +761,7 @@ void loop()
 
 		// Check which condition caused filling to stop
 		// CASE 1: Button2 pressed when filling (B2 low and toggle state true). Run Anti-Drip
-		if ((button2State == HIGH && !inCleaningMode == true) || button3State == LOW || loopDuration > maxTimeFill) //#98
+		if ((button2State == HIGH && !inCleaningMode == true) || button3State == LOW || loopDuration > maxTimeLoop) //#98
 		{
 			if (button3State == LOW)
 			{
@@ -860,7 +856,7 @@ void loop()
 	pressureOutput(); //v1.1 Do we need to take a fresh reading here? Probably a good idea
 	float minPressureDiffSensorClear = 10; //v1.1. In psi
 
-	long int maxTimeDepress = 120000;	//FZQFIRM-2: Maximum time we allow S3 to be open in milli sec (2 min; prevents overheating)
+	maxTimeLoop = 120000;				//FZQFIRM-2: Maximum time we allow S3 to be open in Depress Loop (2 min; prevents overheating)
 
 	unsigned long timeStamp1 = 0;
 	unsigned long timeStamp2 = 0;		//Changed from int to unsigned long 10/28/2019
@@ -870,7 +866,7 @@ void loop()
 	//85: Added condition (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear) to allow depressurization with sensor LOW
 	//v1.1 added sensor override; 
 	//FZQFIRM-2: Added depressurizeDuration condition (10/28/2019)
-	while (button3State == LOW  && loopDuration < maxTimeDepress && ((sensorFillState == HIGH || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown))
+	while (button3State == LOW  && loopDuration < maxTimeLoop && ((sensorFillState == HIGH || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown))
 	{		
 		platformBoost();	//Boost platform pressure periodically
 		
@@ -945,7 +941,7 @@ void loop()
 			timeStamp1 = timeStamp1 + checkInterval;					//Update reference time stamp each checkInterval
 
 			//Test to see if the pressure if falling each checkInterval. 2nd condition allows you to get out of loop by looking for B3 press. depressurizeDuration ensures S3 doesn't stay on too long and get hot
-			while (PTest1 - PTest2 <= 1 && !digitalRead(button3Pin) == HIGH && loopDuration < maxTimeDepress)
+			while (PTest1 - PTest2 <= 1 && !digitalRead(button3Pin) == HIGH && loopDuration < maxTimeLoop)
 			{
 				lcd.setCursor(0, 2); lcd.print(F("Open Exhaust knob..."));
 				messageLcdBlank(1);										//FZQFIRM-4: Blanks irrelevant B1, B2 instructions
@@ -968,7 +964,7 @@ void loop()
 		digitalWrite(light1Pin, LOW);
 
 		// CASE 1: Button3 released, OR S3 has been open too long (10/28/2019)
-		if (button3State == HIGH || loopDuration > maxTimeDepress)
+		if (button3State == HIGH || loopDuration > maxTimeLoop)
 		{
 			relayOn(relay3Pin, false);	
 			lcd.setCursor(0, 1); lcd.print(F("B2 toggles filling. "));	//Overwrites second line on exit
