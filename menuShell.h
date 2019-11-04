@@ -6,27 +6,38 @@ void menuExit()
 {
 	inMenuLoop = false;
 	lcd.clear();
-	printLcd(0, "FIZZIQ " + versionSoftwareTag);
-	lcd.setCursor(0, 2); lcd.print(F("Exiting menu...     "));
+	printLcd(0, "Firmware " + versionSoftwareTag);
+
+	//Print total fills (odometer reading)
+	String convInt = floatToString(buffer, numberCycles, 0);
+	String outputInt = "Total fills: " + convInt;
+	printLcd(1, outputInt);
+
+	//Print session fills
+	String(convNumberCyclesSession) = floatToString(buffer, numberCyclesSession, 0);
+	outputInt = "Session fills: " + convNumberCyclesSession;
+	printLcd(2, outputInt);						
+
+	lcd.setCursor(0, 3); lcd.print(F("Exiting menu...     "));
 	buzzer(250);
-	delay(750);  //To show message
+	delay(1500);  //To show message
 }
 
 void menuShell(boolean inMenuLoop)
 {
 	boolean inMenuLoop1 = false;
 	boolean inMenuLoop2 = false;
-	boolean menuOption11 = false; //AutoSiphon
-	boolean menuOption12 = false; //Cleaning
-	boolean menuOption21 = false; //Carbonation
-	boolean menuOption22 = false; //Manual Diagnostic Mode
+	boolean menuOption11 = false;	//Carbonation
+	boolean menuOption12 = false;	//Cleaning//Cleaning
+	boolean menuOption21 = false;	//Autosiphon (or AutoLevel)
+	boolean menuOption22 = false;	//Manual Diagnostic Mode
 
 	if (inMenuLoop == true)
 	{
 		inMenuLoop1 = true;
 
 		lcd.setCursor(0, 0); lcd.print(F("   *** MENU 1 ***   "));
-		lcd.setCursor(0, 1); lcd.print(F("B1: Set AutoSiphon  "));
+		lcd.setCursor(0, 1); lcd.print(F("B1: Carbonation Mode"));
 		lcd.setCursor(0, 2); lcd.print(F("B2: Cleaning Mode   "));
 		lcd.setCursor(0, 3); lcd.print(F("B3: More...         "));
 	}
@@ -35,18 +46,20 @@ void menuShell(boolean inMenuLoop)
 	while (inMenuLoop1 == true)
 	{
 		readButtons();
+
 		while (button1State == LOW)
 		{
 			menuOption11 = true;
 			inMenuLoop1 = false;
-			buttonPush(button1Pin, light1Pin, 250);
 			button1State = !digitalRead(button1Pin);
 
-			lcd.setCursor(0, 0); lcd.print(F("B1: Incr. by .1 sec "));
-			lcd.setCursor(0, 1); lcd.print(F("B2: Decr. by .1 sec "));
-			lcd.setCursor(0, 2); lcd.print(F("B3: Set value & exit"));
-			// Current value is printed to screen on line 3
+			lcd.clear();
+			lcd.setCursor(0, 0); lcd.print(F("**CARBONATION MODE**"));
+			lcd.setCursor(0, 1); lcd.print(F("Press B1 to begin.  "));
+			//lcd.setCursor (0, 3); lcd.print (F("                    "));   
+			buzzOnce(500, light1Pin);
 		}
+		buzzedOnce = false; //Not sure if this is part of Carbonation mode
 
 		while (button2State == LOW)
 		{
@@ -63,7 +76,7 @@ void menuShell(boolean inMenuLoop)
 			}
 			else
 			{
-				lcd.setCursor(0, 1); lcd.print(F("B1: Enter Cleaning  "));
+				lcd.setCursor(0, 1); lcd.print(F("B1: Start Cleaning  "));
 			}
 			messageLcdBlank(2);
 			messageLcdBlank(3);
@@ -77,7 +90,7 @@ void menuShell(boolean inMenuLoop)
 			button3State = !digitalRead(button3Pin);
 
 			lcd.setCursor(0, 0); lcd.print(F("   *** MENU 2 ***   "));
-			lcd.setCursor(0, 1); lcd.print(F("B1: Carbonation Mode"));
+			lcd.setCursor(0, 1); lcd.print(F("B1: Set Auto Level  "));
 			lcd.setCursor(0, 2); lcd.print(F("B2: Manual Mode     "));
 			lcd.setCursor(0, 3); lcd.print(F("B3: Exit...         "));
 		}
@@ -86,19 +99,19 @@ void menuShell(boolean inMenuLoop)
 	while (inMenuLoop2 == true)
 	{
 		readButtons();
+
 		while (button1State == LOW)
 		{
 			menuOption21 = true;
 			inMenuLoop2 = false;
+			buttonPush(button1Pin, light1Pin, 250);
 			button1State = !digitalRead(button1Pin);
 
-			lcd.clear();
-			lcd.setCursor(0, 0); lcd.print(F("**CARBONATION MODE**"));
-			lcd.setCursor(0, 1); lcd.print(F("Press B1 to begin.  "));
-			//lcd.setCursor (0, 3); lcd.print (F("                    "));   
-			buzzOnce(500, light1Pin);
+			lcd.setCursor(0, 0); lcd.print(F("B1: Incr. by .1 sec "));
+			lcd.setCursor(0, 1); lcd.print(F("B3: Decr. by .1 sec "));
+			lcd.setCursor(0, 2); lcd.print(F("B2: Set value & exit"));
+			// Current value is printed to screen on line 3
 		}
-		buzzedOnce = false;
 
 		while (button2State == LOW)
 		{
@@ -114,6 +127,7 @@ void menuShell(boolean inMenuLoop)
 			buzzOnce(500, light2Pin);
 		}
 		buzzedOnce = false;
+
 		while (button3State == LOW)
 		{
 			inMenuLoop2 = false;
@@ -128,19 +142,20 @@ void menuShell(boolean inMenuLoop)
 	// ===============================================================================
 	// MENU OPTIONS
 	// ===============================================================================
-
-	// Menu Option 11: AUTOSIPHON SET
+	
+	// Menu Option 21: AUTOSIPHON SET //FIZFIRM-12: These options are disordered now that menu has been rearranged
 	// ===============================================================================
 
-	while (menuOption11 == true)
+	while (menuOption21 == true)
 	{
 		inMenuOption11Loop = true;
 		autoSiphonSet();
 
 		if (!inMenuOption11Loop)
 		{
-			menuOption11 = false;
-			menuExit();
+			menuOption21 = false;
+			//menuExit();			//FIZFIRM-15
+			inMenuLoop = false;		//FIZFIRM-15
 		}
 	}
 
@@ -175,15 +190,16 @@ void menuShell(boolean inMenuLoop)
 			}
 		}
 		if (menuOption12 == false) {
-			menuExit();
-			buzzedOnce = false;
+			//menuExit();			//FIZFIRM-15
+			inMenuLoop = false;		//FIZFIRM-15
+			buzzedOnce = false;		//FIZFIRM-15
 		}
 	}
 
-	// Menu Option 21: CARBONATION MODE
+	// Menu Option 11: CARBONATION MODE
 	// ===============================================================================
 
-	while (menuOption21 == true)
+	while (menuOption11 == true)
 	{
 		#include "CarbonationMode.h" 
 		//TODO Carbonation Mode has been commented out. FIX BEFORE RELEASE!

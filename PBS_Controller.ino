@@ -867,9 +867,7 @@ void loop()
 	//v1.1 added sensor override; 
 	//FZQFIRM-2: Added depressurizeDuration condition (10/28/2019)
 	while (button3State == LOW  && loopDuration < maxTimeLoop && ((sensorFillState == HIGH || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown))
-	{		
-		platformBoost();	//Boost platform pressure periodically
-		
+	{			
 		inDepressurizeLoop = true;
 		relayOn(relay3Pin, true); //Open Gas Out solenoid
 		digitalWrite(light3Pin, HIGH);
@@ -877,6 +875,8 @@ void loop()
 		// Pressure output
 		pressureOutput();
 		printLcd(3, outputPSI_b);
+
+		platformBoost();	//Boost platform pressure periodically
 
 		//Allow momentary "burst" foam tamping
 		button2State = !digitalRead(button2Pin);

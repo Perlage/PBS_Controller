@@ -166,7 +166,7 @@ while (inTimingLoop == true)
 		buzzOnce(1500, light3Pin);
 
 		inTimingLoop = false;
-		menuOption21 = false;
+		menuOption11 = false;
 		pressureExit = analogRead(sensorP2Pin);
 
 		//Check to see if pressure has dropped during the carbonation process

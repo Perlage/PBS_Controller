@@ -247,10 +247,10 @@ void autoSiphonSet()
 		autoSiphonDuration10s = autoSiphonDuration10s + 1; //Add .1s
 		buzzOnce(100, light1Pin);
 	}
-	if (button2State == LOW)
+	if (button3State == LOW)
 	{
 		autoSiphonDuration10s = autoSiphonDuration10s - 1; //Subtract .1s
-		buzzOnce(100, light2Pin);
+		buzzOnce(100, light3Pin);
 	}
 
 	autoSiphonDuration10s = constrain(autoSiphonDuration10s, 5, 99); //Constrains autoSiphonDuration10s to between 5 and 99 tenths of sec
@@ -262,25 +262,25 @@ void autoSiphonSet()
 	lcd.setCursor(0, 3); lcd.print(outputTime);
 
 	buzzedOnce = false;
-	if (button3State == LOW)
+	if (button2State == LOW)
 	{
 		outputTime = "New value: " + convTime + "s     ";
 		//printLcd (3, outputTime);
 		lcd.setCursor(0, 3); lcd.print(outputTime);
 
-		buzzOnce(500, light3Pin);
+		buzzOnce(500, light2Pin);
 		delay(1000);
 
 		EEPROM.write(3, autoSiphonDuration10s);             // Write to EEPROM
 		autoSiphonDuration = autoSiphonDuration10s * 100;    //Convert to ms from 10ths of sec
 
 		// This catches loop until release
-		while (!digitalRead(button3Pin) == LOW)
+		while (!digitalRead(button2Pin) == LOW)
 		{
 			// This just catches B3 push so it doesn't flow through to Idle Loop and open door
 		}
 		inMenuOption11Loop = false;
-		button3State = HIGH;
+		button2State = HIGH;
 	}
 	buzzedOnce = false;
 }
