@@ -15,14 +15,14 @@ Authored using Visual Studio Community after Apr 23, 2016
 RECENT VERSION HISTORY
 ======================
 
-v1.4.1 includes changes to flutter S4 to prevent it from being open too long and overheating
-v1.4.2 includes changes to prevent S3 from being open for too long and overheating, both in Fill and Depressurize loops; adding firmware tag to splash screen; changing company name to Perlage Systems
+v1.4.1 includes changes to flutter S4 to prevent it from being open too long and overheating; fluttering of R2/S2 during pressurization.
+v1.4.2 Size: 28,058 bytes. Fixes FIZFIRM-12, 13, 14, 15, 16, 17. Main changes includes changes to prevent S3 from being open for too long and overheating, both in Fill and Depressurize loops; adding firmware tag to splash screen; changing company name to Perlage Systems; Menu reorganization (Carbonation Mode and Cleaning Mode on screen 1); "silent" menu exit; showing total fills and session fills when exiting menu; button reorg on AutoLevel feature (formally AutoSiphon).
 
 ===========================================================================
 */
 
 //Version control variable
-String(versionSoftwareTag) = "v1.4.2";		//Commit 96bebaf, 11/02/2019
+String(versionSoftwareTag) = "v1.4.2";		//Commit 103d55e, 11/04/2019
 
 //Library includes
 #include <Wire.h> 
