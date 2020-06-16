@@ -28,7 +28,7 @@ void menuShell(boolean inMenuLoop)
 	boolean inMenuLoop1 = false;
 	boolean inMenuLoop2 = false;
 	boolean menuOption11 = false;	//Carbonation
-	boolean menuOption12 = false;	//Cleaning//Cleaning
+	boolean menuOption12 = false;	//Cleaning
 	boolean menuOption21 = false;	//Autosiphon (or AutoLevel)
 	boolean menuOption22 = false;	//Manual Diagnostic Mode
 
@@ -90,7 +90,8 @@ void menuShell(boolean inMenuLoop)
 			button3State = !digitalRead(button3Pin);
 
 			lcd.setCursor(0, 0); lcd.print(F("   *** MENU 2 ***   "));
-			lcd.setCursor(0, 1); lcd.print(F("B1: Set Auto Level  "));
+			//lcd.setCursor(0, 1); lcd.print(F("B1: Set Auto Level  "));
+			lcd.setCursor(0, 1); lcd.print(F("B1: (Temp. Disabled)")); //EEPROM patch For Brigadier
 			lcd.setCursor(0, 2); lcd.print(F("B2: Manual Mode     "));
 			lcd.setCursor(0, 3); lcd.print(F("B3: Exit...         "));
 		}
@@ -99,7 +100,7 @@ void menuShell(boolean inMenuLoop)
 	while (inMenuLoop2 == true)
 	{
 		readButtons();
-
+		/*
 		while (button1State == LOW)
 		{
 			menuOption21 = true;
@@ -112,7 +113,7 @@ void menuShell(boolean inMenuLoop)
 			lcd.setCursor(0, 2); lcd.print(F("B2: Set value & exit"));
 			// Current value is printed to screen on line 3
 		}
-
+		*/
 		while (button2State == LOW)
 		{
 			menuOption22 = true;

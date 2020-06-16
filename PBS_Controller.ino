@@ -24,7 +24,7 @@ v1.4.2 Size: 28,058 bytes. Fixes FIZFIRM-12, 13, 14, 15, 16, 17. Main changes in
 */
 
 //Version control variable
-String(versionSoftwareTag) = "v1.4.2";		//Commit 103d55e, 11/04/2019
+String(versionSoftwareTag) = "v1.4.2E";		//Commit 103d55e, 11/04/2019 //EEPROM patch is "E"
 
 //Library includes
 #include <Wire.h> 
@@ -232,7 +232,7 @@ void setup()
 	// EEPROM factory set-reset routine
 	// For some reason, have to include it here and not above with others
 
-	//#include "EEPROMset.h" //Commenting this out removes the ability to set EEPROM with production firmware. Must do in QA/Setup firmware
+	#include "EEPROMset.h" //Commenting this out removes the ability to set EEPROM with production firmware. Must do in QA/Setup firmware
 
 	// Read EEPROM
 	offsetP1 = EEPROM.read(0);
