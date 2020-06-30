@@ -53,7 +53,7 @@ const int buzzerPin			= 13;     // pin for buzzer
 
 const int sensorP2Pin		= A0;     // pin for pressure sensor 2 // REGULATOR PRESSURE--BOTTOM sensor on PCB
 const int sensorP1Pin		= A1;     // pin for pressure sensor 1 // BOTTLE PRESSURE--TOP sensor on PCB
-const int switchModePin		= A2;     // OPEN PIN
+const int analogFillPin		= A2;     // [AFS] Analog Fill Sensing pin--new 06/2020
 const int light1Pin			= A3;     // pin for button1 light 
 const int light2Pin			= A4;     // pin for button2 light
 const int light3Pin			= A5;     // pin for button3 light
@@ -81,6 +81,8 @@ boolean sensorFillState = HIGH;
 boolean sensorFillStateTEMP = HIGH;
 boolean switchDoorState = HIGH;
 boolean switchModeState = HIGH; //LOW is Manual, HIGH (or up) is auto (normal)
+
+int analogFillState; // [AFS] This will be 1023 for OPEN (no liquid); something less when liquid detected
 
 //State variables 
 boolean inPressureNullLoop = false;
@@ -130,6 +132,10 @@ String(outputPSI_rb);                          // Keg, bottle
 String(outputPSI_b);                           // Bottle
 String(outputPSI_r);                           // Keg
 String(outputPSI_d);                           // Diff between bottle and keg
+
+int L1;										   // [AFS]	
+String(convL1);								   // [AFS]	
+String(outputAnalogFillState);				   // [AFS]	
 
 //Variables for platform function and timing
 int timePlatformInit;                           // Time in ms going into loop
@@ -197,7 +203,8 @@ void setup()
 	//pinMode(sensorFillPin, INPUT_PULLUP);  //INPUT_PULLUP uses internal Pullup and maybe additionally a larger (~65k) external pullup resistor
 	pinMode(sensorFillPin, INPUT);           //INPUT and external pullup resistor. 1st 10 units used INPUT_PULLUP
 	pinMode(switchDoorPin, INPUT_PULLUP);
-	pinMode(switchModePin, INPUT_PULLUP);
+	//pinMode(switchModePin, INPUT_PULLUP);  // [AFS] Comment out
+	pinMode(analogFillPin, INPUT_PULLUP);    // [AFS] In Sampler, used 12k resistor. See if INPUT_PULLUP works 
 	pinMode(buzzerPin, OUTPUT);
 
 	//set all relay pins to high which is "off" for this relay
@@ -340,10 +347,11 @@ void loop()
 	button2StateTEMP	= !digitalRead(button2Pin);
 	button3StateTEMP	= !digitalRead(button3Pin);
 	switchDoorState		=  digitalRead(switchDoorPin);
-	switchModeState		=  digitalRead(switchModePin);
-	sensorFillStateTEMP	=  digitalRead(sensorFillPin); //TODO Maybe we don't need to measure this. Old variable??
+	//switchModeState		=  digitalRead(switchModePin); // [AFS] Comment out
+	//sensorFillStateTEMP	=  digitalRead(sensorFillPin); // TODO Maybe we don't need to measure this. Old variable?? [AFS] Comment out
+	analogFillState     = analogRead(analogFillPin);       // [AFS] Analog read of analog fil pin
 
-	sensorFillState = HIGH; //v1.1: We now SET the sensorState HIGH.
+	//sensorFillState = HIGH; //v1.1: We now SET the sensorState HIGH. [AFS] Comment out 
 
 	//Check Button2 toggle state
 	//======================================================================
@@ -390,7 +398,8 @@ void loop()
 	// MessageInsertBottle
 	if (switchDoorState == HIGH && platformStateUp == false)
 	{
-		messageInsertBottle();
+		//messageInsertBottle();                //[AFS] TEMP
+		printLcd(2, outputAnalogFillState);     //[AFS] TEMP
 	}
 
 	// Added last condition to differentiate between depressurized vs never pressurized, so this message doesn't get shown in a hard re-foam situation
@@ -672,6 +681,13 @@ void loop()
 	// FILL LOOP
 	//========================================================================================
 
+	int analogFillThreshold = 950;	// [AFS] Set threshold sensitivity
+	int analogFillStateTEMP;        // [AFS] Delta method
+	int analogFillStateDelta = 25;  // [AFS] Delta method threshold
+
+	analogFillStateTEMP = analogRead(analogFillPin); //[AFS] Delta method
+
+
 	unsigned long loopStartTime = millis();			//FZQFIRM-2,8: Get the start time of Filling or Depressurization loop
 	unsigned long loopDuration = 0;					//FZQFIRM-2,8: Duration of Filling or Depressurization loop
 	
@@ -686,7 +702,7 @@ void loop()
 	int startSolenoidCleaningCycle = millis();		// Get the start time for the solenoid cleaning cycle
 											   
 	// PBSFIRM-135: Last pressure condition in while statement absolutely ensures that there can be no filling without bottle, even in cleaning mode
-	while (loopDuration < maxTimeLoop && button2State == LOW && button3State == HIGH && (sensorFillState == HIGH || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true) && (P1 - offsetP1 >= pressureDeltaDown))
+	while (loopDuration < maxTimeLoop && button2State == LOW && button3State == HIGH && (analogFillStateTEMP - analogRead(analogFillPin) < analogFillStateDelta/*analogFillState > analogFillThreshold */ || inCleaningMode == true) && switchDoorState == LOW && (((P2 - offsetP2) - (P1 - offsetP1) < pressureDeltaMax) || inCleaningMode == true) && (P1 - offsetP1 >= pressureDeltaDown))
 	{
 		loopDuration = millis() - loopStartTime;	//Get the duration since depressure loop entered
 
@@ -716,6 +732,7 @@ void loop()
 		//Read and output pressure
 		pressureOutput();
 		printLcd(3, outputPSI_d);
+		printLcd(2, outputAnalogFillState); //[AFS]
 
 		// CLEANING MODE: If in Cleaning Mode, set FillState HIGH to disable sensor
 		if (inCleaningMode == true)
@@ -739,9 +756,10 @@ void loop()
 		else
 		{
 			//Read sensors
-			sensorFillState = digitalRead(sensorFillPin); //Check fill sensor
+			sensorFillState = digitalRead(sensorFillPin); //Check digital fill sensor
+			analogFillState = analogRead(analogFillPin);  // [AFS] Read analog fill pin
 			switchDoorState = digitalRead(switchDoorPin); //Check door switch 
-			lcd.setCursor(0, 2); lcd.print(F("Filling...          "));
+			//lcd.setCursor(0, 2); lcd.print(F("Filling...          ")); [AFS] TEMP
 		}
 		lcd.setCursor(0, 0); lcd.print(F("B2 toggles filling; "));
 		lcd.setCursor(0, 1); lcd.print(F("Knob controls flow. "));
@@ -783,18 +801,23 @@ void loop()
 		}
 
 		// CASE 2: FillSensor tripped--Overfill condition
-		else if (inFillLoop && sensorFillState == LOW)
+		//else if (inFillLoop && sensorFillState == LOW) //[AFS] Comment out digital read
+		else if (inFillLoop && analogFillState <= analogFillThreshold) //[AFS]
 		{
 			relayOn(relay1Pin, true);
 			relayOn(relay2Pin, true);
 
-			lcd.setCursor(0, 2); lcd.print(F("Adjusting level...  "));
+			//lcd.setCursor(0, 2); lcd.print(F("Adjusting level...  ")); //[AFS] TEMP
+			pressureOutput(); // [AFS]
+			printLcd(2, outputAnalogFillState); //[AFS]
+
 			delay(autoSiphonDuration); // This setting determines duration of autosiphon 
 			relayOn(relay1Pin, false);
 			relayOn(relay2Pin, false);
 
 			//v1.1 Clear Sensor Routine
-			if (digitalRead(sensorFillPin) == LOW)
+			//if (digitalRead(sensorFillPin) == LOW) //[AFS] Comment out
+			if (analogRead(analogFillPin) > analogFillThreshold) //[AFS] 
 			{
 				lcd.setCursor(0, 2); lcd.print(F("Clearing Fill Sensor"));
 				delay(1000); //DEBUG? Delay to show above message. 
@@ -853,6 +876,12 @@ void loop()
 	// DEPRESSURIZE LOOP
 	//========================================================================================
 
+	int analogFoamThreshold = 950;	// [AFS] Set threshold sensitivity
+	int analogFoamStateTEMP;        // [AFS] Delta method
+	int analogFoamStateDelta = 25;  // [AFS] Delta method threshold
+
+	analogFoamStateTEMP = analogRead(analogFillPin); //[AFS] Delta method. Take first reading for comparison
+
 	pressureOutput(); //v1.1 Do we need to take a fresh reading here? Probably a good idea
 	float minPressureDiffSensorClear = 10; //v1.1. In psi
 
@@ -866,7 +895,7 @@ void loop()
 	//85: Added condition (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear) to allow depressurization with sensor LOW
 	//v1.1 added sensor override; 
 	//FZQFIRM-2: Added depressurizeDuration condition (10/28/2019)
-	while (button3State == LOW  && loopDuration < maxTimeLoop && ((sensorFillState == HIGH || (sensorFillState == LOW && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown))
+	while (button3State == LOW  && loopDuration < maxTimeLoop && ((analogFoamStateTEMP - analogRead(analogFillPin) < analogFoamStateDelta || (analogFoamStateTEMP - analogRead(analogFillPin) >= analogFoamStateDelta && PSIdiff < minPressureDiffSensorClear)) || !digitalRead(button1Pin) == LOW || inCleaningMode == true) && switchDoorState == LOW && (P1 - offsetP1 >= pressureDeltaDown))
 	{			
 		inDepressurizeLoop = true;
 		relayOn(relay3Pin, true); //Open Gas Out solenoid

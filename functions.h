@@ -147,7 +147,7 @@ void readButtons()
 void readStates()
 {
 	switchDoorState = digitalRead(switchDoorPin);
-	switchModeState = digitalRead(switchModePin);
+	//switchModeState = digitalRead(switchModePin); [AFS]
 	sensorFillState = digitalRead(sensorFillPin);
 }
 
@@ -157,6 +157,8 @@ void pressureOutput()
 {
 	P1 = analogRead(sensorP1Pin);
 	P2 = analogRead(sensorP2Pin);
+	
+	L1 = analogRead(analogFillPin); //[AFS]
 
 	PSI1 = abs(pressureConv1(P1)); //Added ABS() function Mar 9 2015 to keep bottle pressure from flickering negative
 	PSI2 = abs(pressureConv2(P2)); //Added ABS() function Mar 9 2015 to keep
@@ -165,11 +167,18 @@ void pressureOutput()
 	(convPSI1) = floatToString(buffer, PSI1, 1);
 	(convPSI2) = floatToString(buffer, PSI2, 1);
 	(convPSIdiff) = floatToString(buffer, PSIdiff, 1);
+	
+	(convL1) = floatToString(buffer, L1, 0); //[AFS]
 
-	(outputPSI_rb) = "Keg:" + convPSI2 + " Bottle:" + convPSI1;	//19-20
+
+	(outputPSI_rb) = "Keg:" + convPSI2 + " Bottle:" + convPSI1;	        //19-20
 	(outputPSI_r) = "Pressure:   " + convPSI2 + " psi";					//20-19
 	(outputPSI_b) = "Bottle:     " + convPSI1 + " psi";					//19-20
-	(outputPSI_d) = "Difference: " + convPSIdiff + " psi";			//20-19
+	(outputPSI_d) = "Difference: " + convPSIdiff + " psi";			    //20-19
+
+	(outputAnalogFillState) = "Analog:     " + convL1;  //[AFS]
+
+
 }
 
 //FUNCTION: padString
