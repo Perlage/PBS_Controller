@@ -17,12 +17,13 @@ RECENT VERSION HISTORY
 
 v1.4.1 includes changes to flutter S4 to prevent it from being open too long and overheating; fluttering of R2/S2 during pressurization.
 v1.4.2 Size: 28,058 bytes. Fixes FIZFIRM-12, 13, 14, 15, 16, 17. Main changes includes changes to prevent S3 from being open for too long and overheating, both in Fill and Depressurize loops; adding firmware tag to splash screen; changing company name to Perlage Systems; Menu reorganization (Carbonation Mode and Cleaning Mode on screen 1); "silent" menu exit; showing total fills and session fills when exiting menu; button reorg on AutoLevel feature (formally AutoSiphon).
+v1.4.3 FIZFIRM-22: Removed flutter code for S2 at end of pressurization loop.
 
 ===========================================================================
 */
 
 //Version control variable
-String(versionSoftwareTag) = "v1.4.2";		//Commit 103d55e, 11/04/2019
+String(versionSoftwareTag) = "v1.4.3";		//Commit 103d55e, 11/04/2019
 
 //Library includes
 #include <Wire.h> 
@@ -627,7 +628,9 @@ void loop()
 	{
 		inPressurizeLoop = false;
 
-		//This routine "exercises" Relay2, which may open only once/cycle in normal operation
+		//FZQFIRM-22: This item undoes FZQFIRM-3. Decided flutter code is unnecessary and confusing
+		/*
+		//FZQFIRM-3: This routine "exercises" Relay2, which may open only once/cycle in normal operation
 		relayOn(relay2Pin, false);
 		delay(100);
 		relayOn(relay2Pin, true);
@@ -637,6 +640,7 @@ void loop()
 		relayOn(relay2Pin, true);
 		delay(100);
 		//End R2 exercise routine
+		*/
 
 		relayOn(relay2Pin, false);       // close S2 because we left PressureLoop
 		digitalWrite(light2Pin, LOW);    // Turn off B2 light
