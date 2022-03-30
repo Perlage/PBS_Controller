@@ -23,7 +23,7 @@ v1.4.3 FIZFIRM-22: Removed flutter code for S2 at end of pressurization loop.
 */
 
 //Version control variable
-String(versionSoftwareTag) = "v1.4.3";		//Commit 103d55e, 11/04/2019
+String(versionSoftwareTag) = "v1.4.3";		//Commit 37470da, 03/28/2022
 
 //Library includes
 #include <Wire.h> 
