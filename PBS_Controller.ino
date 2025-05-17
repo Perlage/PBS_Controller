@@ -9,8 +9,9 @@ Author:
 	Seattle, WA 98101 USA
 	evan@perlagesystems.com
 
-Copyright 2013-2020  All rights reserved
+Copyright 2013-2025  All rights reserved
 Authored using Visual Studio Community after Apr 23, 2016
+Installed Visual Studio Community 2022 on May 16, 2025
 
 RECENT VERSION HISTORY
 ======================
