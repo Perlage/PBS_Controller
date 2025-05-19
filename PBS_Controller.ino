@@ -181,6 +181,17 @@ char buffer[25];                                 // Used in float to string conv
 
 void setup()
 {
+	// LCD timing tuned for IDE 2.3.6:
+	// - Library: LiquidCrystal_I2C v1.1.2 by Frank de Brabander
+	// - Forced I2C speed to 100kHz for backpack compatibility
+	// - Delay(100) added after lcd.init()
+	Wire.begin();
+	Wire.setClock(100000);  // Legacy I2C speed — less aggressive
+	delay(100);             // Let things settle
+	lcd.init();
+	delay(100);             // Let LCD initialize
+	lcd.backlight();
+
 	buzzer(100); delay(50); buzzer(100); delay(50); buzzer(100); //Just to give some feedback asap
 
 	//Setup pins
@@ -217,9 +228,10 @@ void setup()
 
 	//Serial.begin(9600); // TO DO: remove when done
 
-	// Initialize LCD - Absolutely necessary
-	lcd.init();
-	lcd.backlight();
+	//This lcd initializatin is now done right at the top of the setup loop, with new LCD timing.
+	//Initialize LCD - Absolutely necessary
+	//lcd.init();
+	//lcd.backlight();
 
 	//===================================================================================
 	// STARTUP ROUTINE
