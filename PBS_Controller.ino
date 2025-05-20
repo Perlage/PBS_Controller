@@ -13,9 +13,12 @@ Copyright 2013-2025  All rights reserved
 Authored using Visual Studio Community after Apr 23, 2016
 Installed Visual Studio Community 2022 on May 16, 2025
 
+MOST RECENT COMMIT
+=====================
+05/19/2025 - Commit 743bf58 - LCD timing adjusted for IDE 2.3.6
+
 RECENT VERSION HISTORY
 ======================
-
 v1.4.1 includes changes to flutter S4 to prevent it from being open too long and overheating; fluttering of R2/S2 during pressurization.
 v1.4.2 Size: 28,058 bytes. Fixes FIZFIRM-12, 13, 14, 15, 16, 17. Main changes includes changes to prevent S3 from being open for too long and overheating, both in Fill and Depressurize loops; adding firmware tag to splash screen; changing company name to Perlage Systems; Menu reorganization (Carbonation Mode and Cleaning Mode on screen 1); "silent" menu exit; showing total fills and session fills when exiting menu; button reorg on AutoLevel feature (formally AutoSiphon).
 v1.4.3 FIZFIRM-22: Removed flutter code for S2 at end of pressurization loop.
