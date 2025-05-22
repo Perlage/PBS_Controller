@@ -7,7 +7,7 @@ void messageInitial()
 	lcd.setCursor(0, 0);  lcd.print(F("FIZZIQ Cocktail     "));
 	//printLcd(1, "Bottling System " + versionSoftwareTag);
 	lcd.setCursor(0, 1);  lcd.print(F("Bottling System     "));
-	lcd.setCursor(0, 2);  lcd.print(F("By PERLAGE SYSTEMS  "));
+	lcd.setCursor(0, 2);  lcd.print(F("APPLIEDFIZZICS.com  "));
 	lcd.setCursor(0, 3);  lcd.print(F("Initializing        "));
 }
 

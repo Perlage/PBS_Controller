@@ -23,6 +23,7 @@ RECENT VERSION HISTORY
 v1.4.1 includes changes to flutter S4 to prevent it from being open too long and overheating; fluttering of R2/S2 during pressurization.
 v1.4.2 Size: 28,058 bytes. Fixes FIZFIRM-12, 13, 14, 15, 16, 17. Main changes includes changes to prevent S3 from being open for too long and overheating, both in Fill and Depressurize loops; adding firmware tag to splash screen; changing company name to Perlage Systems; Menu reorganization (Carbonation Mode and Cleaning Mode on screen 1); "silent" menu exit; showing total fills and session fills when exiting menu; button reorg on AutoLevel feature (formally AutoSiphon).
 v1.4.3 FIZFIRM-22: Removed flutter code for S2 at end of pressurization loop.
+v1.5.0 Reved the second digit to reflect that this is the first version with new development environment. This required new timing code to make LCD work.
 
 ===========================================================================
 */
@@ -243,7 +244,7 @@ void setup()
 
 	//===================================================================================
 	//buzzer(100); delay(50); buzzer(100); delay(50); buzzer(100);
-	messageInitial();
+	messageInitial(); // This message now says "APPLIEDFIZZICS.com"
 
 	// EEPROM factory set-reset routine
 	// For some reason, have to include it here and not above with others
