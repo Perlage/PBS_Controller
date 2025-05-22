@@ -15,6 +15,7 @@ Installed Visual Studio Community 2022 on May 16, 2025
 
 MOST RECENT COMMIT
 =====================
+05/21/2025 - Commit 8de7c7a - New version 1.5.0
 05/19/2025 - Commit 743bf58 - LCD timing adjusted for IDE 2.3.6
 
 RECENT VERSION HISTORY
@@ -27,7 +28,7 @@ v1.4.3 FIZFIRM-22: Removed flutter code for S2 at end of pressurization loop.
 */
 
 //Version control variable
-String(versionSoftwareTag) = "v1.4.3";		//Commit 37470da, 03/28/2022
+String(versionSoftwareTag) = "v1.5.0";		//Commit 8de7c7a, 05/21/2025
 
 //Library includes
 #include <Wire.h> 
